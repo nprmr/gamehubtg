@@ -1,0 +1,27 @@
+:root {
+    /* Surface */
+    --surface-main: #151515;
+    --surface-zero: #ffffff;
+    --surface-zero-alfa: rgba(255, 255, 255, 0.2);
+    --surface-normal-alfa: rgba(72, 72, 72, 0.3);
+    --surface-light: #ebedf0;
+    --surface-accent: #9448ff;
+
+    /* Icotex */
+    --icotex-normal: #151515;
+    --icotex-white: #f3f3f3;
+    --icotex-white-alfa: rgba(243, 243, 243, 0.4);
+    --icotex-low: #b0b0b0;
+    --icotex-lowest: #5e5e5e;
+    --icotex-info: #485aff;
+}
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden; /* убираем любые скроллы */
+    position: fixed;  /* фиксируем страницу */
+    top: 0;
+    left: 0;
+}
