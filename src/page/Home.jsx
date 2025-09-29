@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import "../theme.css";
 import IconButton from "../components/IconButton";
 import SettingsIcon from "../icons/Settings.svg?react";
@@ -12,6 +13,7 @@ import bg2 from "../assets/bg2.png";
 function Home() {
     const [activeIndex, setActiveIndex] = useState(0);
     const carouselRef = useRef(null);
+    const navigate = useNavigate();
 
     // массив фонов
     const images = [bg1, bg2];
@@ -95,7 +97,7 @@ function Home() {
                 <IconButton icon={SettingsIcon} />
             </div>
 
-            {/* VStack: заголовок + карусель + кнопка */}
+            {/* VStack */}
             <div
                 style={{
                     position: "relative",
@@ -103,17 +105,18 @@ function Home() {
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
-                    justifyContent: "space-between", // динамичные отступы
+                    justifyContent: "space-between",
                     width: "100%",
                     height: "100%",
-                    paddingTop: "120px", // 80px + 40px от иконки до VStack
+                    paddingTop: "120px", // 40px от иконки
                     paddingBottom: "24px",
                     boxSizing: "border-box",
                 }}
             >
                 {/* Заголовок */}
                 <div style={{ textAlign: "center" }}>
-                    <h1
+                    <motion.h1
+                        layoutId="title"
                         style={{
                             fontFamily: "Gilroy, sans-serif",
                             fontSize: "32px",
@@ -123,8 +126,9 @@ function Home() {
                         }}
                     >
                         Выбор игры
-                    </h1>
-                    <p
+                    </motion.h1>
+                    <motion.p
+                        layoutId="subtitle"
                         style={{
                             fontFamily: "Gilroy, sans-serif",
                             fontSize: "14px",
@@ -135,10 +139,10 @@ function Home() {
                         }}
                     >
                         наши игры рассчитаны <br /> на компании от 2 до 24 человек
-                    </p>
+                    </motion.p>
                 </div>
 
-                {/* Карусель карточек */}
+                {/* Карусель */}
                 <div
                     ref={carouselRef}
                     style={{
@@ -154,15 +158,16 @@ function Home() {
                     }}
                 >
                     {cards.map((card, i) => (
-                        <div
+                        <motion.div
                             key={i}
+                            layoutId={i === 0 ? "card" : undefined} // layoutId только у первой карточки
                             style={{
                                 flex: "0 0 auto",
                                 scrollSnapAlign: "center",
                             }}
                         >
                             {card}
-                        </div>
+                        </motion.div>
                     ))}
                 </div>
 
@@ -175,11 +180,14 @@ function Home() {
                     }}
                 >
                     {activeIndex === 1 ? (
-                        <PrimaryButton textColor="var(--icotex-white-alfa)">
+                        <PrimaryButton textColor="var(--icotex-white-alfa)" disabled>
                             Игра в разработке
                         </PrimaryButton>
                     ) : (
-                        <PrimaryButton textColor="var(--icotex-white)">
+                        <PrimaryButton
+                            textColor="var(--icotex-white)"
+                            onClick={() => navigate("/neverever")}
+                        >
                             Начать игру
                         </PrimaryButton>
                     )}
