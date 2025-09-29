@@ -14,11 +14,10 @@ function GameCard({ title, subtitle, label, players, categories, riveAnimation }
             style={{
                 width: "300px",
                 height: "292px",
-                padding: "4px",
                 backgroundColor: "var(--surface-normal-alfa)",
                 borderRadius: "32px",
-                backdropFilter: "blur(12px)",
-                WebkitBackdropFilter: "blur(12px)",
+                backdropFilter: "blur(16px)",
+                WebkitBackdropFilter: "blur(16px)",
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
@@ -31,7 +30,7 @@ function GameCard({ title, subtitle, label, players, categories, riveAnimation }
                     style={{
                         marginTop: "16px",
                         marginBottom: "24px",
-                        fontFamily: "'Advent Pro', sans-serif",
+                        fontFamily: "Gilroy, sans-serif",
                         fontSize: "14px",
                         fontWeight: "400",
                         color: "var(--icotex-white-alfa)",
@@ -45,7 +44,7 @@ function GameCard({ title, subtitle, label, players, categories, riveAnimation }
             <h2
                 style={{
                     margin: 0,
-                    fontFamily: "'Advent Pro', sans-serif",
+                    fontFamily: "Gilroy, sans-serif",
                     fontSize: "28px",
                     fontWeight: "700",
                     color: "var(--icotex-white)",
@@ -61,7 +60,7 @@ function GameCard({ title, subtitle, label, players, categories, riveAnimation }
                 style={{
                     marginTop: "16px",
                     marginBottom: "24px",
-                    fontFamily: "'Advent Pro', sans-serif",
+                    fontFamily: "Gilroy, sans-serif",
                     fontSize: "14px",
                     fontWeight: "400",
                     color: "var(--icotex-white)",
@@ -80,7 +79,7 @@ function GameCard({ title, subtitle, label, players, categories, riveAnimation }
                     style={{
                         width: "92px",
                         height: "92px",
-                        marginBottom: "4px",
+                        marginBottom: "8px",
                         display: "flex",
                         justifyContent: "center",
                         alignItems: "center",
@@ -94,9 +93,9 @@ function GameCard({ title, subtitle, label, players, categories, riveAnimation }
                     style={{
                         display: "flex",
                         gap: "8px",
-                        marginBottom: "4px",
+                        marginBottom: "8px",
                         width: "100%",
-                        padding: "0 4px",
+                        padding: "0 8px",
                         boxSizing: "border-box",
                     }}
                 >
@@ -114,7 +113,7 @@ function GameCard({ title, subtitle, label, players, categories, riveAnimation }
                     >
             <span
                 style={{
-                    fontFamily: "'Advent Pro', sans-serif",
+                    fontFamily: "Gilroy, sans-serif",
                     fontSize: "12px",
                     fontWeight: "400",
                     color: "var(--icotex-white)",
@@ -125,7 +124,7 @@ function GameCard({ title, subtitle, label, players, categories, riveAnimation }
                         <span
                             style={{
                                 marginTop: "8px",
-                                fontFamily: "'Advent Pro', sans-serif",
+                                fontFamily: "Gilroy, sans-serif",
                                 fontSize: "32px",
                                 fontWeight: "700",
                                 color: "var(--icotex-white)",
@@ -149,7 +148,7 @@ function GameCard({ title, subtitle, label, players, categories, riveAnimation }
                     >
             <span
                 style={{
-                    fontFamily: "'Advent Pro', sans-serif",
+                    fontFamily: "Gilroy, sans-serif",
                     fontSize: "12px",
                     fontWeight: "400",
                     color: "var(--icotex-white)",
@@ -160,7 +159,7 @@ function GameCard({ title, subtitle, label, players, categories, riveAnimation }
                         <span
                             style={{
                                 marginTop: "8px",
-                                fontFamily: "'Advent Pro', sans-serif",
+                                fontFamily: "Gilroy, sans-serif",
                                 fontSize: "32px",
                                 fontWeight: "700",
                                 color: "var(--icotex-white)",

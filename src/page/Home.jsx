@@ -71,7 +71,7 @@ function Home() {
                     initial={{ y: 50, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     exit={{ y: 100, opacity: 0 }}
-                    transition={{ duration: 0.35 }} // ускорили анимацию
+                    transition={{ duration: 0.35 }}
                     style={{
                         position: "absolute",
                         bottom: 0,
@@ -95,51 +95,48 @@ function Home() {
                 <IconButton icon={SettingsIcon} />
             </div>
 
-            {/* Контентная сетка: заголовок + карусель + кнопка */}
+            {/* VStack: заголовок + карусель + кнопка */}
             <div
                 style={{
                     position: "relative",
                     zIndex: 1,
-                    display: "grid",
-                    gridTemplateRows: "auto 1fr auto 1fr auto",
+                    display: "flex",
+                    flexDirection: "column",
                     alignItems: "center",
-                    justifyItems: "center",
+                    justifyContent: "space-between", // динамичные отступы
                     width: "100%",
                     height: "100%",
-                    paddingTop: "80px",
+                    paddingTop: "120px", // 80px + 40px от иконки до VStack
+                    paddingBottom: "24px",
                     boxSizing: "border-box",
                 }}
             >
-                {/* Заголовки */}
+                {/* Заголовок */}
                 <div style={{ textAlign: "center" }}>
                     <h1
                         style={{
-                            fontFamily: "'Advent Pro', sans-serif",
+                            fontFamily: "Gilroy, sans-serif",
                             fontSize: "32px",
                             fontWeight: "700",
                             color: "var(--icotex-white)",
-                            margin: 0,
+                            marginBottom: "8px",
                         }}
                     >
                         Выбор игры
                     </h1>
                     <p
                         style={{
-                            fontFamily: "'Advent Pro', sans-serif",
+                            fontFamily: "Gilroy, sans-serif",
                             fontSize: "14px",
                             fontWeight: "400",
                             color: "var(--icotex-low)",
-                            marginTop: "8px",
-                            marginBottom: "0",
+                            margin: 0,
                             lineHeight: "1.4",
                         }}
                     >
                         наши игры рассчитаны <br /> на компании от 2 до 24 человек
                     </p>
                 </div>
-
-                {/* spacer сверху */}
-                <div />
 
                 {/* Карусель карточек */}
                 <div
@@ -169,29 +166,23 @@ function Home() {
                     ))}
                 </div>
 
-                {/* убираем скроллбар в Webkit */}
-                <style>
-                    {`
-            div::-webkit-scrollbar {
-              display: none;
-            }
-          `}
-                </style>
-
-                {/* spacer снизу */}
-                <div />
-
                 {/* Кнопка снизу */}
                 <div
                     style={{
                         width: "100%",
                         display: "flex",
                         justifyContent: "center",
-                        paddingBottom: "24px",
-                        boxSizing: "border-box",
                     }}
                 >
-                    <PrimaryButton>Начать игру</PrimaryButton>
+                    {activeIndex === 1 ? (
+                        <PrimaryButton textColor="var(--icotex-white-alfa)">
+                            Игра в разработке
+                        </PrimaryButton>
+                    ) : (
+                        <PrimaryButton textColor="var(--icotex-white)">
+                            Начать игру
+                        </PrimaryButton>
+                    )}
                 </div>
             </div>
         </div>
