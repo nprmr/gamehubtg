@@ -173,7 +173,7 @@ function Home() {
                 </div>
 
                 {/* Кнопка снизу */}
-                <div style={{ width: "100%", padding: "0 16px" }}>
+                <div style={{ width: "-webkit-fill-available", padding: "0 16px" }}>
                     {activeIndex === 1 ? (
                         <PrimaryButton textColor="var(--icotex-white-alfa)" disabled withMargin>
                             Игра в разработке

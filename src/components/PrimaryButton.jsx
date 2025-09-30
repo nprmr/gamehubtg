@@ -1,4 +1,5 @@
 import React from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import "../theme.css";
 
 function PrimaryButton({
@@ -6,7 +7,7 @@ function PrimaryButton({
                            textColor = "var(--icotex-white)",
                            onClick,
                            disabled = false,
-                           withMargin = false, // отступы слева/справа по 16px
+                           description, // теперь строка, анимацию делаем внутри
                        }) {
     return (
         <button
@@ -14,12 +15,12 @@ function PrimaryButton({
             disabled={disabled}
             style={{
                 display: "flex",
-                width: withMargin ? "calc(100% - 32px)" : "100%", // уменьшаем ширину на 32px
-                height: "64px",
-                padding: "8px 16px",
                 flexDirection: "column",
                 justifyContent: "center",
                 alignItems: "center",
+                width: "100%",
+                height: "64px", // фиксированная высота
+                padding: "8px 16px",
                 borderRadius: "20px",
                 background: disabled
                     ? "var(--surface-normal-alfa)"
@@ -27,14 +28,12 @@ function PrimaryButton({
                 border: "none",
                 cursor: disabled ? "not-allowed" : "pointer",
                 fontFamily: "Gilroy, sans-serif",
-                fontSize: "24px",
-                fontWeight: "600",
-                color: disabled ? "var(--icotex-white-alfa)" : textColor,
                 backdropFilter: "blur(20px)",
                 WebkitBackdropFilter: "blur(20px)",
                 transition: "transform 0.1s ease",
-                margin: withMargin ? "0 16px 24px 16px" : "0 0 24px 0",
+                marginBottom: "24px",
                 boxSizing: "border-box",
+                overflow: "hidden", // чтобы анимация не вылезала за границы
             }}
             onMouseDown={(e) =>
                 !disabled && (e.currentTarget.style.transform = "scale(0.985)")
@@ -46,7 +45,37 @@ function PrimaryButton({
                 !disabled && (e.currentTarget.style.transform = "scale(1)")
             }
         >
-            {children}
+      <span
+          style={{
+              fontSize: "20px",
+              fontWeight: "600",
+              color: disabled ? "var(--icotex-white-alfa)" : textColor,
+              lineHeight: 1,
+          }}
+      >
+        {children}
+      </span>
+
+            <AnimatePresence>
+                {description && (
+                    <motion.span
+                        key="desc"
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 4 }}
+                        transition={{ duration: 0.3 }}
+                        style={{
+                            fontSize: "12px",
+                            fontWeight: "400",
+                            color: "var(--icotex-white-alfa)",
+                            marginTop: "2px",
+                            lineHeight: 1.2,
+                        }}
+                    >
+                        {description}
+                    </motion.span>
+                )}
+            </AnimatePresence>
         </button>
     );
 }

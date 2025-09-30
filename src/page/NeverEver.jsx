@@ -169,7 +169,7 @@ function NeverEver() {
                 <motion.div
                     initial={{ gap: "0px" }}
                     animate={{ gap: "8px" }}
-                    transition={{ duration: 0.3, ease: "easeOut" }}
+                    transition={{ duration: 0.4, ease: "easeOut" }}
                     style={{
                         width: "100%",
                         display: "flex",
@@ -182,7 +182,7 @@ function NeverEver() {
                     <motion.div
                         initial={{ x: 40 }}
                         animate={{ x: 0 }}
-                        transition={{ duration: 0.4, ease: "easeOut" }}
+                        transition={{ duration: 0.5, ease: "easeOut" }}
                     >
                         <IconPrimaryButton onClick={() => navigate(-1)} />
                     </motion.div>
@@ -201,6 +201,7 @@ function NeverEver() {
                             <PrimaryButton
                                 textColor="var(--icotex-white)"
                                 onClick={() => console.log("Start game")}
+                                description={`Выбрано категорий ${selectedCategories.length}`}
                             >
                                 Играть
                             </PrimaryButton>
