@@ -1,20 +1,21 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import "../theme.css";
 import IconButton from "../components/IconButton";
 import SettingsIcon from "../icons/Settings.svg?react";
 import CategoryCard from "../components/CategoryCard";
-
-import bg1 from "../assets/bg1.png"; // фон как в Home
+import PrimaryButton from "../components/PrimaryButton";
+import IconPrimaryButton from "../components/IconPrimaryButton";
+import bg1 from "../assets/bg1.png";
 
 function NeverEver() {
     const [selectedCategories, setSelectedCategories] = useState([]);
+    const navigate = useNavigate();
 
     const toggleCategory = (title) => {
         setSelectedCategories((prev) =>
-            prev.includes(title)
-                ? prev.filter((t) => t !== title)
-                : [...prev, title]
+            prev.includes(title) ? prev.filter((t) => t !== title) : [...prev, title]
         );
     };
 
@@ -63,14 +64,7 @@ function NeverEver() {
             />
 
             {/* Кнопка Settings */}
-            <div
-                style={{
-                    position: "fixed",
-                    top: "16px",
-                    right: "16px",
-                    zIndex: 10,
-                }}
-            >
+            <div style={{ position: "fixed", top: "16px", right: "16px", zIndex: 10 }}>
                 <IconButton icon={SettingsIcon} />
             </div>
 
@@ -119,14 +113,16 @@ function NeverEver() {
                     </motion.p>
                 </div>
 
-                {/* Горизонтальная карусель 2 ряда */}
-                <div
+                {/* Горизонтальная карусель */}
+                <motion.div
+                    initial={{ gap: "0px" }}
+                    animate={{ gap: "16px" }}
+                    transition={{ duration: 0.6, ease: "easeOut" }}
                     style={{
                         display: "flex",
                         flexDirection: "row",
                         overflowX: "auto",
                         padding: "16px 16px",
-                        gap: "16px",
                         width: "100%",
                         boxSizing: "border-box",
                         scrollbarWidth: "none",
@@ -134,13 +130,16 @@ function NeverEver() {
                     }}
                 >
                     {topRow.map((cat, i) => (
-                        <div
+                        <motion.div
                             key={i}
                             style={{
                                 display: "flex",
                                 flexDirection: "column",
                                 gap: "16px",
                             }}
+                            initial={{ x: -10 }}
+                            animate={{ x: 0 }}
+                            transition={{ duration: 0.5, delay: i * 0.05 }}
                         >
                             <CategoryCard
                                 title={cat.title}
@@ -158,44 +157,56 @@ function NeverEver() {
                                     riveFile={bottomRow[i].riveFile}
                                     selected={selectedCategories.includes(bottomRow[i].title)}
                                     onClick={() =>
-                                        !bottomRow[i].locked &&
-                                        toggleCategory(bottomRow[i].title)
+                                        !bottomRow[i].locked && toggleCategory(bottomRow[i].title)
                                     }
                                 />
                             )}
-                        </div>
+                        </motion.div>
                     ))}
-                </div>
+                </motion.div>
 
-                {/* Кнопка снизу */}
-                <div
+                {/* Кнопки снизу */}
+                <motion.div
+                    initial={{ gap: "0px" }}
+                    animate={{ gap: "8px" }}
+                    transition={{ duration: 0.3, ease: "easeOut" }}
                     style={{
                         width: "100%",
                         display: "flex",
                         justifyContent: "center",
+                        padding: "0 16px",
+                        boxSizing: "border-box",
                     }}
                 >
-                    <button
-                        disabled={selectedCategories.length === 0}
-                        style={{
-                            width: "calc(100% - 32px)",
-                            height: "64px",
-                            margin: "0 16px 24px 16px",
-                            borderRadius: "20px",
-                            background: selectedCategories.length
-                                ? "var(--icotex-accent)"
-                                : "var(--surface-normal-alfa)",
-                            color: "white",
-                            fontSize: "20px",
-                            fontWeight: "600",
-                            border: "none",
-                            cursor: selectedCategories.length ? "pointer" : "not-allowed",
-                            opacity: selectedCategories.length ? 1 : 0.6,
-                        }}
+                    {/* Кнопка-стрелка */}
+                    <motion.div
+                        initial={{ x: 40 }}
+                        animate={{ x: 0 }}
+                        transition={{ duration: 0.4, ease: "easeOut" }}
                     >
-                        Продолжить
-                    </button>
-                </div>
+                        <IconPrimaryButton onClick={() => navigate(-1)} />
+                    </motion.div>
+
+                    {/* Основная кнопка */}
+                    <motion.div
+                        initial={{ width: "100%" }}
+                        animate={{ width: "calc(100% - 72px)" }} // 64px иконка + 8px gap
+                        transition={{ duration: 0.4, ease: "easeOut" }}
+                    >
+                        {selectedCategories.length === 0 ? (
+                            <PrimaryButton textColor="var(--icotex-white-alfa)" disabled>
+                                Выберите категории
+                            </PrimaryButton>
+                        ) : (
+                            <PrimaryButton
+                                textColor="var(--icotex-white)"
+                                onClick={() => console.log("Start game")}
+                            >
+                                Играть
+                            </PrimaryButton>
+                        )}
+                    </motion.div>
+                </motion.div>
             </div>
         </div>
     );

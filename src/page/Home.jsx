@@ -15,19 +15,22 @@ function Home() {
     const carouselRef = useRef(null);
     const navigate = useNavigate();
 
-    // массив фонов
     const images = [bg1, bg2];
 
-    // массив карточек
     const cards = [
-        <GameCard
+        <motion.div
             key={0}
-            label="1/4"
-            title="Я никогда НЕ"
-            subtitle="Игроки говорят «Я никогда не…», остальные отмечают, если делали это"
-            players="2+"
-            categories="14"
-        />,
+            layoutId="gamecard"
+            transition={{ duration: 0.6, ease: "easeInOut" }}
+        >
+            <GameCard
+                label="1/4"
+                title="Я никогда НЕ"
+                subtitle="Игроки говорят «Я никогда не…», остальные отмечают, если делали это"
+                players="2+"
+                categories="14"
+            />
+        </motion.div>,
         <GameCard
             key={1}
             label="2/4"
@@ -37,7 +40,6 @@ function Home() {
         />,
     ];
 
-    // следим за скроллом и вычисляем индекс карточки
     useEffect(() => {
         const handleScroll = () => {
             if (!carouselRef.current) return;
@@ -108,7 +110,7 @@ function Home() {
                     justifyContent: "space-between",
                     width: "100%",
                     height: "100%",
-                    paddingTop: "120px", // 40px от иконки
+                    paddingTop: "120px",
                     paddingBottom: "24px",
                     boxSizing: "border-box",
                 }}
@@ -153,14 +155,13 @@ function Home() {
                         padding: "0 16px",
                         width: "100%",
                         boxSizing: "border-box",
-                        scrollbarWidth: "none", // Firefox
-                        msOverflowStyle: "none", // IE/Edge
+                        scrollbarWidth: "none",
+                        msOverflowStyle: "none",
                     }}
                 >
                     {cards.map((card, i) => (
                         <motion.div
                             key={i}
-                            layoutId={i === 0 ? "card" : undefined} // layoutId только у первой карточки
                             style={{
                                 flex: "0 0 auto",
                                 scrollSnapAlign: "center",
@@ -172,21 +173,16 @@ function Home() {
                 </div>
 
                 {/* Кнопка снизу */}
-                <div
-                    style={{
-                        width: "100%",
-                        display: "flex",
-                        justifyContent: "center",
-                    }}
-                >
+                <div style={{ width: "100%", padding: "0 16px" }}>
                     {activeIndex === 1 ? (
-                        <PrimaryButton textColor="var(--icotex-white-alfa)" disabled>
+                        <PrimaryButton textColor="var(--icotex-white-alfa)" disabled withMargin>
                             Игра в разработке
                         </PrimaryButton>
                     ) : (
                         <PrimaryButton
                             textColor="var(--icotex-white)"
                             onClick={() => navigate("/neverever")}
+                            withMargin
                         >
                             Начать игру
                         </PrimaryButton>
