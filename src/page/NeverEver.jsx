@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import "../theme.css";
@@ -11,7 +11,29 @@ import bg1 from "../assets/bg1.png";
 
 function NeverEver() {
     const [selectedCategories, setSelectedCategories] = useState([]);
+    const [categories, setCategories] = useState([]);
+    const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
+
+    // Загружаем категории с бэка
+    useEffect(() => {
+        fetch("http://localhost:4000/api/categories")
+            .then((res) => res.json())
+            .then((data) => {
+                // маппим поля: paid -> locked
+                const mapped = data.map((cat) => ({
+                    ...cat,
+                    locked: cat.paid,
+                    riveFile: `http://localhost:4000${cat.riveFile}`,
+                }));
+                setCategories(mapped);
+                setLoading(false);
+            })
+            .catch((err) => {
+                console.error("Ошибка загрузки категорий:", err);
+                setLoading(false);
+            });
+    }, []);
 
     const toggleCategory = (title) => {
         setSelectedCategories((prev) =>
@@ -19,22 +41,22 @@ function NeverEver() {
         );
     };
 
-    const categories = [
-        { title: "Друзья и компании", riveFile: "/rive/fire.riv" },
-        { title: "Детство", riveFile: "/rive/childhood.riv" },
-        { title: "Семья", riveFile: "/rive/family.riv" },
-        { title: "Здоровье и тело", riveFile: "/rive/heart.riv" },
-        { title: "Алкогольные истории", riveFile: "/rive/alchohol.riv", locked: true, adult: true },
-        { title: "Секс и интим", riveFile: "/rive/sex.riv", locked: true, adult: true },
-        { title: "Фантазии и мечты", riveFile: "/rive/dream.riv", locked: true },
-        { title: "Путешествия", riveFile: "/rive/travel.riv", locked: true },
-        { title: "Страх и адреналин", riveFile: "/rive/fear.riv", locked: true },
-        { title: "Отношения и свидания", riveFile: "/rive/date.riv", locked: true },
-        { title: "Работа и учеба", riveFile: "/rive/work.riv", locked: true },
-        { title: "Стыд и позор", riveFile: "/rive/shame.riv", locked: true },
-        { title: "Интернет и соц. сети", riveFile: "/rive/phone.riv", locked: true },
-        { title: "Игры и развлечения", riveFile: "/rive/game.riv", locked: true },
-    ];
+    if (loading) {
+        return (
+            <div
+                style={{
+                    width: "100vw",
+                    height: "100vh",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    color: "white",
+                }}
+            >
+                Загрузка категорий...
+            </div>
+        );
+    }
 
     const topRow = categories.slice(0, 7);
     const bottomRow = categories.slice(7);
@@ -131,7 +153,7 @@ function NeverEver() {
                 >
                     {topRow.map((cat, i) => (
                         <motion.div
-                            key={i}
+                            key={cat.title}
                             style={{
                                 display: "flex",
                                 flexDirection: "column",
@@ -157,7 +179,8 @@ function NeverEver() {
                                     riveFile={bottomRow[i].riveFile}
                                     selected={selectedCategories.includes(bottomRow[i].title)}
                                     onClick={() =>
-                                        !bottomRow[i].locked && toggleCategory(bottomRow[i].title)
+                                        !bottomRow[i].locked &&
+                                        toggleCategory(bottomRow[i].title)
                                     }
                                 />
                             )}
@@ -190,7 +213,7 @@ function NeverEver() {
                     {/* Основная кнопка */}
                     <motion.div
                         initial={{ width: "100%" }}
-                        animate={{ width: "calc(100% - 72px)" }} // 64px иконка + 8px gap
+                        animate={{ width: "calc(100% - 72px)" }}
                         transition={{ duration: 0.4, ease: "easeOut" }}
                     >
                         {selectedCategories.length === 0 ? (
@@ -200,7 +223,7 @@ function NeverEver() {
                         ) : (
                             <PrimaryButton
                                 textColor="var(--icotex-white)"
-                                onClick={() => console.log("Start game")}
+                                onClick={() => navigate("/game", { state: { categories: selectedCategories } })}
                                 description={`Выбрано категорий ${selectedCategories.length}`}
                             >
                                 Играть

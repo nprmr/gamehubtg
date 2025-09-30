@@ -7,14 +7,16 @@ import lockIcon from "../icons/lock.png";
 import adultIcon from "../icons/adult.png";
 
 /**
+ * Компонент карточки категории
+ *
  * Props:
  * - title: string
- * - riveFile: string (например "/rive/family.riv" из public)
- * - locked?: boolean
- * - adult?: boolean
- * - selected?: boolean
+ * - riveFile: string (например "http://localhost:4000/rive/family.riv")
+ * - locked?: boolean (если категория платная)
+ * - adult?: boolean (если 18+)
+ * - selected?: boolean (выбрана ли категория)
  * - onClick?: () => void
- * - badgeIcons?: { lock?: string; adult?: string } // если нужны кастомные
+ * - badgeIcons?: { lock?: string; adult?: string } // кастомные иконки
  */
 function CategoryCard({
                           title,
@@ -34,7 +36,7 @@ function CategoryCard({
         autoplay: true,
     });
 
-    // достаём boolean input "activation"
+    // достаём boolean input "Activation" (если есть в rive)
     const activationInput = useStateMachineInput(
         rive,
         STATE_MACHINE_NAME,
@@ -47,7 +49,7 @@ function CategoryCard({
         if (onClick) onClick();
     };
 
-    // иконки по умолчанию из src/icons
+    // иконки (по умолчанию — из /icons)
     const adultIconSrc = badgeIcons.adult || adultIcon;
     const lockIconSrc = badgeIcons.lock || lockIcon;
 
