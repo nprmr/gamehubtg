@@ -3,7 +3,10 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import IconButton from "../components/IconButton";
 import PrimaryButton from "../components/PrimaryButton";
-import CategoryRive from "../components/CategoryRive"; // ✅ новый компонент
+import FlatButton from "../components/FlatButton";
+import SecondaryButton from "../components/SecondaryButton";
+import CategoryRive from "../components/CategoryRive";
+import BottomSheet from "../components/BottomSheet";
 import FaqIcon from "../icons/faq.svg?react";
 import ArrowBackIcon from "../icons/arrowback.svg?react";
 
@@ -15,6 +18,7 @@ function GameScreen() {
     const [questions, setQuestions] = useState([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [loading, setLoading] = useState(true);
+    const [showSheet, setShowSheet] = useState(false);
 
     const dir = currentIndex % 2 === 0 ? 1 : -1;
 
@@ -41,17 +45,20 @@ function GameScreen() {
         if (currentIndex < questions.length - 1) {
             setCurrentIndex((prev) => prev + 1);
         } else {
-            setCurrentIndex(questions.length); // показать заглушку
+            setCurrentIndex(questions.length);
         }
     };
 
     if (loading) return <div style={centerStyle}>Загружаем вопросы...</div>;
-    if (questions.length === 0) return <div style={centerStyle}>Нет вопросов для выбранных категорий</div>;
+    if (questions.length === 0)
+        return <div style={centerStyle}>Нет вопросов для выбранных категорий</div>;
 
     if (currentIndex >= questions.length) {
         return (
             <div style={{ ...centerStyle, flexDirection: "column" }}>
-                <h2 style={{ fontSize: 24, marginBottom: 16, color: "var(--icotex-white)" }}>
+                <h2
+                    style={{ fontSize: 24, marginBottom: 16, color: "var(--icotex-white)" }}
+                >
                     Слова кончились 🎉
                 </h2>
                 <PrimaryButton textColor="var(--icotex-white)" onClick={() => navigate("/")}>
@@ -79,7 +86,7 @@ function GameScreen() {
         >
             {/* Иконки */}
             <div style={{ position: "absolute", top: 16, left: 16, zIndex: 10 }}>
-                <IconButton icon={ArrowBackIcon} onClick={() => navigate(-1)} />
+                <IconButton icon={ArrowBackIcon} onClick={() => setShowSheet(true)} />
             </div>
             <div style={{ position: "absolute", top: 16, right: 16, zIndex: 10 }}>
                 <IconButton icon={FaqIcon} />
@@ -144,13 +151,13 @@ function GameScreen() {
                             x: 0,
                             rotate: 0,
                             opacity: 1,
-                            transition: { type: "spring", stiffness: 120, damping: 22, duration: 0.35 },
+                            transition: { type: "spring", stiffness: 120, damping: 22 },
                         }}
                         exit={{
                             x: dir * 400,
                             rotate: dir * 14,
                             opacity: 0,
-                            transition: { type: "spring", stiffness: 120, damping: 20, duration: 0.35 },
+                            transition: { type: "spring", stiffness: 120, damping: 20 },
                         }}
                         style={{
                             width: "100%",
@@ -164,7 +171,6 @@ function GameScreen() {
                             alignItems: "flex-start",
                         }}
                     >
-                        {/* Текст вопроса */}
                         <p
                             style={{
                                 fontFamily: "Gilroy, sans-serif",
@@ -178,7 +184,6 @@ function GameScreen() {
                             {currentQuestion.text}
                         </p>
 
-                        {/* Rive анимация снизу справа */}
                         <div
                             style={{
                                 position: "absolute",
@@ -188,7 +193,10 @@ function GameScreen() {
                                 height: 92,
                             }}
                         >
-                            <CategoryRive riveFile={currentQuestion.riveFile} />
+                            <CategoryRive
+                                riveFile={currentQuestion.riveFile}
+                                stateMachine={currentQuestion.stateMachine}
+                            />
                         </div>
                     </motion.div>
                 </AnimatePresence>
@@ -200,6 +208,16 @@ function GameScreen() {
                     Дальше
                 </PrimaryButton>
             </div>
+
+            {/* BottomSheet */}
+            <BottomSheet
+                open={showSheet}
+                onClose={() => setShowSheet(false)}
+                onConfirm={() => navigate("/neverever", { replace: true })}
+                riveFile="/rive/tv.riv"
+                stateMachine="State Machine 1"
+                trigger="clickTrigger"
+            />
         </div>
     );
 }

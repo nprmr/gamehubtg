@@ -27,6 +27,7 @@ function NeverEver() {
                 style={{
                     width: "100vw",
                     height: "100vh",
+                    backgroundColor: "var(--surface-main)",
                     display: "flex",
                     justifyContent: "center",
                     alignItems: "center",
@@ -149,7 +150,7 @@ function NeverEver() {
                                 title={cat.title}
                                 locked={cat.locked}
                                 adult={cat.adult}
-                                riveFile={`http://localhost:4000${cat.riveFile}`}
+                                riveFile={cat.riveFile}
                                 selected={selectedCategories.includes(cat.title)}
                                 onClick={() => !cat.locked && toggleCategory(cat.title)}
                             />
@@ -158,7 +159,7 @@ function NeverEver() {
                                     title={bottomRow[i].title}
                                     locked={bottomRow[i].locked}
                                     adult={bottomRow[i].adult}
-                                    riveFile={`http://localhost:4000${bottomRow[i].riveFile}`}
+                                    riveFile={bottomRow[i].riveFile}
                                     selected={selectedCategories.includes(bottomRow[i].title)}
                                     onClick={() =>
                                         !bottomRow[i].locked && toggleCategory(bottomRow[i].title)
@@ -188,7 +189,7 @@ function NeverEver() {
                         animate={{ x: 0 }}
                         transition={{ duration: 0.5, ease: "easeOut" }}
                     >
-                        <IconPrimaryButton onClick={() => navigate(-1)} />
+                        <IconPrimaryButton onClick={() => navigate("/", { replace: true })} />
                     </motion.div>
 
                     {/* Основная кнопка */}

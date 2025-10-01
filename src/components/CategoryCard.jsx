@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useRive, useStateMachineInput } from "@rive-app/react-canvas";
 import "../theme.css";
 
@@ -36,16 +36,31 @@ function CategoryCard({
         autoplay: true,
     });
 
-    // достаём boolean input "Activation" (если есть в rive)
+    // достаём input Activation (boolean или trigger)
     const activationInput = useStateMachineInput(
         rive,
         STATE_MACHINE_NAME,
         "Activation"
     );
 
+    // 🔹 фикс: при маунте выставляем false, чтобы не проигрывалось сразу
+    useEffect(() => {
+        if (activationInput && typeof activationInput.value === "boolean") {
+            activationInput.value = false;
+        }
+    }, [activationInput]);
+
     const handleClick = () => {
         if (locked) return; // заблокированные не кликаются
-        if (activationInput) activationInput.value = !activationInput.value;
+
+        if (activationInput) {
+            if (typeof activationInput.value === "boolean") {
+                activationInput.value = !activationInput.value; // toggle для bool
+            } else if (activationInput.fire) {
+                activationInput.fire(); // fallback если вдруг trigger
+            }
+        }
+
         if (onClick) onClick();
     };
 
