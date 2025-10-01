@@ -3,13 +3,12 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import IconButton from "../components/IconButton";
 import PrimaryButton from "../components/PrimaryButton";
-import FlatButton from "../components/FlatButton";
-import SecondaryButton from "../components/SecondaryButton";
 import CategoryRive from "../components/CategoryRive";
 import BottomSheet from "../components/BottomSheet";
 import FaqIcon from "../icons/faq.svg?react";
 import ArrowBackIcon from "../icons/arrowback.svg?react";
 import NoWordsCard from "../components/NoWordsCard";
+import { getQuestionsByCategories } from "../api"; // ✅ используем API слой
 
 function GameScreen() {
     const location = useLocation();
@@ -25,18 +24,17 @@ function GameScreen() {
 
     useEffect(() => {
         if (categories.length > 0) {
-            const qs = categories.map(encodeURIComponent).join(",");
-            fetch(`http://localhost:4000/api/questions/multi?categories=${qs}`)
-                .then((res) => res.json())
-                .then((data) => {
+            (async () => {
+                try {
+                    const data = await getQuestionsByCategories(categories);
                     const shuffled = [...data].sort(() => Math.random() - 0.5);
                     setQuestions(shuffled);
-                    setLoading(false);
-                })
-                .catch((err) => {
+                } catch (err) {
                     console.error("Ошибка загрузки вопросов:", err);
+                } finally {
                     setLoading(false);
-                });
+                }
+            })();
         } else {
             setLoading(false);
         }
@@ -50,7 +48,24 @@ function GameScreen() {
         }
     };
 
-    if (loading) return <div style={centerStyle}>Загружаем вопросы...</div>;
+    if (loading) {
+        return (
+            <div
+                style={{
+                    width: "100vw",
+                    height: "100vh",
+                    backgroundColor: "var(--surface-main)",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    color: "var(--icotex-white)",
+                    fontFamily: "Gilroy, sans-serif",
+                }}
+            >
+                Загружаем вопросы...
+            </div>
+        );
+    }
     if (questions.length === 0)
         return <div style={centerStyle}>Нет вопросов для выбранных категорий</div>;
 
@@ -60,7 +75,7 @@ function GameScreen() {
                 style={{
                     width: "100vw",
                     height: "100vh",
-                    backgroundColor: "var(--surface-main)", // 👈 не белый фон, а твой surface
+                    backgroundColor: "var(--surface-main)",
                     display: "flex",
                     justifyContent: "center",
                     alignItems: "center",

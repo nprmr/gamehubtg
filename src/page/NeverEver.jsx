@@ -9,7 +9,8 @@ import PrimaryButton from "../components/PrimaryButton";
 import IconPrimaryButton from "../components/IconPrimaryButton";
 import bg1 from "../assets/bg1.png";
 import { useCategories } from "../hooks/useCategories";
-import LockedCategorySheet from "../components/LockedCategorySheet"; // 👈 новый шит
+import { getQuestionsByCategory } from "../api"; // ✅ используем API-слой
+import LockedCategorySheet from "../components/LockedCategorySheet";
 
 function NeverEver() {
     const { categories, loading } = useCategories();
@@ -23,27 +24,26 @@ function NeverEver() {
 
     const toggleCategory = (title) => {
         setSelectedCategories((prev) =>
-            prev.includes(title) ? prev.filter((t) => t !== title) : [...prev, title]
+            prev.includes(title)
+                ? prev.filter((t) => t !== title)
+                : [...prev, title]
         );
     };
 
     // 🔹 Открытие шита для заблокированной категории
     const openLockedCategory = async (cat) => {
         try {
-            const res = await fetch(
-                `http://localhost:4000/api/questions?category=${encodeURIComponent(
-                    cat.title
-                )}`
-            );
-            const data = await res.json();
-
+            const data = await getQuestionsByCategory(cat.title); // ✅ теперь через API (моки/реал)
             setLockedSheet({
                 open: true,
                 category: cat,
-                phrases: data.map((q) => q.text).slice(0, 3), // первые 3 фразы
+                phrases: (Array.isArray(data) ? data : [])
+                    .map((q) => q.text)
+                    .slice(0, 3),
             });
         } catch (err) {
             console.error("Ошибка загрузки вопросов:", err);
+            setLockedSheet({ open: true, category: cat, phrases: [] });
         }
     };
 
@@ -66,9 +66,11 @@ function NeverEver() {
         );
     }
 
-    // Разбиваем категории на 2 ряда
-    const topRow = categories.slice(0, Math.ceil(categories.length / 2));
-    const bottomRow = categories.slice(Math.ceil(categories.length / 2));
+    // ✅ защита от undefined
+    const safeCategories = Array.isArray(categories) ? categories : [];
+    const half = Math.ceil(safeCategories.length / 2);
+    const topRow = safeCategories.slice(0, half);
+    const bottomRow = safeCategories.slice(half);
 
     return (
         <div
@@ -95,7 +97,9 @@ function NeverEver() {
             />
 
             {/* Кнопка Settings */}
-            <div style={{ position: "fixed", top: "16px", right: "16px", zIndex: 10 }}>
+            <div
+                style={{ position: "fixed", top: "16px", right: "16px", zIndex: 10 }}
+            >
                 <IconButton icon={SettingsIcon} />
             </div>
 
@@ -190,7 +194,9 @@ function NeverEver() {
                                     locked={bottomRow[i].locked}
                                     adult={bottomRow[i].adult}
                                     riveFile={bottomRow[i].riveFile}
-                                    selected={selectedCategories.includes(bottomRow[i].title)}
+                                    selected={selectedCategories.includes(
+                                        bottomRow[i].title
+                                    )}
                                     onClick={() =>
                                         bottomRow[i].locked
                                             ? openLockedCategory(bottomRow[i])
@@ -221,7 +227,9 @@ function NeverEver() {
                         animate={{ x: 0 }}
                         transition={{ duration: 0.5, ease: "easeOut" }}
                     >
-                        <IconPrimaryButton onClick={() => navigate("/", { replace: true })} />
+                        <IconPrimaryButton
+                            onClick={() => navigate("/", { replace: true })}
+                        />
                     </motion.div>
 
                     {/* Основная кнопка */}
@@ -238,7 +246,9 @@ function NeverEver() {
                             <PrimaryButton
                                 textColor="var(--icotex-white)"
                                 onClick={() =>
-                                    navigate("/game", { state: { categories: selectedCategories } })
+                                    navigate("/game", {
+                                        state: { categories: selectedCategories },
+                                    })
                                 }
                                 description={`Выбрано категорий ${selectedCategories.length}`}
                             >
@@ -249,7 +259,7 @@ function NeverEver() {
                 </motion.div>
             </div>
 
-            {/* 👇 Новый BottomSheet для заблокированных */}
+            {/* 👇 BottomSheet для заблокированных */}
             <LockedCategorySheet
                 open={lockedSheet.open}
                 onClose={() =>
