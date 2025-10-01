@@ -12,8 +12,12 @@ import bg2 from "../assets/bg2.png";
 
 function Home() {
     const [activeIndex, setActiveIndex] = useState(0);
-    const carouselRef = useRef(null);
+    const [cardWidth, setCardWidth] = useState(300);
+    const [viewportWidth, setViewportWidth] = useState(window.innerWidth);
+    const GAP = 16;
     const navigate = useNavigate();
+
+    const firstItemRef = useRef(null);
 
     const images = [bg1, bg2];
 
@@ -41,21 +45,45 @@ function Home() {
     ];
 
     useEffect(() => {
-        const handleScroll = () => {
-            if (!carouselRef.current) return;
-            const scrollLeft = carouselRef.current.scrollLeft;
-            const cardWidth = 300 + 16; // ширина карточки + gap
-            const index = Math.round(scrollLeft / cardWidth);
-            setActiveIndex(index);
+        const measure = () => {
+            if (firstItemRef.current) {
+                const w = firstItemRef.current.getBoundingClientRect().width;
+                if (w) setCardWidth(Math.round(w));
+            }
+            setViewportWidth(window.innerWidth);
         };
-
-        const ref = carouselRef.current;
-        if (ref) ref.addEventListener("scroll", handleScroll);
-
-        return () => {
-            if (ref) ref.removeEventListener("scroll", handleScroll);
-        };
+        measure();
+        window.addEventListener("resize", measure);
+        return () => window.removeEventListener("resize", measure);
     }, []);
+
+    const maxIndex = cards.length - 1;
+    const clamp = (n) => Math.max(0, Math.min(maxIndex, n));
+    const goTo = (i) => setActiveIndex(clamp(i));
+
+    const step = cardWidth + GAP;
+
+    // вычисляем X так, чтобы крайние карточки имели разное поведение
+    const getXForIndex = (i) => {
+        if (i === 0) {
+            // первая карточка: фиксированный отступ 16px
+            return 16;
+        }
+        if (i === maxIndex) {
+            // последняя карточка: центрируем
+            const centerOfCard = i * step + cardWidth / 2;
+            const viewportCenter = viewportWidth / 2;
+            return viewportCenter - centerOfCard;
+        }
+        // промежуточные: центрируем
+        const centerOfCard = i * step + cardWidth / 2;
+        const viewportCenter = viewportWidth / 2;
+        return viewportCenter - centerOfCard;
+    };
+
+    // ограничения: первая = 16px слева, последняя = центр
+    const minX = getXForIndex(maxIndex);
+    const maxX = 16;
 
     return (
         <div
@@ -67,7 +95,7 @@ function Home() {
                 overflow: "hidden",
             }}
         >
-            {/* Фон с анимацией */}
+            {/* Фон */}
             <AnimatePresence mode="wait">
                 <motion.img
                     key={activeIndex}
@@ -146,30 +174,53 @@ function Home() {
 
                 {/* Карусель */}
                 <div
-                    ref={carouselRef}
                     style={{
-                        display: "flex",
-                        gap: "16px",
-                        overflowX: "auto",
-                        scrollSnapType: "x mandatory",
-                        padding: "0 16px",
+                        position: "relative",
                         width: "100%",
                         boxSizing: "border-box",
-                        scrollbarWidth: "none",
-                        msOverflowStyle: "none",
+                        overflow: "hidden",
+                        touchAction: "pan-y",
                     }}
                 >
-                    {cards.map((card, i) => (
-                        <motion.div
-                            key={i}
-                            style={{
-                                flex: "0 0 auto",
-                                scrollSnapAlign: "center",
-                            }}
-                        >
-                            {card}
-                        </motion.div>
-                    ))}
+                    <motion.div
+                        style={{
+                            display: "flex",
+                            gap: `${GAP}px`,
+                        }}
+                        drag="x"
+                        dragConstraints={{ left: minX, right: maxX }}
+                        dragElastic={0.05}
+                        dragMomentum={false}
+                        animate={{ x: getXForIndex(activeIndex) }}
+                        transition={{ type: "spring", stiffness: 250, damping: 35 }}
+                        onDragEnd={(_, info) => {
+                            const { offset, velocity } = info;
+                            const dx = offset.x;
+                            const vx = velocity.x;
+
+                            const swipePower = Math.abs(dx) * 0.5 + Math.abs(vx) * 20;
+                            const passed = Math.abs(dx) > step * 0.25 || swipePower > 300;
+
+                            if (passed) {
+                                if (dx < 0) goTo(activeIndex + 1);
+                                else goTo(activeIndex - 1);
+                            } else {
+                                goTo(activeIndex);
+                            }
+                        }}
+                    >
+                        {cards.map((card, i) => (
+                            <div
+                                key={i}
+                                ref={i === 0 ? firstItemRef : undefined}
+                                style={{
+                                    flex: "0 0 auto",
+                                }}
+                            >
+                                {card}
+                            </div>
+                        ))}
+                    </motion.div>
                 </div>
 
                 {/* Кнопка снизу */}

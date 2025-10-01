@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import "../theme.css";
@@ -8,32 +8,12 @@ import CategoryCard from "../components/CategoryCard";
 import PrimaryButton from "../components/PrimaryButton";
 import IconPrimaryButton from "../components/IconPrimaryButton";
 import bg1 from "../assets/bg1.png";
+import { useCategories } from "../hooks/useCategories";
 
 function NeverEver() {
+    const { categories, loading } = useCategories();
     const [selectedCategories, setSelectedCategories] = useState([]);
-    const [categories, setCategories] = useState([]);
-    const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
-
-    // Загружаем категории с бэка
-    useEffect(() => {
-        fetch("http://localhost:4000/api/categories")
-            .then((res) => res.json())
-            .then((data) => {
-                // маппим поля: paid -> locked
-                const mapped = data.map((cat) => ({
-                    ...cat,
-                    locked: cat.paid,
-                    riveFile: `http://localhost:4000${cat.riveFile}`,
-                }));
-                setCategories(mapped);
-                setLoading(false);
-            })
-            .catch((err) => {
-                console.error("Ошибка загрузки категорий:", err);
-                setLoading(false);
-            });
-    }, []);
 
     const toggleCategory = (title) => {
         setSelectedCategories((prev) =>
@@ -50,16 +30,18 @@ function NeverEver() {
                     display: "flex",
                     justifyContent: "center",
                     alignItems: "center",
-                    color: "white",
+                    color: "var(--icotex-white)",
+                    fontFamily: "Gilroy, sans-serif",
                 }}
             >
-                Загрузка категорий...
+                Загружаем категории...
             </div>
         );
     }
 
-    const topRow = categories.slice(0, 7);
-    const bottomRow = categories.slice(7);
+    // Разбиваем категории на 2 ряда, как было раньше
+    const topRow = categories.slice(0, Math.ceil(categories.length / 2));
+    const bottomRow = categories.slice(Math.ceil(categories.length / 2));
 
     return (
         <div
@@ -167,7 +149,7 @@ function NeverEver() {
                                 title={cat.title}
                                 locked={cat.locked}
                                 adult={cat.adult}
-                                riveFile={cat.riveFile}
+                                riveFile={`http://localhost:4000${cat.riveFile}`}
                                 selected={selectedCategories.includes(cat.title)}
                                 onClick={() => !cat.locked && toggleCategory(cat.title)}
                             />
@@ -176,11 +158,10 @@ function NeverEver() {
                                     title={bottomRow[i].title}
                                     locked={bottomRow[i].locked}
                                     adult={bottomRow[i].adult}
-                                    riveFile={bottomRow[i].riveFile}
+                                    riveFile={`http://localhost:4000${bottomRow[i].riveFile}`}
                                     selected={selectedCategories.includes(bottomRow[i].title)}
                                     onClick={() =>
-                                        !bottomRow[i].locked &&
-                                        toggleCategory(bottomRow[i].title)
+                                        !bottomRow[i].locked && toggleCategory(bottomRow[i].title)
                                     }
                                 />
                             )}
@@ -223,7 +204,9 @@ function NeverEver() {
                         ) : (
                             <PrimaryButton
                                 textColor="var(--icotex-white)"
-                                onClick={() => navigate("/game", { state: { categories: selectedCategories } })}
+                                onClick={() =>
+                                    navigate("/game", { state: { categories: selectedCategories } })
+                                }
                                 description={`Выбрано категорий ${selectedCategories.length}`}
                             >
                                 Играть
