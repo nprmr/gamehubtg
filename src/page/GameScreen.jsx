@@ -9,6 +9,7 @@ import CategoryRive from "../components/CategoryRive";
 import BottomSheet from "../components/BottomSheet";
 import FaqIcon from "../icons/faq.svg?react";
 import ArrowBackIcon from "../icons/arrowback.svg?react";
+import NoWordsCard from "../components/NoWordsCard";
 
 function GameScreen() {
     const location = useLocation();
@@ -55,15 +56,19 @@ function GameScreen() {
 
     if (currentIndex >= questions.length) {
         return (
-            <div style={{ ...centerStyle, flexDirection: "column" }}>
-                <h2
-                    style={{ fontSize: 24, marginBottom: 16, color: "var(--icotex-white)" }}
-                >
-                    Слова кончились 🎉
-                </h2>
-                <PrimaryButton textColor="var(--icotex-white)" onClick={() => navigate("/")}>
-                    Вернуться в меню
-                </PrimaryButton>
+            <div
+                style={{
+                    width: "100vw",
+                    height: "100vh",
+                    backgroundColor: "var(--surface-main)", // 👈 не белый фон, а твой surface
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    padding: "0 16px",
+                    boxSizing: "border-box",
+                }}
+            >
+                <NoWordsCard onChangeCategory={() => navigate("/neverever")} />
             </div>
         );
     }

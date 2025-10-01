@@ -63,7 +63,7 @@ function FlatButton({
                         style={{
                             fontSize: "12px",
                             fontWeight: "400",
-                            color: "var(--icotex-white-alfa)",
+                            color: "var(--icotex-lowest)",
                             marginTop: "2px",
                             lineHeight: 1.2,
                         }}

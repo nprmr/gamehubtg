@@ -9,16 +9,42 @@ import PrimaryButton from "../components/PrimaryButton";
 import IconPrimaryButton from "../components/IconPrimaryButton";
 import bg1 from "../assets/bg1.png";
 import { useCategories } from "../hooks/useCategories";
+import LockedCategorySheet from "../components/LockedCategorySheet"; // 👈 новый шит
 
 function NeverEver() {
     const { categories, loading } = useCategories();
     const [selectedCategories, setSelectedCategories] = useState([]);
+    const [lockedSheet, setLockedSheet] = useState({
+        open: false,
+        category: null,
+        phrases: [],
+    });
     const navigate = useNavigate();
 
     const toggleCategory = (title) => {
         setSelectedCategories((prev) =>
             prev.includes(title) ? prev.filter((t) => t !== title) : [...prev, title]
         );
+    };
+
+    // 🔹 Открытие шита для заблокированной категории
+    const openLockedCategory = async (cat) => {
+        try {
+            const res = await fetch(
+                `http://localhost:4000/api/questions?category=${encodeURIComponent(
+                    cat.title
+                )}`
+            );
+            const data = await res.json();
+
+            setLockedSheet({
+                open: true,
+                category: cat,
+                phrases: data.map((q) => q.text).slice(0, 3), // первые 3 фразы
+            });
+        } catch (err) {
+            console.error("Ошибка загрузки вопросов:", err);
+        }
     };
 
     if (loading) {
@@ -40,7 +66,7 @@ function NeverEver() {
         );
     }
 
-    // Разбиваем категории на 2 ряда, как было раньше
+    // Разбиваем категории на 2 ряда
     const topRow = categories.slice(0, Math.ceil(categories.length / 2));
     const bottomRow = categories.slice(Math.ceil(categories.length / 2));
 
@@ -152,7 +178,11 @@ function NeverEver() {
                                 adult={cat.adult}
                                 riveFile={cat.riveFile}
                                 selected={selectedCategories.includes(cat.title)}
-                                onClick={() => !cat.locked && toggleCategory(cat.title)}
+                                onClick={() =>
+                                    cat.locked
+                                        ? openLockedCategory(cat)
+                                        : toggleCategory(cat.title)
+                                }
                             />
                             {bottomRow[i] && (
                                 <CategoryCard
@@ -162,7 +192,9 @@ function NeverEver() {
                                     riveFile={bottomRow[i].riveFile}
                                     selected={selectedCategories.includes(bottomRow[i].title)}
                                     onClick={() =>
-                                        !bottomRow[i].locked && toggleCategory(bottomRow[i].title)
+                                        bottomRow[i].locked
+                                            ? openLockedCategory(bottomRow[i])
+                                            : toggleCategory(bottomRow[i].title)
                                     }
                                 />
                             )}
@@ -216,6 +248,18 @@ function NeverEver() {
                     </motion.div>
                 </motion.div>
             </div>
+
+            {/* 👇 Новый BottomSheet для заблокированных */}
+            <LockedCategorySheet
+                open={lockedSheet.open}
+                onClose={() =>
+                    setLockedSheet({ open: false, category: null, phrases: [] })
+                }
+                categoryTitle={lockedSheet.category?.title}
+                riveFile={lockedSheet.category?.riveFile}
+                phrases={lockedSheet.phrases}
+                price="199₽"
+            />
         </div>
     );
 }

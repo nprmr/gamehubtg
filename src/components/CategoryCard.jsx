@@ -51,17 +51,19 @@ function CategoryCard({
     }, [activationInput]);
 
     const handleClick = () => {
-        if (locked) return; // заблокированные не кликаются
+        // 👉 теперь не блокируем клик, а просто отдаём наружу
+        if (onClick) {
+            onClick();
+        }
 
-        if (activationInput) {
+        // анимацию триггерим только для открытых категорий
+        if (!locked && activationInput) {
             if (typeof activationInput.value === "boolean") {
                 activationInput.value = !activationInput.value; // toggle для bool
             } else if (activationInput.fire) {
                 activationInput.fire(); // fallback если вдруг trigger
             }
         }
-
-        if (onClick) onClick();
     };
 
     // иконки (по умолчанию — из /icons)
