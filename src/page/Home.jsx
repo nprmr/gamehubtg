@@ -90,12 +90,12 @@ function Home() {
             style={{
                 width: "100vw",
                 height: "100vh",
-                backgroundColor: "var(--surface-main)", // фон всегда твой
+                backgroundColor: "var(--surface-main)",
                 position: "relative",
                 overflow: "hidden",
             }}
         >
-            {/* фоновые картинки */}
+            {/* фон */}
             <AnimatePresence mode="wait">
                 {active?.bg && (
                     <motion.img
@@ -117,22 +117,22 @@ function Home() {
                 )}
             </AnimatePresence>
 
-            {/* верхняя панель с иконкой */}
+            {/* верхняя панель → safe-area (чёлка, жесты), не Telegram UI */}
             <div
                 style={{
                     position: "relative",
                     zIndex: 2,
                     display: "flex",
                     justifyContent: "flex-end",
-                    paddingTop: "calc(var(--tg-content-safe-area-inset-top) + 8px)",
+                    paddingTop: "calc(var(--tg-safe-area-inset-top) + 8px)",
                     paddingRight: "calc(var(--tg-safe-area-inset-right) + 16px)",
-                    marginBottom: 24,
+                    marginBottom: 8,
                 }}
             >
                 <IconButton icon={SettingsIcon} />
             </div>
 
-            {/* основной контент */}
+            {/* основной контент → content-safe-area */}
             <div
                 style={{
                     position: "relative",
@@ -143,6 +143,7 @@ function Home() {
                     alignItems: "center",
                     width: "100%",
                     height: "calc(100% - var(--tg-content-safe-area-inset-top))",
+                    paddingTop: "calc(var(--tg-content-safe-area-inset-top) + 16px)",
                     paddingBottom: "calc(var(--tg-content-safe-area-inset-bottom) + 16px)",
                     boxSizing: "border-box",
                 }}
