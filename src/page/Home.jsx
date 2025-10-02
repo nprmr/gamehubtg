@@ -22,7 +22,7 @@ function Home() {
     const [safeArea, setSafeArea] = useState(() => {
         const insets = viewportSafeAreaInsets();
         return {
-            top: insets.top || 16,
+            top: insets.top || 116,
             bottom: insets.bottom || 16,
             left: insets.left || 0,
             right: insets.right || 0,
