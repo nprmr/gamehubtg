@@ -92,8 +92,7 @@ function Home() {
     const active = games[activeIndex];
 
     return (
-        <div style={{ width: "100vw", height: "calc(100vh - var(--tg-content-safe-area-inset-top) - var(--tg-content-safe-area-inset-bottom))",
-            marginTop: "var(--tg-content-safe-area-inset-top)",  backgroundColor: "var(--surface-main)", position: "relative", overflow: "hidden" }}>
+        <div style={{ width: "100vw", height: "calc(100vh - var(--tg-content-safe-area-inset-top) - var(--tg-content-safe-area-inset-bottom))",  backgroundColor: "var(--surface-main)", position: "relative", overflow: "hidden" }}>
             <AnimatePresence mode="wait">
                 {active?.bg && (
                     <motion.img
