@@ -139,7 +139,7 @@ function Home() {
                     height: "100%",
                     // ✅ берём БОЛЬШЕЕ из content-safe и системного safe, чтобы точно уйти ниже бара TG
                     paddingTop:
-                        "calc(max(var(--tg-content-safe-area-inset-top, 0px), var(--tg-safe-area-inset-top, 0px)) + 20px)",
+                        "calc(max(var(--tg-content-safe-area-inset-top, 0px), var(--tg-safe-area-inset-top, 0px)) + 48px)",
                     boxSizing: "border-box",
                 }}
             >
@@ -151,7 +151,7 @@ function Home() {
                         width: "100%",
                         // ✅ справа тоже используем максимум
                         paddingRight:
-                            "calc(max(var(--tg-content-safe-area-inset-right, 0px), var(--tg-safe-area-inset-right, 0px)) + 16px)",
+                            "calc(max(var(--tg-content-safe-area-inset-right, 0px), var(--tg-safe-area-inset-right, 0px)) + 24px)",
                         marginBottom: 24,
                     }}
                 >
@@ -254,7 +254,7 @@ function Home() {
                     position: "absolute",
                     // ✅ максимум из content-safe и системного safe, затем +24px
                     bottom:
-                        "calc(max(var(--tg-content-safe-area-inset-bottom, 0px), var(--tg-safe-area-inset-bottom, 0px)) + 24px)",
+                        "calc(max(var(--tg-content-safe-area-inset-bottom, 0px), var(--tg-safe-area-inset-bottom, 0px))",
                     left: 16,
                     right: 16,
                     zIndex: 10,
