@@ -8,7 +8,7 @@ import GameCard from "../components/GameCard";
 import PrimaryButton from "../components/PrimaryButton";
 import { getGames } from "../api";
 
-import { viewportSafeAreaInsets } from "@telegram-apps/sdk"; // ✅ используем SDK
+import { viewportSafeAreaInsets } from "@telegram-apps/sdk"; // ✅ SDK
 
 function Home() {
     const [activeIndex, setActiveIndex] = useState(0);
@@ -18,8 +18,16 @@ function Home() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // ✅ Safe Area из Telegram SDK
-    const [safeArea, setSafeArea] = useState(viewportSafeAreaInsets());
+    // ✅ Safe Area с fallback
+    const [safeArea, setSafeArea] = useState(() => {
+        const insets = viewportSafeAreaInsets();
+        return {
+            top: insets.top || 16,
+            bottom: insets.bottom || 16,
+            left: insets.left || 0,
+            right: insets.right || 0,
+        };
+    });
 
     const GAP = 16;
     const navigate = useNavigate();
@@ -27,17 +35,31 @@ function Home() {
 
     // ресайз и safe area
     useEffect(() => {
-        const measure = () => {
+        const updateSafeArea = () => {
+            const insets = viewportSafeAreaInsets();
+            setSafeArea({
+                top: insets.top || 16,
+                bottom: insets.bottom || 16,
+                left: insets.left || 0,
+                right: insets.right || 0,
+            });
             if (firstItemRef.current) {
                 const w = firstItemRef.current.getBoundingClientRect().width;
                 if (w) setCardWidth(Math.round(w));
             }
             setViewportWidth(window.innerWidth);
-            setSafeArea(viewportSafeAreaInsets()); // обновляем safeArea
         };
-        measure();
-        window.addEventListener("resize", measure);
-        return () => window.removeEventListener("resize", measure);
+
+        updateSafeArea();
+
+        // слушаем изменения viewport от Telegram и resize
+        window.Telegram?.WebApp?.onEvent("viewportChanged", updateSafeArea);
+        window.addEventListener("resize", updateSafeArea);
+
+        return () => {
+            window.Telegram?.WebApp?.offEvent("viewportChanged", updateSafeArea);
+            window.removeEventListener("resize", updateSafeArea);
+        };
     }, []);
 
     // загрузка игр
