@@ -8,12 +8,6 @@ import GameCard from "../components/GameCard";
 import PrimaryButton from "../components/PrimaryButton";
 import { getGames } from "../api";
 
-import {
-    viewport,
-    viewportSafeAreaInsets,
-    viewportContentSafeAreaInsets,
-} from "@telegram-apps/sdk";
-
 function Home() {
     const [activeIndex, setActiveIndex] = useState(0);
     const [cardWidth, setCardWidth] = useState(300);
@@ -22,79 +16,23 @@ function Home() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // ✅ Safe Area с учётом телеграм-панелей (content safe area) + fallback
-    const [safeArea, setSafeArea] = useState(() => {
-        const c = viewportContentSafeAreaInsets?.() || {};
-        const d = viewportSafeAreaInsets?.() || {};
-        return {
-            top: c.top || d.top || 16,
-            bottom: c.bottom || d.bottom || 16,
-            left: c.left || d.left || 0,
-            right: c.right || d.right || 0,
-        };
-    });
-
     const GAP = 16;
     const navigate = useNavigate();
     const firstItemRef = useRef(null);
 
-    // Хелпер: обновление инсетoв и размеров
-    const updateSafeAreaAndSize = () => {
-        const c = viewportContentSafeAreaInsets?.() || {};
-        const d = viewportSafeAreaInsets?.() || {};
-        setSafeArea({
-            top: c.top || d.top || 16,
-            bottom: c.bottom || d.bottom || 16,
-            left: c.left || d.left || 0,
-            right: c.right || d.right || 0,
-        });
-
-        if (firstItemRef.current) {
-            const w = firstItemRef.current.getBoundingClientRect().width;
-            if (w) setCardWidth(Math.round(w));
-        }
-        setViewportWidth(window.innerWidth);
-    };
-
-    // Монтируем viewport, биндём CSS-переменные и подписываемся на события
+    // ресайз карточки
     useEffect(() => {
-        let cancelled = false;
-
-        (async () => {
-            try {
-                // В 3.x это важно: сначала смонтироваться
-                await viewport.mount?.();
-                // Привяжем CSS-переменные: --tg-viewport-height / --tg-viewport-stable-height
-                viewport.bindCssVars?.();
-            } catch (e) {
-                // noop
-            } finally {
-                if (!cancelled) updateSafeAreaAndSize();
+        const measure = () => {
+            if (firstItemRef.current) {
+                const w = firstItemRef.current.getBoundingClientRect().width;
+                if (w) setCardWidth(Math.round(w));
             }
-        })();
-
-        const offContent = viewport.on?.("content_safe_area_changed", updateSafeAreaAndSize);
-        const offDevice = viewport.on?.("safe_area_changed", updateSafeAreaAndSize);
-        const offFs = viewport.on?.("fullscreen_changed", updateSafeAreaAndSize);
-
-        // На старых клиентов подстрахуемся событием WebApp
-        window.Telegram?.WebApp?.onEvent?.("viewportChanged", updateSafeAreaAndSize);
-        window.addEventListener("resize", updateSafeAreaAndSize);
-
-        return () => {
-            cancelled = true;
-            offContent && offContent();
-            offDevice && offDevice();
-            offFs && offFs();
-            window.Telegram?.WebApp?.offEvent?.("viewportChanged", updateSafeAreaAndSize);
-            window.removeEventListener("resize", updateSafeAreaAndSize);
+            setViewportWidth(window.innerWidth);
         };
+        measure();
+        window.addEventListener("resize", measure);
+        return () => window.removeEventListener("resize", measure);
     }, []);
-
-    // (опционально) можно попытаться запросить фуллскрин при первом заходе
-    // useEffect(() => {
-    //   window.Telegram?.WebApp?.requestFullscreen?.();
-    // }, []);
 
     // загрузка игр
     useEffect(() => {
@@ -136,7 +74,7 @@ function Home() {
             <div
                 style={{
                     width: "100vw",
-                    height: "var(--tg-viewport-stable-height, 100dvh)", // ✅ корректная высота
+                    height: "var(--tg-viewport-stable-height, 100dvh)",
                     backgroundColor: "var(--surface-main)",
                     display: "flex",
                     justifyContent: "center",
@@ -160,17 +98,17 @@ function Home() {
         <div
             style={{
                 width: "100vw",
-                height: "var(--tg-viewport-stable-height, 100dvh)", // ✅ вместо 100vh
+                height: "var(--tg-viewport-stable-height, 100dvh)", // ✅ правильная высота
                 backgroundColor: "var(--surface-main)",
                 position: "relative",
                 overflow: "hidden",
-                paddingTop: safeArea.top,
-                paddingBottom: safeArea.bottom,
-                paddingLeft: safeArea.left,
-                paddingRight: safeArea.right,
                 boxSizing: "border-box",
                 display: "flex",
                 flexDirection: "column",
+                paddingTop: "env(safe-area-inset-top, 0px)",      // ✅ safe-area от CSS
+                paddingBottom: "env(safe-area-inset-bottom, 0px)",
+                paddingLeft: "env(safe-area-inset-left, 0px)",
+                paddingRight: "env(safe-area-inset-right, 0px)",
             }}
         >
             <AnimatePresence mode="wait">
@@ -198,8 +136,8 @@ function Home() {
             <div
                 style={{
                     position: "absolute",
-                    top: safeArea.top + 16,
-                    right: safeArea.right + 16,
+                    top: "calc(env(safe-area-inset-top, 0px) + 16px)",   // ✅ сдвигаем от «чёлки»
+                    right: "calc(env(safe-area-inset-right, 0px) + 16px)",
                     zIndex: 10,
                 }}
             >
