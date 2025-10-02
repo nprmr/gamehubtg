@@ -92,7 +92,7 @@ function Home() {
     const active = games[activeIndex];
 
     return (
-        <div style={{ width: "100vw", height: "100vh", paddingTop: "calc(var(--tg-content-safe-area-inset-top) + 16px)", backgroundColor: "var(--surface-main)", position: "relative", overflow: "hidden" }}>
+        <div style={{ width: "100vw", height: "100vh", backgroundColor: "var(--surface-main)", position: "relative", overflow: "hidden" }}>
             <AnimatePresence mode="wait">
                 {active?.bg && (
                     <motion.img
@@ -107,7 +107,7 @@ function Home() {
                 )}
             </AnimatePresence>
 
-            <div style={{ position: "fixed", top: 16, right: 16, zIndex: 10 }}>
+            <div style={{ position: "fixed", paddingTop: "calc(var(--tg-content-safe-area-inset-top) + 16px)", right: 16, zIndex: 10 }}>
                 <IconButton icon={SettingsIcon} />
             </div>
 
