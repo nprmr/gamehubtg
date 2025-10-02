@@ -16,3 +16,6 @@ WebApp.ready();  // важно вызвать в начале
 if (WebApp.isExpanded) {
     WebApp.requestFullscreen();
 }
+// блокируем закрытие свайпом
+WebApp.viewport.lockOrientation();
+
