@@ -8,7 +8,11 @@ import GameCard from "../components/GameCard";
 import PrimaryButton from "../components/PrimaryButton";
 import { getGames } from "../api";
 
-import { viewportSafeAreaInsets } from "@telegram-apps/sdk"; // ✅ SDK
+import {
+    viewport,
+    viewportSafeAreaInsets,
+    viewportContentSafeAreaInsets,
+} from "@telegram-apps/sdk";
 
 function Home() {
     const [activeIndex, setActiveIndex] = useState(0);
@@ -18,14 +22,15 @@ function Home() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // ✅ Safe Area с fallback
+    // ✅ Safe Area с учётом телеграм-панелей (content safe area) + fallback
     const [safeArea, setSafeArea] = useState(() => {
-        const insets = viewportSafeAreaInsets();
+        const c = viewportContentSafeAreaInsets?.() || {};
+        const d = viewportSafeAreaInsets?.() || {};
         return {
-            top: insets.top || 116,
-            bottom: insets.bottom || 16,
-            left: insets.left || 0,
-            right: insets.right || 0,
+            top: c.top || d.top || 16,
+            bottom: c.bottom || d.bottom || 16,
+            left: c.left || d.left || 0,
+            right: c.right || d.right || 0,
         };
     });
 
@@ -33,34 +38,63 @@ function Home() {
     const navigate = useNavigate();
     const firstItemRef = useRef(null);
 
-    // ресайз и safe area
+    // Хелпер: обновление инсетoв и размеров
+    const updateSafeAreaAndSize = () => {
+        const c = viewportContentSafeAreaInsets?.() || {};
+        const d = viewportSafeAreaInsets?.() || {};
+        setSafeArea({
+            top: c.top || d.top || 16,
+            bottom: c.bottom || d.bottom || 16,
+            left: c.left || d.left || 0,
+            right: c.right || d.right || 0,
+        });
+
+        if (firstItemRef.current) {
+            const w = firstItemRef.current.getBoundingClientRect().width;
+            if (w) setCardWidth(Math.round(w));
+        }
+        setViewportWidth(window.innerWidth);
+    };
+
+    // Монтируем viewport, биндём CSS-переменные и подписываемся на события
     useEffect(() => {
-        const updateSafeArea = () => {
-            const insets = viewportSafeAreaInsets();
-            setSafeArea({
-                top: insets.top || 16,
-                bottom: insets.bottom || 16,
-                left: insets.left || 0,
-                right: insets.right || 0,
-            });
-            if (firstItemRef.current) {
-                const w = firstItemRef.current.getBoundingClientRect().width;
-                if (w) setCardWidth(Math.round(w));
+        let cancelled = false;
+
+        (async () => {
+            try {
+                // В 3.x это важно: сначала смонтироваться
+                await viewport.mount?.();
+                // Привяжем CSS-переменные: --tg-viewport-height / --tg-viewport-stable-height
+                viewport.bindCssVars?.();
+            } catch (e) {
+                // noop
+            } finally {
+                if (!cancelled) updateSafeAreaAndSize();
             }
-            setViewportWidth(window.innerWidth);
-        };
+        })();
 
-        updateSafeArea();
+        const offContent = viewport.on?.("content_safe_area_changed", updateSafeAreaAndSize);
+        const offDevice = viewport.on?.("safe_area_changed", updateSafeAreaAndSize);
+        const offFs = viewport.on?.("fullscreen_changed", updateSafeAreaAndSize);
 
-        // слушаем изменения viewport от Telegram и resize
-        window.Telegram?.WebApp?.onEvent("viewportChanged", updateSafeArea);
-        window.addEventListener("resize", updateSafeArea);
+        // На старых клиентов подстрахуемся событием WebApp
+        window.Telegram?.WebApp?.onEvent?.("viewportChanged", updateSafeAreaAndSize);
+        window.addEventListener("resize", updateSafeAreaAndSize);
 
         return () => {
-            window.Telegram?.WebApp?.offEvent("viewportChanged", updateSafeArea);
-            window.removeEventListener("resize", updateSafeArea);
+            cancelled = true;
+            offContent && offContent();
+            offDevice && offDevice();
+            offFs && offFs();
+            window.Telegram?.WebApp?.offEvent?.("viewportChanged", updateSafeAreaAndSize);
+            window.removeEventListener("resize", updateSafeAreaAndSize);
         };
     }, []);
+
+    // (опционально) можно попытаться запросить фуллскрин при первом заходе
+    // useEffect(() => {
+    //   window.Telegram?.WebApp?.requestFullscreen?.();
+    // }, []);
 
     // загрузка игр
     useEffect(() => {
@@ -102,7 +136,7 @@ function Home() {
             <div
                 style={{
                     width: "100vw",
-                    height: "100vh",
+                    height: "var(--tg-viewport-stable-height, 100dvh)", // ✅ корректная высота
                     backgroundColor: "var(--surface-main)",
                     display: "flex",
                     justifyContent: "center",
@@ -126,7 +160,7 @@ function Home() {
         <div
             style={{
                 width: "100vw",
-                height: "100vh",
+                height: "var(--tg-viewport-stable-height, 100dvh)", // ✅ вместо 100vh
                 backgroundColor: "var(--surface-main)",
                 position: "relative",
                 overflow: "hidden",

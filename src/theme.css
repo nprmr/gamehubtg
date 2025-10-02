@@ -15,19 +15,27 @@
     --icotex-lowest: #5e5e5e;
     --icotex-info: #485aff;
 }
+
+/* Базовая разметка */
 html, body {
     margin: 0;
-    font-family: "Gilroy", sans-serif;
     padding: 0;
+
     width: 100%;
-    height: 100%;
-    overflow: hidden; /* убираем любые скроллы */
-    position: fixed;  /* фиксируем страницу */
-    top: 0;
-    left: 0;
+    height: var(--tg-viewport-stable-height, 100dvh); /* ✅ поддержка Telegram SDK и iOS */
+    overflow: hidden;
+    font-family: "Gilroy", sans-serif;
+    background: var(--surface-main);
+
+    /* ✅ поддержка системных safe-area (iOS чёлка, home bar и пр.) */
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
 }
+
 h1, h2, h3, h4, h5, h6, p {
-    margin: 0; /* убираем дефолтные отступы */
+    margin: 0;
     font-family: "Gilroy", sans-serif;
 }
 
@@ -37,30 +45,31 @@ h1 {
     color: var(--icotex-white);
 }
 
+/* Шрифты */
 @font-face {
     font-family: "Gilroy";
-    src: url("assets/fonts/Gilroy/Gilroy-Regular.ttf") format("ttf");
+    src: url("assets/fonts/Gilroy/Gilroy-Regular.ttf") format("truetype");
     font-weight: 400;
     font-style: normal;
 }
 
 @font-face {
     font-family: "Gilroy";
-    src: url("assets/fonts/Gilroy/Gilroy-Bold.ttf") format("ttf");
+    src: url("assets/fonts/Gilroy/Gilroy-Bold.ttf") format("truetype");
     font-weight: 500;
     font-style: normal;
 }
 
 @font-face {
     font-family: "Gilroy";
-    src: url("assets/fonts/Gilroy/Gilroy-Black.ttf") format("ttf");
+    src: url("assets/fonts/Gilroy/Gilroy-Black.ttf") format("truetype");
     font-weight: 700;
     font-style: normal;
 }
 
 @font-face {
     font-family: "Gilroy";
-    src: url("assets/fonts/Gilroy/Gilroy-Semibold.ttf") format("ttf");
+    src: url("assets/fonts/Gilroy/Gilroy-Semibold.ttf") format("truetype");
     font-weight: 700;
     font-style: normal;
 }
