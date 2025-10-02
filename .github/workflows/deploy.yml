@@ -3,7 +3,7 @@ name: Build and Deploy to FTP
 on:
   push:
     branches:
-      - wothout-safe-area   # или ваша ветка
+      - without-safe-area   # или ваша ветка
 
 jobs:
   build-and-deploy:
