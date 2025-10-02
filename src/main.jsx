@@ -2,20 +2,27 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App.jsx";
 import "./theme.css";
-import WebApp from '@twa-dev/sdk';
+import WebApp from "@twa-dev/sdk";
 
+// Инициализация Telegram Mini App
 function initTelegram() {
-    WebApp.ready();
+    try {
+        WebApp.ready();
 
-    // пробуем fullscreen
-    WebApp.requestFullscreen();
+        // fullscreen (работает только в Telegram)
+        if (typeof WebApp.requestFullscreen === "function") {
+            WebApp.requestFullscreen();
+        }
 
-    // блокируем свайп вниз (закрытие)
-    if (WebApp.disableVerticalSwipes) {
-        WebApp.disableVerticalSwipes();
-    } else if (WebApp.viewport?.lockOrientation) {
-        // fallback для старых SDK
-        WebApp.viewport.lockOrientation();
+        // блокировка свайпов вниз (API 7.7+)
+        if (typeof WebApp.disableVerticalSwipes === "function") {
+            WebApp.disableVerticalSwipes();
+        } else if (WebApp.viewport?.lockOrientation) {
+            // fallback для старых версий SDK
+            WebApp.viewport.lockOrientation();
+        }
+    } catch (e) {
+        console.log("Работаем в браузере — методы Telegram отключены");
     }
 }
 
