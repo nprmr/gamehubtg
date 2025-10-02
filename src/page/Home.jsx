@@ -56,7 +56,14 @@ function Home() {
     const goTo = (i) => setActiveIndex(clamp(i));
     const step = cardWidth + GAP;
 
+    // 🔧 теперь первая карточка всегда начинается от левого края с 16px
     const getXForIndex = (i) => {
+        if (i === 0) return 16;
+        if (i === maxIndex) {
+            const centerOfCard = i * step + cardWidth / 2;
+            const viewportCenter = viewportWidth / 2;
+            return viewportCenter - centerOfCard;
+        }
         const centerOfCard = i * step + cardWidth / 2;
         const viewportCenter = viewportWidth / 2;
         return viewportCenter - centerOfCard;
@@ -130,8 +137,8 @@ function Home() {
                     alignItems: "center",
                     width: "100%",
                     height: "100%",
-                    paddingTop: "calc(var(--tg-content-safe-area-inset-top) + 56px)", // 🔽 на 8px выше, чем было
-                    paddingBottom: "calc(var(--tg-content-safe-area-inset-bottom) + 66px)", // 🔼 на 30px ниже, чем было
+                    paddingTop: "calc(var(--tg-content-safe-area-inset-top) + 56px)", // верхняя кнопка
+                    paddingBottom: "calc(var(--tg-content-safe-area-inset-bottom) + 66px)", // базовый safe-area
                     boxSizing: "border-box",
                 }}
             >
@@ -183,7 +190,7 @@ function Home() {
                         flex: 1,
                         display: "flex",
                         alignItems: "center",
-                        justifyContent: "center",
+                        justifyContent: "flex-start", // начинаем от левой стороны
                         width: "100%",
                         overflow: "hidden",
                         touchAction: "pan-y",
@@ -241,7 +248,7 @@ function Home() {
                 </div>
 
                 {/* кнопка */}
-                <div style={{ width: "100%", padding: "0 16px" }}>
+                <div style={{ width: "100%", padding: "0 16px", marginBottom: "72px" }}>
                     {active?.id !== "neverever" ? (
                         <PrimaryButton textColor="var(--icotex-white-alfa)" disabled withMargin>
                             Игра в разработке
