@@ -151,7 +151,7 @@ function Home() {
                         width: "100%",
                         // ✅ справа тоже используем максимум
                         paddingRight:
-                            "calc(max(var(--tg-content-safe-area-inset-right, 0px), var(--tg-safe-area-inset-right, 0px)) + 24px)",
+                            "calc(max(var(--tg-content-safe-area-inset-right, 0px), var(--tg-safe-area-inset-right, 0px)) + 32px)",
                         marginBottom: 24,
                     }}
                 >
