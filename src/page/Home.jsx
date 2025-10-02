@@ -20,20 +20,11 @@ function Home() {
     const navigate = useNavigate();
     const firstItemRef = useRef(null);
 
-    // Новые refs для измерения высоты фиксированной кнопки
-    const buttonRef = useRef(null);
-    const [buttonHeight, setButtonHeight] = useState(0);
-
     useEffect(() => {
         const measure = () => {
             if (firstItemRef.current) {
                 const w = firstItemRef.current.getBoundingClientRect().width;
                 if (w) setCardWidth(Math.round(w));
-            }
-            // измеряем высоту фиксированного контейнера кнопки
-            if (buttonRef.current) {
-                const rect = buttonRef.current.getBoundingClientRect();
-                setButtonHeight(Math.round(rect.height));
             }
             setViewportWidth(window.innerWidth);
         };
@@ -142,11 +133,10 @@ function Home() {
                     zIndex: 1,
                     display: "flex",
                     flexDirection: "column",
-                    justifyContent: "flex-start",
+                    justifyContent: "space-between", // равномерное распределение
                     alignItems: "center",
                     width: "100%",
                     height: "100%",
-                    // ✅ берём БОЛЬШЕЕ из content-safe и системного safe, чтобы точно уйти ниже бара TG
                     paddingTop:
                         "calc(max(var(--tg-content-safe-area-inset-top, 0px), var(--tg-safe-area-inset-top, 0px)) + 48px)",
                     boxSizing: "border-box",
@@ -158,7 +148,6 @@ function Home() {
                         display: "flex",
                         justifyContent: "flex-end",
                         width: "100%",
-                        // ✅ справа тоже используем максимум
                         paddingRight:
                             "calc(max(var(--tg-content-safe-area-inset-right, 0px), var(--tg-safe-area-inset-right, 0px)) + 32px)",
                         marginBottom: 24,
@@ -168,7 +157,7 @@ function Home() {
                 </div>
 
                 {/* заголовок */}
-                <div style={{ textAlign: "center", marginBottom: 24 }}>
+                <div style={{ textAlign: "center" }}>
                     <motion.h1
                         layoutId="title"
                         style={{
@@ -196,18 +185,16 @@ function Home() {
                     </motion.p>
                 </div>
 
-                {/* свайп-карточки — центрируем авто-отступами между заголовком и спейсером */}
+                {/* карусель */}
                 <div
                     style={{
-                        flex: "0 0 auto",
+                        flex: 1,
                         display: "flex",
                         alignItems: "center",
-                        justifyContent: "flex-start",
+                        justifyContent: "center",
                         width: "100%",
                         overflow: "hidden",
                         touchAction: "pan-y",
-                        marginTop: "auto",
-                        marginBottom: "auto",
                     }}
                 >
                     <motion.div
@@ -257,23 +244,14 @@ function Home() {
                     </motion.div>
                 </div>
 
-                {/* СПЕЙСЕР: занимает место под фиксированную кнопку, чтобы карусель была равноудалена */}
-                <div
-                    aria-hidden
-                    style={{
-                        width: "100%",
-                        height: `${buttonHeight || 0}px`,
-                        flex: "0 0 auto",
-                    }}
-                />
+                {/* спейсер под кнопку */}
+                <div style={{ height: 96, flexShrink: 0 }} />
             </div>
 
             {/* фиксированная нижняя кнопка */}
             <div
-                ref={buttonRef}
                 style={{
                     position: "absolute",
-                    // ✅ максимум из content-safe и системного safe, затем +24px (закрывающая скобка была потеряна)
                     bottom:
                         "calc(max(var(--tg-content-safe-area-inset-bottom, 0px), var(--tg-safe-area-inset-bottom, 0px)) + 24px)",
                     left: 16,
