@@ -107,7 +107,7 @@ function Home() {
                 )}
             </AnimatePresence>
 
-            <div style={{ position: "fixed", paddingTop: "calc(var(--tg-content-safe-area-inset-top) + 16px)", right: 16, zIndex: 10 }}>
+            <div style={{ position: "fixed", paddingTop: "calc(var(--tg-safe-area-inset-top) + 16px)", right: 16, zIndex: 10 }}>
                 <IconButton icon={SettingsIcon} />
             </div>
 
