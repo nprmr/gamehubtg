@@ -7,7 +7,8 @@ import SettingsIcon from "../icons/Settings.svg?react";
 import GameCard from "../components/GameCard";
 import PrimaryButton from "../components/PrimaryButton";
 import { getGames } from "../api";
-import { useSafeArea } from "../hooks/useSafeArea"; // ✅ твой хук
+
+import { viewportSafeAreaInsets } from "@telegram-apps/sdk"; // ✅ используем SDK
 
 function Home() {
     const [activeIndex, setActiveIndex] = useState(0);
@@ -17,14 +18,14 @@ function Home() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // ✅ Safe Area из хука
-    const { top, bottom, left, right } = useSafeArea();
+    // ✅ Safe Area из Telegram SDK
+    const [safeArea, setSafeArea] = useState(viewportSafeAreaInsets());
 
     const GAP = 16;
     const navigate = useNavigate();
     const firstItemRef = useRef(null);
 
-    // ресайз и замер ширины карточек
+    // ресайз и safe area
     useEffect(() => {
         const measure = () => {
             if (firstItemRef.current) {
@@ -32,6 +33,7 @@ function Home() {
                 if (w) setCardWidth(Math.round(w));
             }
             setViewportWidth(window.innerWidth);
+            setSafeArea(viewportSafeAreaInsets()); // обновляем safeArea
         };
         measure();
         window.addEventListener("resize", measure);
@@ -106,10 +108,10 @@ function Home() {
                 backgroundColor: "var(--surface-main)",
                 position: "relative",
                 overflow: "hidden",
-                paddingTop: top,
-                paddingBottom: bottom,
-                paddingLeft: left,
-                paddingRight: right,
+                paddingTop: safeArea.top,
+                paddingBottom: safeArea.bottom,
+                paddingLeft: safeArea.left,
+                paddingRight: safeArea.right,
                 boxSizing: "border-box",
                 display: "flex",
                 flexDirection: "column",
@@ -140,8 +142,8 @@ function Home() {
             <div
                 style={{
                     position: "absolute",
-                    top: top + 16,
-                    right: right + 16,
+                    top: safeArea.top + 16,
+                    right: safeArea.right + 16,
                     zIndex: 10,
                 }}
             >
