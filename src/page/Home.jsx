@@ -117,21 +117,22 @@ function Home() {
                 )}
             </AnimatePresence>
 
-            {/* верхняя панель с safe-area */}
+            {/* верхняя панель с иконкой */}
             <div
                 style={{
                     position: "relative",
                     zIndex: 2,
                     display: "flex",
                     justifyContent: "flex-end",
-                    paddingTop: "calc(var(--tg-safe-area-inset-top) + 8px)",
+                    paddingTop: "calc(var(--tg-content-safe-area-inset-top) + 8px)",
                     paddingRight: "calc(var(--tg-safe-area-inset-right) + 16px)",
+                    marginBottom: 24,
                 }}
             >
                 <IconButton icon={SettingsIcon} />
             </div>
 
-            {/* основной контент с content-safe-area */}
+            {/* основной контент */}
             <div
                 style={{
                     position: "relative",
@@ -141,8 +142,7 @@ function Home() {
                     justifyContent: "space-between",
                     alignItems: "center",
                     width: "100%",
-                    height: "100%",
-                    paddingTop: "calc(var(--tg-content-safe-area-inset-top) + 64px)",
+                    height: "calc(100% - var(--tg-content-safe-area-inset-top))",
                     paddingBottom: "calc(var(--tg-content-safe-area-inset-bottom) + 16px)",
                     boxSizing: "border-box",
                 }}
