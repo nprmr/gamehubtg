@@ -56,6 +56,7 @@ function Home() {
     const goTo = (i) => setActiveIndex(clamp(i));
     const step = cardWidth + GAP;
 
+    // первая карточка всегда стартует с 16px слева
     const getXForIndex = (i) => {
         if (i === 0) return 16;
         if (i === maxIndex) {
@@ -136,7 +137,8 @@ function Home() {
                     alignItems: "center",
                     width: "100%",
                     height: "100%",
-                    paddingTop: "calc(var(--tg-content-safe-area-inset-top) + 56px)", // 🔥 всегда ниже Telegram UI
+                    // 🔥 визуально одинаковый отступ под Telegram-баром на всех iPhone
+                    paddingTop: "calc(var(--tg-content-safe-area-inset-top) + 20px)",
                     boxSizing: "border-box",
                 }}
             >
@@ -220,10 +222,7 @@ function Home() {
                         {games.map((g, i) => (
                             <div key={g.id} ref={i === 0 ? firstItemRef : undefined} style={{ flex: "0 0 auto" }}>
                                 {i === 0 ? (
-                                    <motion.div
-                                        layoutId="gamecard"
-                                        transition={{ duration: 0.6, ease: "easeInOut" }}
-                                    >
+                                    <motion.div layoutId="gamecard" transition={{ duration: 0.6, ease: "easeInOut" }}>
                                         <GameCard
                                             label={g.label}
                                             title={g.title}
@@ -246,7 +245,7 @@ function Home() {
                 </div>
             </div>
 
-            {/* 🔥 фиксированная нижняя кнопка */}
+            {/* фиксированная нижняя кнопка */}
             <div
                 style={{
                     position: "absolute",
@@ -261,11 +260,7 @@ function Home() {
                         Игра в разработке
                     </PrimaryButton>
                 ) : (
-                    <PrimaryButton
-                        textColor="var(--icotex-white)"
-                        onClick={() => navigate("/neverever")}
-                        withMargin
-                    >
+                    <PrimaryButton textColor="var(--icotex-white)" onClick={() => navigate("/neverever")} withMargin>
                         Начать игру
                     </PrimaryButton>
                 )}

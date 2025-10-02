@@ -8,19 +8,19 @@ function initTelegram() {
     try {
         WebApp.ready();
 
-        // ✅ переводим в fullscreen сразу
+        // ✅ принудительно в полноэкранный режим
         if (typeof WebApp.expand === "function") {
             WebApp.expand();
         }
 
-        // Блокировка свайпов вниз
+        // блокировка свайпов вниз
         if (typeof WebApp.disableVerticalSwipes === "function") {
             WebApp.disableVerticalSwipes();
         } else if (WebApp.viewport?.lockOrientation) {
             WebApp.viewport.lockOrientation();
         }
 
-        // Слушаем safe-area
+        // подписка на safe-area
         WebApp.onEvent("safe_area_changed", (insets) => {
             console.log("Safe area updated:", insets);
         });
