@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import "../theme.css";
@@ -11,6 +11,7 @@ import bg1 from "../assets/bg1.webp";
 import { useCategories } from "../hooks/useCategories";
 import { getQuestionsByCategory } from "../api";
 import LockedCategorySheet from "../components/LockedCategorySheet";
+import { useSafeArea } from "../hooks/useSafeArea";
 
 function NeverEver() {
     const { categories, loading } = useCategories();
@@ -22,6 +23,7 @@ function NeverEver() {
     });
 
     const navigate = useNavigate();
+    const { safe, content } = useSafeArea();
 
     const toggleCategory = (title) => {
         setSelectedCategories((prev) =>
@@ -100,8 +102,8 @@ function NeverEver() {
             <div
                 style={{
                     position: "fixed",
-                    top: "calc(var(--tg-viewport-content-safe-area-inset-top, 0px) + 16px)",
-                    right: 16,
+                    top: safe.top + 16,
+                    right: content.right + 16,
                     zIndex: 10,
                 }}
             >
@@ -119,8 +121,8 @@ function NeverEver() {
                     justifyContent: "space-between",
                     width: "100%",
                     height: "100%",
-                    paddingTop: "120px",
-                    paddingBottom: "24px",
+                    paddingTop: safe.top + 120,
+                    paddingBottom: safe.bottom + 24,
                     boxSizing: "border-box",
                 }}
             >

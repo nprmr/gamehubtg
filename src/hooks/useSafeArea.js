@@ -3,35 +3,52 @@ import { useState, useEffect } from "react";
 import { viewport } from "@telegram-apps/sdk";
 
 export function useSafeArea() {
-    const [insets, setInsets] = useState({
-        top: viewport?.contentSafeAreaInsetTop() || 0,
-        bottom: viewport?.contentSafeAreaInsetBottom() || 0,
-        left: viewport?.contentSafeAreaInsetLeft() || 0,
-        right: viewport?.contentSafeAreaInsetRight() || 0,
+    const getInsets = () => ({
+        safe: {
+            top: viewport?.safeAreaInsetTop?.() || 0,
+            bottom: viewport?.safeAreaInsetBottom?.() || 0,
+            left: viewport?.safeAreaInsetLeft?.() || 0,
+            right: viewport?.safeAreaInsetRight?.() || 0,
+        },
+        content: {
+            top: viewport?.contentSafeAreaInsetTop?.() || 0,
+            bottom: viewport?.contentSafeAreaInsetBottom?.() || 0,
+            left: viewport?.contentSafeAreaInsetLeft?.() || 0,
+            right: viewport?.contentSafeAreaInsetRight?.() || 0,
+        },
     });
 
+    const [insets, setInsets] = useState(getInsets);
+    const [isTelegram, setIsTelegram] = useState(false);
+
     useEffect(() => {
-        if (!viewport) return;
+        // 👉 проверяем, что мы реально в Telegram Mini App
+        if (!viewport?.isSupported) {
+            setIsTelegram(false);
+            return;
+        }
 
-        // Привязываем к CSS-переменным (доступны как --tg-viewport-content-safe-area-inset-*)
-        viewport.bindCssVars();
+        setIsTelegram(true);
 
-        const updateInsets = () => {
-            setInsets({
-                top: viewport.contentSafeAreaInsetTop(),
-                bottom: viewport.contentSafeAreaInsetBottom(),
-                left: viewport.contentSafeAreaInsetLeft(),
-                right: viewport.contentSafeAreaInsetRight(),
-            });
-        };
+        // проброс CSS переменных (если доступно)
+        try {
+            viewport.bindCssVars();
+        } catch (e) {
+            console.warn("bindCssVars недоступен вне Mini App", e);
+        }
 
-        // сразу обновляем
+        const updateInsets = () => setInsets(getInsets());
+
         updateInsets();
 
-        // ✅ подписка на события SDK
+        viewport.on("change:safeAreaInsets", updateInsets);
         viewport.on("change:contentSafeAreaInsets", updateInsets);
-        return () => viewport.off("change:contentSafeAreaInsets", updateInsets);
+
+        return () => {
+            viewport.off("change:safeAreaInsets", updateInsets);
+            viewport.off("change:contentSafeAreaInsets", updateInsets);
+        };
     }, []);
 
-    return insets;
+    return { ...insets, isTelegram };
 }

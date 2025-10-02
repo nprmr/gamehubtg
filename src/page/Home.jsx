@@ -7,6 +7,7 @@ import SettingsIcon from "../icons/Settings.svg?react";
 import GameCard from "../components/GameCard";
 import PrimaryButton from "../components/PrimaryButton";
 import { getGames } from "../api";
+import { useSafeArea } from "../hooks/useSafeArea";
 
 function Home() {
     const [activeIndex, setActiveIndex] = useState(0);
@@ -19,6 +20,8 @@ function Home() {
     const GAP = 16;
     const navigate = useNavigate();
     const firstItemRef = useRef(null);
+
+    const { safe, content } = useSafeArea();
 
     // ресайз и замер ширины карточек
     useEffect(() => {
@@ -60,12 +63,6 @@ function Home() {
     const step = cardWidth + GAP;
 
     const getXForIndex = (i) => {
-        if (i === 0) return 16;
-        if (i === maxIndex) {
-            const centerOfCard = i * step + cardWidth / 2;
-            const viewportCenter = viewportWidth / 2;
-            return viewportCenter - centerOfCard;
-        }
         const centerOfCard = i * step + cardWidth / 2;
         const viewportCenter = viewportWidth / 2;
         return viewportCenter - centerOfCard;
@@ -133,8 +130,8 @@ function Home() {
             <div
                 style={{
                     position: "fixed",
-                    top: "calc(var(--tg-viewport-content-safe-area-inset-top, 0px) + 16px)",
-                    right: 16,
+                    top: safe.top + 16,
+                    right: content.right + 16,
                     zIndex: 10,
                 }}
             >
@@ -152,8 +149,8 @@ function Home() {
                     justifyContent: "space-between",
                     width: "100%",
                     height: "100%",
-                    paddingTop: 120,
-                    paddingBottom: 24,
+                    paddingTop: safe.top + 120,
+                    paddingBottom: safe.bottom + 24,
                     boxSizing: "border-box",
                 }}
             >
@@ -237,7 +234,12 @@ function Home() {
                 </div>
 
                 {/* Кнопка снизу */}
-                <div style={{ width: "-webkit-fill-available", padding: "0 16px" }}>
+                <div
+                    style={{
+                        width: "100%",
+                        padding: "0 16px",
+                    }}
+                >
                     {active?.id !== "neverever" ? (
                         <PrimaryButton
                             textColor="var(--icotex-white-alfa)"
