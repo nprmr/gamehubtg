@@ -21,6 +21,16 @@ function initTelegram() {
             // fallback для старых версий SDK
             WebApp.viewport.lockOrientation();
         }
+
+        // ✅ Берём реальные safe-area insets из SDK
+        if (WebApp.viewport?.safeAreaInsets) {
+            const { top, bottom, left, right } = WebApp.viewport.safeAreaInsets;
+
+            document.documentElement.style.setProperty("--my-safe-top", `${top}px`);
+            document.documentElement.style.setProperty("--my-safe-bottom", `${bottom}px`);
+            document.documentElement.style.setProperty("--my-safe-left", `${left}px`);
+            document.documentElement.style.setProperty("--my-safe-right", `${right}px`);
+        }
     } catch (e) {
         console.log("Работаем в браузере — методы Telegram отключены");
     }
