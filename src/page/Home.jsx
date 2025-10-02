@@ -117,7 +117,21 @@ function Home() {
                 )}
             </AnimatePresence>
 
-            {/* внутренний контейнер с safe-area */}
+            {/* верхняя панель с safe-area */}
+            <div
+                style={{
+                    position: "relative",
+                    zIndex: 2,
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    paddingTop: "calc(var(--tg-safe-area-inset-top) + 8px)",
+                    paddingRight: "calc(var(--tg-safe-area-inset-right) + 16px)",
+                }}
+            >
+                <IconButton icon={SettingsIcon} />
+            </div>
+
+            {/* основной контент с content-safe-area */}
             <div
                 style={{
                     position: "relative",
@@ -125,18 +139,14 @@ function Home() {
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "space-between",
+                    alignItems: "center",
                     width: "100%",
                     height: "100%",
-                    paddingTop: "calc(var(--tg-content-safe-area-inset-top) + 16px)",
+                    paddingTop: "calc(var(--tg-content-safe-area-inset-top) + 64px)",
                     paddingBottom: "calc(var(--tg-content-safe-area-inset-bottom) + 16px)",
                     boxSizing: "border-box",
                 }}
             >
-                {/* верхняя панель */}
-                <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 24 }}>
-                    <IconButton icon={SettingsIcon} />
-                </div>
-
                 {/* заголовок */}
                 <div style={{ textAlign: "center", marginBottom: 24 }}>
                     <motion.h1
