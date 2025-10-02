@@ -1,4 +1,3 @@
-// src/page/Home.jsx
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -8,7 +7,6 @@ import SettingsIcon from "../icons/Settings.svg?react";
 import GameCard from "../components/GameCard";
 import PrimaryButton from "../components/PrimaryButton";
 import { getGames } from "../api";
-import { viewport } from "@telegram-apps/sdk"; // ✅ берём API Telegram
 
 function Home() {
     const [activeIndex, setActiveIndex] = useState(0);
@@ -19,26 +17,26 @@ function Home() {
     const [error, setError] = useState(null);
 
     // safe area (для fullscreen в Telegram)
-    const [safeTop, setSafeTop] = useState(viewport?.contentSafeAreaInsetTop?.() || 0);
+    const [safeTop, setSafeTop] = useState(0);
 
     const GAP = 16;
     const navigate = useNavigate();
     const firstItemRef = useRef(null);
 
-    // ✅ подписка на изменения safe area
+    // ✅ safe area через viewport API
     useEffect(() => {
-        if (!viewport) return;
+        const tg = window.Telegram?.WebApp;
+        const viewport = tg?.viewport;
 
-        // Привяжем CSS-переменные (например, можно будет использовать var(--tg-viewport-content-safe-area-inset-top))
-        viewport.bindCssVars();
+        if (!viewport) return;
 
         const updateInsets = () => {
             setSafeTop(viewport.contentSafeAreaInsetTop?.() || 0);
         };
 
         updateInsets();
-        viewport.onEvent("content_safe_area_changed", updateInsets);
 
+        viewport.onEvent("content_safe_area_changed", updateInsets);
         return () => viewport.offEvent("content_safe_area_changed", updateInsets);
     }, []);
 
