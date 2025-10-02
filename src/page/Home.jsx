@@ -56,7 +56,6 @@ function Home() {
     const goTo = (i) => setActiveIndex(clamp(i));
     const step = cardWidth + GAP;
 
-    // первая карточка с отступом 16px
     const getXForIndex = (i) => {
         if (i === 0) return 16;
         if (i === maxIndex) {
@@ -137,7 +136,7 @@ function Home() {
                     alignItems: "center",
                     width: "100%",
                     height: "100%",
-                    paddingTop: "calc(var(--tg-content-safe-area-inset-top) + 56px)", // 🔥 Telegram safe-area
+                    paddingTop: "calc(var(--tg-content-safe-area-inset-top) + 56px)", // 🔥 всегда ниже Telegram UI
                     boxSizing: "border-box",
                 }}
             >
@@ -147,7 +146,7 @@ function Home() {
                         display: "flex",
                         justifyContent: "flex-end",
                         width: "100%",
-                        paddingRight: "calc(var(--tg-safe-area-inset-right) + 16px)",
+                        paddingRight: "calc(var(--tg-content-safe-area-inset-right) + 16px)",
                         marginBottom: 24,
                     }}
                 >
