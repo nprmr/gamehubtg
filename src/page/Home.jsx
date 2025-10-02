@@ -19,12 +19,18 @@ function Home() {
     const GAP = 16;
     const navigate = useNavigate();
     const firstItemRef = useRef(null);
+    const buttonRef = useRef(null);
+    const [buttonTop, setButtonTop] = useState(0);
 
     useEffect(() => {
         const measure = () => {
             if (firstItemRef.current) {
                 const w = firstItemRef.current.getBoundingClientRect().width;
                 if (w) setCardWidth(Math.round(w));
+            }
+            if (buttonRef.current) {
+                const rect = buttonRef.current.getBoundingClientRect();
+                setButtonTop(rect.top);
             }
             setViewportWidth(window.innerWidth);
         };
@@ -56,14 +62,8 @@ function Home() {
     const goTo = (i) => setActiveIndex(clamp(i));
     const step = cardWidth + GAP;
 
-    // первая карточка всегда стартует с 16px слева
     const getXForIndex = (i) => {
-        if (i === 0) return 16;
-        if (i === maxIndex) {
-            const centerOfCard = i * step + cardWidth / 2;
-            const viewportCenter = viewportWidth / 2;
-            return viewportCenter - centerOfCard;
-        }
+        if (i === 0) return 16; // только первая карточка имеет отступ слева 16px
         const centerOfCard = i * step + cardWidth / 2;
         const viewportCenter = viewportWidth / 2;
         return viewportCenter - centerOfCard;
@@ -133,7 +133,6 @@ function Home() {
                     zIndex: 1,
                     display: "flex",
                     flexDirection: "column",
-                    justifyContent: "space-between", // равномерное распределение
                     alignItems: "center",
                     width: "100%",
                     height: "100%",
@@ -142,7 +141,7 @@ function Home() {
                     boxSizing: "border-box",
                 }}
             >
-                {/* верхняя панель с иконкой */}
+                {/* верхняя панель */}
                 <div
                     style={{
                         display: "flex",
@@ -157,7 +156,7 @@ function Home() {
                 </div>
 
                 {/* заголовок */}
-                <div style={{ textAlign: "center" }}>
+                <div style={{ textAlign: "center", marginBottom: 24 }}>
                     <motion.h1
                         layoutId="title"
                         style={{
@@ -185,7 +184,7 @@ function Home() {
                     </motion.p>
                 </div>
 
-                {/* карусель */}
+                {/* контейнер для центрирования карусели */}
                 <div
                     style={{
                         flex: 1,
@@ -193,8 +192,6 @@ function Home() {
                         alignItems: "center",
                         justifyContent: "center",
                         width: "100%",
-                        overflow: "hidden",
-                        touchAction: "pan-y",
                     }}
                 >
                     <motion.div
@@ -243,13 +240,11 @@ function Home() {
                         ))}
                     </motion.div>
                 </div>
-
-                {/* спейсер под кнопку */}
-                <div style={{ height: 96, flexShrink: 0 }} />
             </div>
 
             {/* фиксированная нижняя кнопка */}
             <div
+                ref={buttonRef}
                 style={{
                     position: "absolute",
                     bottom:
