@@ -129,9 +129,9 @@ function Home() {
                     justifyContent: "space-between",
                     alignItems: "center",
                     width: "100%",
-                    height: "100%", // ✅ не режем высоту
-                    paddingTop: "calc(var(--tg-content-safe-area-inset-top) + 64px)", // 🔽 иконка ещё ниже
-                    paddingBottom: "calc(var(--tg-content-safe-area-inset-bottom) + 96px)", // 🔼 кнопка выше
+                    height: "100%",
+                    paddingTop: "calc(var(--tg-content-safe-area-inset-top) + 56px)", // 🔽 на 8px выше, чем было
+                    paddingBottom: "calc(var(--tg-content-safe-area-inset-bottom) + 66px)", // 🔼 на 30px ниже, чем было
                     boxSizing: "border-box",
                 }}
             >
