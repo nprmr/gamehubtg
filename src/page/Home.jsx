@@ -7,6 +7,7 @@ import SettingsIcon from "../icons/Settings.svg?react";
 import GameCard from "../components/GameCard";
 import PrimaryButton from "../components/PrimaryButton";
 import { getGames } from "../api";
+import { useSafeArea } from "../hooks/useSafeArea"; // ✅ твой хук
 
 function Home() {
     const [activeIndex, setActiveIndex] = useState(0);
@@ -16,29 +17,12 @@ function Home() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // safe area (для fullscreen в Telegram)
-    const [safeTop, setSafeTop] = useState(0);
+    // ✅ Safe Area из хука
+    const { top, bottom, left, right } = useSafeArea();
 
     const GAP = 16;
     const navigate = useNavigate();
     const firstItemRef = useRef(null);
-
-    // ✅ safe area через viewport API
-    useEffect(() => {
-        const tg = window.Telegram?.WebApp;
-        const viewport = tg?.viewport;
-
-        if (!viewport) return;
-
-        const updateInsets = () => {
-            setSafeTop(viewport.contentSafeAreaInsetTop?.() || 0);
-        };
-
-        updateInsets();
-
-        viewport.onEvent("content_safe_area_changed", updateInsets);
-        return () => viewport.offEvent("content_safe_area_changed", updateInsets);
-    }, []);
 
     // ресайз и замер ширины карточек
     useEffect(() => {
@@ -68,7 +52,9 @@ function Home() {
                 if (alive) setLoading(false);
             }
         })();
-        return () => { alive = false; };
+        return () => {
+            alive = false;
+        };
     }, []);
 
     // helpers
@@ -78,12 +64,6 @@ function Home() {
     const step = cardWidth + GAP;
 
     const getXForIndex = (i) => {
-        if (i === 0) return 16;
-        if (i === maxIndex) {
-            const centerOfCard = i * step + cardWidth / 2;
-            const viewportCenter = viewportWidth / 2;
-            return viewportCenter - centerOfCard;
-        }
         const centerOfCard = i * step + cardWidth / 2;
         const viewportCenter = viewportWidth / 2;
         return viewportCenter - centerOfCard;
@@ -111,7 +91,10 @@ function Home() {
             </div>
         );
     }
-    if (error) return <div style={{ color: "tomato", padding: 24 }}>Ошибка: {error}</div>;
+    if (error)
+        return (
+            <div style={{ color: "tomato", padding: 24 }}>Ошибка: {error}</div>
+        );
 
     const active = games[activeIndex];
 
@@ -122,7 +105,14 @@ function Home() {
                 height: "100vh",
                 backgroundColor: "var(--surface-main)",
                 position: "relative",
-                overflow: "hidden"
+                overflow: "hidden",
+                paddingTop: top,
+                paddingBottom: bottom,
+                paddingLeft: left,
+                paddingRight: right,
+                boxSizing: "border-box",
+                display: "flex",
+                flexDirection: "column",
             }}
         >
             <AnimatePresence mode="wait">
@@ -140,19 +130,19 @@ function Home() {
                             left: 0,
                             width: "100%",
                             height: "auto",
-                            zIndex: 0
+                            zIndex: 0,
                         }}
                     />
                 )}
             </AnimatePresence>
 
-            {/* Кнопка с учётом safe area */}
+            {/* Кнопка настроек */}
             <div
                 style={{
-                    position: "fixed",
-                    top: safeTop + 16,
-                    right: 16,
-                    zIndex: 10
+                    position: "absolute",
+                    top: top + 16,
+                    right: right + 16,
+                    zIndex: 10,
                 }}
             >
                 <IconButton icon={SettingsIcon} />
@@ -161,17 +151,15 @@ function Home() {
             {/* Контент */}
             <div
                 style={{
-                    position: "relative",
+                    flex: 1,
                     zIndex: 1,
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
                     justifyContent: "space-between",
                     width: "100%",
-                    height: "100%",
-                    paddingTop: 120,
-                    paddingBottom: 24,
-                    boxSizing: "border-box"
+                    boxSizing: "border-box",
+                    padding: "24px 0",
                 }}
             >
                 <div style={{ textAlign: "center" }}>
@@ -182,7 +170,7 @@ function Home() {
                             fontSize: 32,
                             fontWeight: 700,
                             color: "var(--icotex-white)",
-                            marginBottom: 8
+                            marginBottom: 8,
                         }}
                     >
                         Выбор игры
@@ -195,7 +183,7 @@ function Home() {
                             fontWeight: 400,
                             color: "var(--icotex-low)",
                             margin: 0,
-                            lineHeight: 1.4
+                            lineHeight: 1.4,
                         }}
                     >
                         наши игры рассчитаны <br /> на компании от 2 до 24 человек
@@ -209,7 +197,7 @@ function Home() {
                         width: "100%",
                         boxSizing: "border-box",
                         overflow: "hidden",
-                        touchAction: "pan-y"
+                        touchAction: "pan-y",
                     }}
                 >
                     <motion.div
@@ -224,8 +212,10 @@ function Home() {
                             const { offset, velocity } = info;
                             const dx = offset.x;
                             const vx = velocity.x;
-                            const swipePower = Math.abs(dx) * 0.5 + Math.abs(vx) * 20;
-                            const passed = Math.abs(dx) > step * 0.25 || swipePower > 300;
+                            const swipePower =
+                                Math.abs(dx) * 0.5 + Math.abs(vx) * 20;
+                            const passed =
+                                Math.abs(dx) > step * 0.25 || swipePower > 300;
                             if (passed) {
                                 if (dx < 0) goTo(activeIndex + 1);
                                 else goTo(activeIndex - 1);
@@ -243,7 +233,10 @@ function Home() {
                                 {i === 0 ? (
                                     <motion.div
                                         layoutId="gamecard"
-                                        transition={{ duration: 0.6, ease: "easeInOut" }}
+                                        transition={{
+                                            duration: 0.6,
+                                            ease: "easeInOut",
+                                        }}
                                     >
                                         <GameCard
                                             label={g.label}
@@ -267,9 +260,18 @@ function Home() {
                 </div>
 
                 {/* Кнопка снизу */}
-                <div style={{ width: "-webkit-fill-available", padding: "0 16px" }}>
+                <div
+                    style={{
+                        width: "-webkit-fill-available",
+                        padding: "0 16px",
+                    }}
+                >
                     {active?.id !== "neverever" ? (
-                        <PrimaryButton textColor="var(--icotex-white-alfa)" disabled withMargin>
+                        <PrimaryButton
+                            textColor="var(--icotex-white-alfa)"
+                            disabled
+                            withMargin
+                        >
                             Игра в разработке
                         </PrimaryButton>
                     ) : (
