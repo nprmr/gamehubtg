@@ -4,35 +4,37 @@ import App from "./App.jsx";
 import "./theme.css";
 import WebApp from "@twa-dev/sdk";
 
-// Инициализация Telegram Mini App
+// применяем safe-area
+function applySafeArea(insets) {
+    document.documentElement.style.setProperty("--tg-safe-area-inset-top", `${insets.top}px`);
+    document.documentElement.style.setProperty("--tg-safe-area-inset-bottom", `${insets.bottom}px`);
+    document.documentElement.style.setProperty("--tg-safe-area-inset-left", `${insets.left}px`);
+    document.documentElement.style.setProperty("--tg-safe-area-inset-right", `${insets.right}px`);
+}
+
 function initTelegram() {
     try {
         WebApp.ready();
-
-        // fullscreen (работает только в Telegram)
-        if (typeof WebApp.requestFullscreen === "function") {
-            WebApp.requestFullscreen();
-        }
+        WebApp.expand?.();
 
         // блокировка свайпов вниз (API 7.7+)
         if (typeof WebApp.disableVerticalSwipes === "function") {
             WebApp.disableVerticalSwipes();
         } else if (WebApp.viewport?.lockOrientation) {
-            // fallback для старых версий SDK
             WebApp.viewport.lockOrientation();
         }
 
-        // ✅ Берём реальные safe-area insets из SDK
+        // сразу применяем текущие insets
         if (WebApp.viewport?.safeAreaInsets) {
-            const { top, bottom, left, right } = WebApp.viewport.safeAreaInsets;
-
-            document.documentElement.style.setProperty("--my-safe-top", `${top}px`);
-            document.documentElement.style.setProperty("--my-safe-bottom", `${bottom}px`);
-            document.documentElement.style.setProperty("--my-safe-left", `${left}px`);
-            document.documentElement.style.setProperty("--my-safe-right", `${right}px`);
+            applySafeArea(WebApp.viewport.safeAreaInsets);
         }
+
+        // слушаем изменения safe-area
+        WebApp.onEvent("safe_area_changed", (insets) => {
+            applySafeArea(insets);
+        });
     } catch (e) {
-        console.log("Работаем в браузере — методы Telegram отключены");
+        console.log("Работаем в браузере — методы Telegram отключены", e);
     }
 }
 
