@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, useLocation } from "react-route
 import { AnimatePresence, LayoutGroup } from "framer-motion";
 import Home from "./page/Home.jsx";
 import NeverEver from "./page/NeverEver.jsx";
-import GameScreen from "./page/GameScreen.jsx"; // ✅ добавили
+import GameScreen from "./page/GameScreen.jsx"; // ✅
 
 function AnimatedRoutes() {
     const location = useLocation();
@@ -14,7 +14,7 @@ function AnimatedRoutes() {
                 <Routes location={location} key={location.pathname}>
                     <Route path="/" element={<Home />} />
                     <Route path="/neverever" element={<NeverEver />} />
-                    <Route path="/game" element={<GameScreen />} /> {/* ✅ новый маршрут */}
+                    <Route path="/game" element={<GameScreen />} /> {/* ✅ */}
                 </Routes>
             </AnimatePresence>
         </LayoutGroup>

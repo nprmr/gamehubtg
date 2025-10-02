@@ -16,10 +16,31 @@ function Home() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    // safe area (для fullscreen в Telegram)
+    const [safeTop, setSafeTop] = useState(0);
+
     const GAP = 16;
     const navigate = useNavigate();
     const firstItemRef = useRef(null);
 
+    // ✅ safe area через viewport API
+    useEffect(() => {
+        const tg = window.Telegram?.WebApp;
+        const viewport = tg?.viewport;
+
+        if (!viewport) return;
+
+        const updateInsets = () => {
+            setSafeTop(viewport.contentSafeAreaInsetTop?.() || 0);
+        };
+
+        updateInsets();
+
+        viewport.onEvent("content_safe_area_changed", updateInsets);
+        return () => viewport.offEvent("content_safe_area_changed", updateInsets);
+    }, []);
+
+    // ресайз и замер ширины карточек
     useEffect(() => {
         const measure = () => {
             if (firstItemRef.current) {
@@ -33,6 +54,7 @@ function Home() {
         return () => window.removeEventListener("resize", measure);
     }, []);
 
+    // загрузка игр
     useEffect(() => {
         let alive = true;
         (async () => {
@@ -49,6 +71,7 @@ function Home() {
         return () => { alive = false; };
     }, []);
 
+    // helpers
     const maxIndex = Math.max(0, games.length - 1);
     const clamp = (n) => Math.max(0, Math.min(maxIndex, n));
     const goTo = (i) => setActiveIndex(clamp(i));
@@ -69,6 +92,7 @@ function Home() {
     const minX = getXForIndex(maxIndex);
     const maxX = 16;
 
+    // состояния загрузки
     if (loading) {
         return (
             <div
@@ -92,7 +116,15 @@ function Home() {
     const active = games[activeIndex];
 
     return (
-        <div style={{ width: "100vw", height: "100vh", backgroundColor: "var(--surface-main)", position: "relative", overflow: "hidden" }}>
+        <div
+            style={{
+                width: "100vw",
+                height: "100vh",
+                backgroundColor: "var(--surface-main)",
+                position: "relative",
+                overflow: "hidden"
+            }}
+        >
             <AnimatePresence mode="wait">
                 {active?.bg && (
                     <motion.img
@@ -102,26 +134,84 @@ function Home() {
                         animate={{ y: 0, opacity: 1 }}
                         exit={{ y: 100, opacity: 0 }}
                         transition={{ duration: 0.35 }}
-                        style={{ position: "absolute", bottom: 0, left: 0, width: "100%", height: "auto", zIndex: 0 }}
+                        style={{
+                            position: "absolute",
+                            bottom: 0,
+                            left: 0,
+                            width: "100%",
+                            height: "auto",
+                            zIndex: 0
+                        }}
                     />
                 )}
             </AnimatePresence>
 
-            <div style={{ position: "fixed", top: 16, right: 16, zIndex: 10 }}>
+            {/* Кнопка с учётом safe area */}
+            <div
+                style={{
+                    position: "fixed",
+                    top: safeTop + 16,
+                    right: 16,
+                    zIndex: 10
+                }}
+            >
                 <IconButton icon={SettingsIcon} />
             </div>
 
-            <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "space-between", width: "100%", height: "100%", paddingTop: 120, paddingBottom: 24, boxSizing: "border-box" }}>
+            {/* Контент */}
+            <div
+                style={{
+                    position: "relative",
+                    zIndex: 1,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    width: "100%",
+                    height: "100%",
+                    paddingTop: 120,
+                    paddingBottom: 24,
+                    boxSizing: "border-box"
+                }}
+            >
                 <div style={{ textAlign: "center" }}>
-                    <motion.h1 layoutId="title" style={{ fontFamily: "Gilroy, sans-serif", fontSize: 32, fontWeight: 700, color: "var(--icotex-white)", marginBottom: 8 }}>
+                    <motion.h1
+                        layoutId="title"
+                        style={{
+                            fontFamily: "Gilroy, sans-serif",
+                            fontSize: 32,
+                            fontWeight: 700,
+                            color: "var(--icotex-white)",
+                            marginBottom: 8
+                        }}
+                    >
                         Выбор игры
                     </motion.h1>
-                    <motion.p layoutId="subtitle" style={{ fontFamily: "Gilroy, sans-serif", fontSize: 14, fontWeight: 400, color: "var(--icotex-low)", margin: 0, lineHeight: 1.4 }}>
+                    <motion.p
+                        layoutId="subtitle"
+                        style={{
+                            fontFamily: "Gilroy, sans-serif",
+                            fontSize: 14,
+                            fontWeight: 400,
+                            color: "var(--icotex-low)",
+                            margin: 0,
+                            lineHeight: 1.4
+                        }}
+                    >
                         наши игры рассчитаны <br /> на компании от 2 до 24 человек
                     </motion.p>
                 </div>
 
-                <div style={{ position: "relative", width: "100%", boxSizing: "border-box", overflow: "hidden", touchAction: "pan-y" }}>
+                {/* Свайп-карусель */}
+                <div
+                    style={{
+                        position: "relative",
+                        width: "100%",
+                        boxSizing: "border-box",
+                        overflow: "hidden",
+                        touchAction: "pan-y"
+                    }}
+                >
                     <motion.div
                         style={{ display: "flex", gap: `${GAP}px` }}
                         drag="x"
@@ -145,9 +235,16 @@ function Home() {
                         }}
                     >
                         {games.map((g, i) => (
-                            <div key={g.id} ref={i === 0 ? firstItemRef : undefined} style={{ flex: "0 0 auto" }}>
+                            <div
+                                key={g.id}
+                                ref={i === 0 ? firstItemRef : undefined}
+                                style={{ flex: "0 0 auto" }}
+                            >
                                 {i === 0 ? (
-                                    <motion.div layoutId="gamecard" transition={{ duration: 0.6, ease: "easeInOut" }}>
+                                    <motion.div
+                                        layoutId="gamecard"
+                                        transition={{ duration: 0.6, ease: "easeInOut" }}
+                                    >
                                         <GameCard
                                             label={g.label}
                                             title={g.title}
@@ -169,13 +266,18 @@ function Home() {
                     </motion.div>
                 </div>
 
+                {/* Кнопка снизу */}
                 <div style={{ width: "-webkit-fill-available", padding: "0 16px" }}>
                     {active?.id !== "neverever" ? (
                         <PrimaryButton textColor="var(--icotex-white-alfa)" disabled withMargin>
                             Игра в разработке
                         </PrimaryButton>
                     ) : (
-                        <PrimaryButton textColor="var(--icotex-white)" onClick={() => navigate("/neverever")} withMargin>
+                        <PrimaryButton
+                            textColor="var(--icotex-white)"
+                            onClick={() => navigate("/neverever")}
+                            withMargin
+                        >
                             Начать игру
                         </PrimaryButton>
                     )}

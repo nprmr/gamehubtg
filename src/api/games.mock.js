@@ -1,5 +1,5 @@
-import bg1 from "../assets/bg1.png";
-import bg2 from "../assets/bg2.png";
+import bg1 from "../assets/bg1.webp";
+import bg2 from "../assets/bg2.webp";
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 

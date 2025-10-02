@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import "../theme.css";
@@ -7,7 +7,7 @@ import SettingsIcon from "../icons/Settings.svg?react";
 import CategoryCard from "../components/CategoryCard";
 import PrimaryButton from "../components/PrimaryButton";
 import IconPrimaryButton from "../components/IconPrimaryButton";
-import bg1 from "../assets/bg1.png";
+import bg1 from "../assets/bg1.webp";
 import { useCategories } from "../hooks/useCategories";
 import { getQuestionsByCategory } from "../api"; // ✅ используем API-слой
 import LockedCategorySheet from "../components/LockedCategorySheet";
@@ -20,7 +20,26 @@ function NeverEver() {
         category: null,
         phrases: [],
     });
+
+    const [safeTop, setSafeTop] = useState(0);
     const navigate = useNavigate();
+
+    // ✅ safe area через viewport API
+    useEffect(() => {
+        const tg = window.Telegram?.WebApp;
+        const viewport = tg?.viewport;
+
+        if (!viewport) return;
+
+        const updateInsets = () => {
+            setSafeTop(viewport.contentSafeAreaInsetTop?.() || 0);
+        };
+
+        updateInsets();
+
+        viewport.onEvent("content_safe_area_changed", updateInsets);
+        return () => viewport.offEvent("content_safe_area_changed", updateInsets);
+    }, []);
 
     const toggleCategory = (title) => {
         setSelectedCategories((prev) =>
@@ -33,7 +52,7 @@ function NeverEver() {
     // 🔹 Открытие шита для заблокированной категории
     const openLockedCategory = async (cat) => {
         try {
-            const data = await getQuestionsByCategory(cat.title); // ✅ теперь через API (моки/реал)
+            const data = await getQuestionsByCategory(cat.title);
             setLockedSheet({
                 open: true,
                 category: cat,
@@ -66,7 +85,6 @@ function NeverEver() {
         );
     }
 
-    // ✅ защита от undefined
     const safeCategories = Array.isArray(categories) ? categories : [];
     const half = Math.ceil(safeCategories.length / 2);
     const topRow = safeCategories.slice(0, half);
@@ -96,9 +114,14 @@ function NeverEver() {
                 }}
             />
 
-            {/* Кнопка Settings */}
+            {/* Кнопка Settings (safeTop) */}
             <div
-                style={{ position: "fixed", top: "16px", right: "16px", zIndex: 10 }}
+                style={{
+                    position: "fixed",
+                    top: safeTop + 16,
+                    right: 16,
+                    zIndex: 10,
+                }}
             >
                 <IconButton icon={SettingsIcon} />
             </div>
