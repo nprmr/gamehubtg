@@ -90,12 +90,12 @@ function Home() {
             style={{
                 width: "100vw",
                 height: "100vh",
-                backgroundColor: "var(--surface-main)",
+                backgroundColor: "var(--surface-main)", // фон всегда твой
                 position: "relative",
                 overflow: "hidden",
             }}
         >
-            {/* фон */}
+            {/* фоновые картинки */}
             <AnimatePresence mode="wait">
                 {active?.bg && (
                     <motion.img
@@ -117,22 +117,22 @@ function Home() {
                 )}
             </AnimatePresence>
 
-            {/* верхняя панель → safe-area (чёлка, жесты), не Telegram UI */}
+            {/* верхняя панель с иконкой */}
             <div
                 style={{
                     position: "relative",
                     zIndex: 2,
                     display: "flex",
                     justifyContent: "flex-end",
-                    paddingTop: "calc(var(--tg-safe-area-inset-top) + 8px)",
+                    paddingTop: "calc(var(--tg-content-safe-area-inset-top) + 32px)", // ниже панели TG
                     paddingRight: "calc(var(--tg-safe-area-inset-right) + 16px)",
-                    marginBottom: 8,
+                    marginBottom: 16,
                 }}
             >
                 <IconButton icon={SettingsIcon} />
             </div>
 
-            {/* основной контент → content-safe-area */}
+            {/* основной контент */}
             <div
                 style={{
                     position: "relative",
@@ -144,7 +144,7 @@ function Home() {
                     width: "100%",
                     height: "calc(100% - var(--tg-content-safe-area-inset-top))",
                     paddingTop: "calc(var(--tg-content-safe-area-inset-top) + 16px)",
-                    paddingBottom: "calc(var(--tg-content-safe-area-inset-bottom) + 16px)",
+                    paddingBottom: "calc(var(--tg-content-safe-area-inset-bottom) + 64px)", // выше системной панели
                     boxSizing: "border-box",
                 }}
             >
@@ -241,7 +241,7 @@ function Home() {
                 </div>
 
                 {/* кнопка */}
-                <div style={{ width: "100%", padding: "0 16px" }}>
+                <div style={{ width: "100%", padding: "0 16px", marginBottom: "24px" }}>
                     {active?.id !== "neverever" ? (
                         <PrimaryButton textColor="var(--icotex-white-alfa)" disabled withMargin>
                             Игра в разработке
