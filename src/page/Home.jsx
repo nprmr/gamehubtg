@@ -137,8 +137,9 @@ function Home() {
                     alignItems: "center",
                     width: "100%",
                     height: "100%",
-                    // 🔥 визуально одинаковый отступ под Telegram-баром на всех iPhone
-                    paddingTop: "calc(var(--tg-content-safe-area-inset-top) + 20px)",
+                    // ✅ берём БОЛЬШЕЕ из content-safe и системного safe, чтобы точно уйти ниже бара TG
+                    paddingTop:
+                        "calc(max(var(--tg-content-safe-area-inset-top, 0px), var(--tg-safe-area-inset-top, 0px)) + 20px)",
                     boxSizing: "border-box",
                 }}
             >
@@ -148,7 +149,9 @@ function Home() {
                         display: "flex",
                         justifyContent: "flex-end",
                         width: "100%",
-                        paddingRight: "calc(var(--tg-content-safe-area-inset-right) + 16px)",
+                        // ✅ справа тоже используем максимум
+                        paddingRight:
+                            "calc(max(var(--tg-content-safe-area-inset-right, 0px), var(--tg-safe-area-inset-right, 0px)) + 16px)",
                         marginBottom: 24,
                     }}
                 >
@@ -249,7 +252,9 @@ function Home() {
             <div
                 style={{
                     position: "absolute",
-                    bottom: "calc(var(--tg-content-safe-area-inset-bottom) + 24px)",
+                    // ✅ максимум из content-safe и системного safe, затем +24px
+                    bottom:
+                        "calc(max(var(--tg-content-safe-area-inset-bottom, 0px), var(--tg-safe-area-inset-bottom, 0px)) + 24px)",
                     left: 16,
                     right: 16,
                     zIndex: 10,
