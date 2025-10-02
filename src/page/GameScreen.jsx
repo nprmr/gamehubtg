@@ -9,7 +9,6 @@ import FaqIcon from "../icons/faq.svg?react";
 import ArrowBackIcon from "../icons/arrowback.svg?react";
 import NoWordsCard from "../components/NoWordsCard";
 import { getQuestionsByCategories } from "../api";
-import { useSafeArea } from "../hooks/useSafeArea"; // ✅ хук для safe area
 
 function GameScreen() {
     const location = useLocation();
@@ -21,7 +20,6 @@ function GameScreen() {
     const [loading, setLoading] = useState(true);
     const [showSheet, setShowSheet] = useState(false);
 
-    const { top: safeTop } = useSafeArea(); // ✅ отступ сверху
     const dir = currentIndex % 2 === 0 ? 1 : -1;
 
     useEffect(() => {
@@ -52,16 +50,18 @@ function GameScreen() {
 
     if (loading) {
         return (
-            <div style={{
-                width: "100vw",
-                height: "100vh",
-                backgroundColor: "var(--surface-main)",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                color: "var(--icotex-white)",
-                fontFamily: "Gilroy, sans-serif",
-            }}>
+            <div
+                style={{
+                    width: "100vw",
+                    height: "100vh",
+                    backgroundColor: "var(--surface-main)",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    color: "var(--icotex-white)",
+                    fontFamily: "Gilroy, sans-serif",
+                }}
+            >
                 Загружаем вопросы...
             </div>
         );
@@ -72,16 +72,18 @@ function GameScreen() {
 
     if (currentIndex >= questions.length) {
         return (
-            <div style={{
-                width: "100vw",
-                height: "100vh",
-                backgroundColor: "var(--surface-main)",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                padding: "0 16px",
-                boxSizing: "border-box",
-            }}>
+            <div
+                style={{
+                    width: "100vw",
+                    height: "100vh",
+                    backgroundColor: "var(--surface-main)",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    padding: "0 16px",
+                    boxSizing: "border-box",
+                }}
+            >
                 <NoWordsCard onChangeCategory={() => navigate("/neverever")} />
             </div>
         );
@@ -90,22 +92,38 @@ function GameScreen() {
     const currentQuestion = questions[currentIndex];
 
     return (
-        <div style={{
-            width: "100vw",
-            height: "100vh",
-            backgroundColor: "var(--surface-main)",
-            position: "relative",
-            overflow: "hidden",
-            padding: "0 16px",
-            boxSizing: "border-box",
-            display: "flex",
-            flexDirection: "column",
-        }}>
-            {/* Иконки с учётом safe area */}
-            <div style={{ position: "absolute", top: safeTop + 16, left: 16, zIndex: 10 }}>
+        <div
+            style={{
+                width: "100vw",
+                height: "100vh",
+                backgroundColor: "var(--surface-main)",
+                position: "relative",
+                overflow: "hidden",
+                padding: "0 16px",
+                boxSizing: "border-box",
+                display: "flex",
+                flexDirection: "column",
+            }}
+        >
+            {/* Иконки с safe area через CSS-переменные */}
+            <div
+                style={{
+                    position: "absolute",
+                    top: "calc(var(--tg-viewport-content-safe-area-inset-top, 0px) + 16px)",
+                    left: 16,
+                    zIndex: 10,
+                }}
+            >
                 <IconButton icon={ArrowBackIcon} onClick={() => setShowSheet(true)} />
             </div>
-            <div style={{ position: "absolute", top: safeTop + 16, right: 16, zIndex: 10 }}>
+            <div
+                style={{
+                    position: "absolute",
+                    top: "calc(var(--tg-viewport-content-safe-area-inset-top, 0px) + 16px)",
+                    right: 16,
+                    zIndex: 10,
+                }}
+            >
                 <IconButton icon={FaqIcon} />
             </div>
 
@@ -148,27 +166,33 @@ function GameScreen() {
             </div>
 
             {/* Центральная карточка */}
-            <div style={{
-                flex: 1,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                position: "relative",
-                marginTop: 24,
-                marginBottom: 24,
-            }}>
+            <div
+                style={{
+                    flex: 1,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    position: "relative",
+                    marginTop: 24,
+                    marginBottom: 24,
+                }}
+            >
                 <AnimatePresence mode="popLayout" initial={false} custom={dir}>
                     <motion.div
                         key={currentIndex}
                         custom={dir}
                         initial={{ x: dir * -400, rotate: dir * 12, opacity: 0 }}
                         animate={{
-                            x: 0, rotate: 0, opacity: 1,
-                            transition: { type: "spring", stiffness: 120, damping: 22 }
+                            x: 0,
+                            rotate: 0,
+                            opacity: 1,
+                            transition: { type: "spring", stiffness: 120, damping: 22 },
                         }}
                         exit={{
-                            x: dir * 400, rotate: dir * 14, opacity: 0,
-                            transition: { type: "spring", stiffness: 120, damping: 20 }
+                            x: dir * 400,
+                            rotate: dir * 14,
+                            opacity: 0,
+                            transition: { type: "spring", stiffness: 120, damping: 20 },
                         }}
                         style={{
                             width: "100%",
@@ -182,24 +206,28 @@ function GameScreen() {
                             alignItems: "flex-start",
                         }}
                     >
-                        <p style={{
-                            fontFamily: "Gilroy, sans-serif",
-                            fontWeight: 700,
-                            fontSize: 24,
-                            color: "var(--icotex-normal)",
-                            lineHeight: 1.4,
-                            margin: 0,
-                        }}>
+                        <p
+                            style={{
+                                fontFamily: "Gilroy, sans-serif",
+                                fontWeight: 700,
+                                fontSize: 24,
+                                color: "var(--icotex-normal)",
+                                lineHeight: 1.4,
+                                margin: 0,
+                            }}
+                        >
                             {currentQuestion.text}
                         </p>
 
-                        <div style={{
-                            position: "absolute",
-                            right: 24,
-                            bottom: 24,
-                            width: 92,
-                            height: 92,
-                        }}>
+                        <div
+                            style={{
+                                position: "absolute",
+                                right: 24,
+                                bottom: 24,
+                                width: 92,
+                                height: 92,
+                            }}
+                        >
                             <CategoryRive
                                 riveFile={currentQuestion.riveFile}
                                 stateMachine={currentQuestion.stateMachine}

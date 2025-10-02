@@ -16,29 +16,9 @@ function Home() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // safe area (для fullscreen в Telegram)
-    const [safeTop, setSafeTop] = useState(0);
-
     const GAP = 16;
     const navigate = useNavigate();
     const firstItemRef = useRef(null);
-
-    // ✅ safe area через viewport API
-    useEffect(() => {
-        const tg = window.Telegram?.WebApp;
-        const viewport = tg?.viewport;
-
-        if (!viewport) return;
-
-        const updateInsets = () => {
-            setSafeTop(viewport.contentSafeAreaInsetTop?.() || 0);
-        };
-
-        updateInsets();
-
-        viewport.onEvent("content_safe_area_changed", updateInsets);
-        return () => viewport.offEvent("content_safe_area_changed", updateInsets);
-    }, []);
 
     // ресайз и замер ширины карточек
     useEffect(() => {
@@ -68,7 +48,9 @@ function Home() {
                 if (alive) setLoading(false);
             }
         })();
-        return () => { alive = false; };
+        return () => {
+            alive = false;
+        };
     }, []);
 
     // helpers
@@ -111,7 +93,8 @@ function Home() {
             </div>
         );
     }
-    if (error) return <div style={{ color: "tomato", padding: 24 }}>Ошибка: {error}</div>;
+    if (error)
+        return <div style={{ color: "tomato", padding: 24 }}>Ошибка: {error}</div>;
 
     const active = games[activeIndex];
 
@@ -122,7 +105,7 @@ function Home() {
                 height: "100vh",
                 backgroundColor: "var(--surface-main)",
                 position: "relative",
-                overflow: "hidden"
+                overflow: "hidden",
             }}
         >
             <AnimatePresence mode="wait">
@@ -140,7 +123,7 @@ function Home() {
                             left: 0,
                             width: "100%",
                             height: "auto",
-                            zIndex: 0
+                            zIndex: 0,
                         }}
                     />
                 )}
@@ -150,9 +133,9 @@ function Home() {
             <div
                 style={{
                     position: "fixed",
-                    top: safeTop + 16,
+                    top: "calc(var(--tg-viewport-content-safe-area-inset-top, 0px) + 16px)",
                     right: 16,
-                    zIndex: 10
+                    zIndex: 10,
                 }}
             >
                 <IconButton icon={SettingsIcon} />
@@ -171,7 +154,7 @@ function Home() {
                     height: "100%",
                     paddingTop: 120,
                     paddingBottom: 24,
-                    boxSizing: "border-box"
+                    boxSizing: "border-box",
                 }}
             >
                 <div style={{ textAlign: "center" }}>
@@ -182,7 +165,7 @@ function Home() {
                             fontSize: 32,
                             fontWeight: 700,
                             color: "var(--icotex-white)",
-                            marginBottom: 8
+                            marginBottom: 8,
                         }}
                     >
                         Выбор игры
@@ -195,7 +178,7 @@ function Home() {
                             fontWeight: 400,
                             color: "var(--icotex-low)",
                             margin: 0,
-                            lineHeight: 1.4
+                            lineHeight: 1.4,
                         }}
                     >
                         наши игры рассчитаны <br /> на компании от 2 до 24 человек
@@ -209,7 +192,7 @@ function Home() {
                         width: "100%",
                         boxSizing: "border-box",
                         overflow: "hidden",
-                        touchAction: "pan-y"
+                        touchAction: "pan-y",
                     }}
                 >
                     <motion.div
@@ -225,7 +208,8 @@ function Home() {
                             const dx = offset.x;
                             const vx = velocity.x;
                             const swipePower = Math.abs(dx) * 0.5 + Math.abs(vx) * 20;
-                            const passed = Math.abs(dx) > step * 0.25 || swipePower > 300;
+                            const passed =
+                                Math.abs(dx) > step * 0.25 || swipePower > 300;
                             if (passed) {
                                 if (dx < 0) goTo(activeIndex + 1);
                                 else goTo(activeIndex - 1);
@@ -240,27 +224,13 @@ function Home() {
                                 ref={i === 0 ? firstItemRef : undefined}
                                 style={{ flex: "0 0 auto" }}
                             >
-                                {i === 0 ? (
-                                    <motion.div
-                                        layoutId="gamecard"
-                                        transition={{ duration: 0.6, ease: "easeInOut" }}
-                                    >
-                                        <GameCard
-                                            label={g.label}
-                                            title={g.title}
-                                            subtitle={g.subtitle}
-                                            players={g.players}
-                                            categories={g.categories}
-                                        />
-                                    </motion.div>
-                                ) : (
-                                    <GameCard
-                                        label={g.label}
-                                        title={g.title}
-                                        subtitle={g.subtitle}
-                                        riveAnimation={g.riveAnimation}
-                                    />
-                                )}
+                                <GameCard
+                                    label={g.label}
+                                    title={g.title}
+                                    subtitle={g.subtitle}
+                                    players={g.players}
+                                    categories={g.categories}
+                                />
                             </div>
                         ))}
                     </motion.div>
@@ -269,7 +239,11 @@ function Home() {
                 {/* Кнопка снизу */}
                 <div style={{ width: "-webkit-fill-available", padding: "0 16px" }}>
                     {active?.id !== "neverever" ? (
-                        <PrimaryButton textColor="var(--icotex-white-alfa)" disabled withMargin>
+                        <PrimaryButton
+                            textColor="var(--icotex-white-alfa)"
+                            disabled
+                            withMargin
+                        >
                             Игра в разработке
                         </PrimaryButton>
                     ) : (

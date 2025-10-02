@@ -1,21 +1,22 @@
+// src/hooks/useSafeArea.js
 import { useState, useEffect } from "react";
+import { viewport } from "@telegram-apps/sdk";
 
 export function useSafeArea() {
-    const tg = window.Telegram?.WebApp;
-    const viewport = tg?.viewport;
-
     const [insets, setInsets] = useState({
-        top: viewport?.contentSafeAreaInsetTop?.() || 0,
-        bottom: viewport?.contentSafeAreaInsetBottom?.() || 0,
-        left: viewport?.contentSafeAreaInsetLeft?.() || 0,
-        right: viewport?.contentSafeAreaInsetRight?.() || 0,
+        top: viewport?.contentSafeAreaInsetTop() || 0,
+        bottom: viewport?.contentSafeAreaInsetBottom() || 0,
+        left: viewport?.contentSafeAreaInsetLeft() || 0,
+        right: viewport?.contentSafeAreaInsetRight() || 0,
     });
 
     useEffect(() => {
         if (!viewport) return;
 
-        // подписка на событие content_safe_area_changed
-        const listener = () => {
+        // Привязываем к CSS-переменным (доступны как --tg-viewport-content-safe-area-inset-*)
+        viewport.bindCssVars();
+
+        const updateInsets = () => {
             setInsets({
                 top: viewport.contentSafeAreaInsetTop(),
                 bottom: viewport.contentSafeAreaInsetBottom(),
@@ -24,9 +25,13 @@ export function useSafeArea() {
             });
         };
 
-        viewport.onEvent("content_safe_area_changed", listener);
-        return () => viewport.offEvent("content_safe_area_changed", listener);
-    }, [viewport]);
+        // сразу обновляем
+        updateInsets();
+
+        // ✅ подписка на события SDK
+        viewport.on("change:contentSafeAreaInsets", updateInsets);
+        return () => viewport.off("change:contentSafeAreaInsets", updateInsets);
+    }, []);
 
     return insets;
 }

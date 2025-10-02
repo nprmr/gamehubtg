@@ -9,7 +9,7 @@ import PrimaryButton from "../components/PrimaryButton";
 import IconPrimaryButton from "../components/IconPrimaryButton";
 import bg1 from "../assets/bg1.webp";
 import { useCategories } from "../hooks/useCategories";
-import { getQuestionsByCategory } from "../api"; // ✅ используем API-слой
+import { getQuestionsByCategory } from "../api";
 import LockedCategorySheet from "../components/LockedCategorySheet";
 
 function NeverEver() {
@@ -21,25 +21,7 @@ function NeverEver() {
         phrases: [],
     });
 
-    const [safeTop, setSafeTop] = useState(0);
     const navigate = useNavigate();
-
-    // ✅ safe area через viewport API
-    useEffect(() => {
-        const tg = window.Telegram?.WebApp;
-        const viewport = tg?.viewport;
-
-        if (!viewport) return;
-
-        const updateInsets = () => {
-            setSafeTop(viewport.contentSafeAreaInsetTop?.() || 0);
-        };
-
-        updateInsets();
-
-        viewport.onEvent("content_safe_area_changed", updateInsets);
-        return () => viewport.offEvent("content_safe_area_changed", updateInsets);
-    }, []);
 
     const toggleCategory = (title) => {
         setSelectedCategories((prev) =>
@@ -114,11 +96,11 @@ function NeverEver() {
                 }}
             />
 
-            {/* Кнопка Settings (safeTop) */}
+            {/* Кнопка Settings с safe area */}
             <div
                 style={{
                     position: "fixed",
-                    top: safeTop + 16,
+                    top: "calc(var(--tg-viewport-content-safe-area-inset-top, 0px) + 16px)",
                     right: 16,
                     zIndex: 10,
                 }}
