@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useLayoutEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import "../theme.css";
@@ -19,18 +19,17 @@ function Home() {
     const GAP = 16;
     const navigate = useNavigate();
     const firstItemRef = useRef(null);
+    const headerRef = useRef(null);
+    const carouselBoxRef = useRef(null);
     const buttonRef = useRef(null);
-    const [buttonTop, setButtonTop] = useState(0);
+    const [yOffset, setYOffset] = useState(0);
 
+    // ------------------------ размеры карточки и вьюпорта ------------------------
     useEffect(() => {
         const measure = () => {
             if (firstItemRef.current) {
                 const w = firstItemRef.current.getBoundingClientRect().width;
                 if (w) setCardWidth(Math.round(w));
-            }
-            if (buttonRef.current) {
-                const rect = buttonRef.current.getBoundingClientRect();
-                setButtonTop(rect.top);
             }
             setViewportWidth(window.innerWidth);
         };
@@ -39,6 +38,7 @@ function Home() {
         return () => window.removeEventListener("resize", measure);
     }, []);
 
+    // ------------------------ загрузка игр --------------------------------------
     useEffect(() => {
         let alive = true;
         (async () => {
@@ -57,13 +57,14 @@ function Home() {
         };
     }, []);
 
+    // ------------------------ карусель: расчёт X --------------------------------
     const maxIndex = Math.max(0, games.length - 1);
     const clamp = (n) => Math.max(0, Math.min(maxIndex, n));
     const goTo = (i) => setActiveIndex(clamp(i));
     const step = cardWidth + GAP;
 
     const getXForIndex = (i) => {
-        if (i === 0) return 16; // только первая карточка имеет отступ слева 16px
+        if (i === 0) return 16;
         const centerOfCard = i * step + cardWidth / 2;
         const viewportCenter = viewportWidth / 2;
         return viewportCenter - centerOfCard;
@@ -71,6 +72,30 @@ function Home() {
 
     const minX = getXForIndex(maxIndex);
     const maxX = 16;
+
+    // ------------------------ точное вертикальное центрирование -----------------
+    const recomputeCentering = () => {
+        if (!headerRef.current || !carouselBoxRef.current || !buttonRef.current) return;
+
+        const headerRect = headerRef.current.getBoundingClientRect();
+        const carouselRect = carouselBoxRef.current.getBoundingClientRect();
+        const buttonRect = buttonRef.current.getBoundingClientRect();
+
+        const topBoundary = headerRect.bottom;
+        const bottomBoundary = buttonRect.top;
+        const targetCenterY = (topBoundary + bottomBoundary) / 2;
+        const carouselCenterY = carouselRect.top + carouselRect.height / 2;
+
+        const delta = Math.round(targetCenterY - carouselCenterY);
+        setYOffset(delta);
+    };
+
+    useLayoutEffect(() => {
+        recomputeCentering();
+        const onResize = () => recomputeCentering();
+        window.addEventListener("resize", onResize);
+        return () => window.removeEventListener("resize", onResize);
+    }, [games, viewportWidth, activeIndex]);
 
     if (loading) {
         return (
@@ -107,13 +132,9 @@ function Home() {
             {/* фон */}
             <AnimatePresence mode="wait">
                 {active?.bg && (
-                    <motion.img
+                    <img
                         key={activeIndex}
                         src={active.bg}
-                        initial={{ y: 50, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        exit={{ y: 100, opacity: 0 }}
-                        transition={{ duration: 0.35 }}
                         style={{
                             position: "absolute",
                             bottom: 0,
@@ -122,6 +143,7 @@ function Home() {
                             height: "auto",
                             zIndex: 0,
                         }}
+                        alt="background"
                     />
                 )}
             </AnimatePresence>
@@ -136,12 +158,12 @@ function Home() {
                     alignItems: "center",
                     width: "100%",
                     height: "100%",
+                    boxSizing: "border-box",
                     paddingTop:
                         "calc(max(var(--tg-content-safe-area-inset-top, 0px), var(--tg-safe-area-inset-top, 0px)) + 48px)",
-                    boxSizing: "border-box",
                 }}
             >
-                {/* верхняя панель */}
+                {/* верхняя панель с иконкой */}
                 <div
                     style={{
                         display: "flex",
@@ -156,9 +178,8 @@ function Home() {
                 </div>
 
                 {/* заголовок */}
-                <div style={{ textAlign: "center", marginBottom: 24 }}>
-                    <motion.h1
-                        layoutId="title"
+                <div ref={headerRef} style={{ textAlign: "center", marginBottom: 0 }}>
+                    <h1
                         style={{
                             fontFamily: "Gilroy, sans-serif",
                             fontSize: 32,
@@ -168,9 +189,8 @@ function Home() {
                         }}
                     >
                         Выбор игры
-                    </motion.h1>
-                    <motion.p
-                        layoutId="subtitle"
+                    </h1>
+                    <p
                         style={{
                             fontFamily: "Gilroy, sans-serif",
                             fontSize: 14,
@@ -181,64 +201,40 @@ function Home() {
                         }}
                     >
                         наши игры рассчитаны <br /> на компании от 2 до 24 человек
-                    </motion.p>
+                    </p>
                 </div>
 
-                {/* контейнер для центрирования карусели */}
+                {/* КАРУСЕЛЬ */}
                 <div
+                    ref={carouselBoxRef}
                     style={{
-                        flex: 1,
+                        transform: `translateY(${yOffset}px)`,
                         display: "flex",
                         alignItems: "center",
-                        justifyContent: "center",
+                        justifyContent: "flex-start",
                         width: "100%",
+                        overflow: "hidden",
+                        touchAction: "pan-y",
+                        marginTop: 16,
+                        marginBottom: 16,
                     }}
                 >
-                    <motion.div
-                        style={{ display: "flex", gap: `${GAP}px` }}
-                        drag="x"
-                        dragConstraints={{ left: minX, right: maxX }}
-                        dragElastic={0.05}
-                        dragMomentum={false}
-                        animate={{ x: getXForIndex(activeIndex) }}
-                        transition={{ type: "spring", stiffness: 250, damping: 35 }}
-                        onDragEnd={(_, info) => {
-                            const { offset, velocity } = info;
-                            const dx = offset.x;
-                            const vx = velocity.x;
-                            const swipePower = Math.abs(dx) * 0.5 + Math.abs(vx) * 20;
-                            const passed = Math.abs(dx) > step * 0.25 || swipePower > 300;
-                            if (passed) {
-                                if (dx < 0) goTo(activeIndex + 1);
-                                else goTo(activeIndex - 1);
-                            } else {
-                                goTo(activeIndex);
-                            }
-                        }}
+                    <div
+                        style={{ display: "flex", gap: `${GAP}px`, transform: `translateX(${getXForIndex(activeIndex)}px)` }}
                     >
                         {games.map((g, i) => (
                             <div key={g.id} ref={i === 0 ? firstItemRef : undefined} style={{ flex: "0 0 auto" }}>
-                                {i === 0 ? (
-                                    <motion.div layoutId="gamecard" transition={{ duration: 0.6, ease: "easeInOut" }}>
-                                        <GameCard
-                                            label={g.label}
-                                            title={g.title}
-                                            subtitle={g.subtitle}
-                                            players={g.players}
-                                            categories={g.categories}
-                                        />
-                                    </motion.div>
-                                ) : (
-                                    <GameCard
-                                        label={g.label}
-                                        title={g.title}
-                                        subtitle={g.subtitle}
-                                        riveAnimation={g.riveAnimation}
-                                    />
-                                )}
+                                <GameCard
+                                    label={g.label}
+                                    title={g.title}
+                                    subtitle={g.subtitle}
+                                    players={g.players}
+                                    categories={g.categories}
+                                    riveAnimation={g.riveAnimation}
+                                />
                             </div>
                         ))}
-                    </motion.div>
+                    </div>
                 </div>
             </div>
 
@@ -246,11 +242,11 @@ function Home() {
             <div
                 ref={buttonRef}
                 style={{
-                    position: "absolute",
-                    bottom:
-                        "calc(max(var(--tg-content-safe-area-inset-bottom, 0px), var(--tg-safe-area-inset-bottom, 0px)) + 24px)",
+                    position: "fixed",
                     left: 16,
                     right: 16,
+                    bottom:
+                        "calc(max(var(--tg-content-safe-area-inset-bottom, 0px), var(--tg-safe-area-inset-bottom, 0px)) + 24px)",
                     zIndex: 10,
                 }}
             >
