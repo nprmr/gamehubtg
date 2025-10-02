@@ -98,14 +98,14 @@ function Home() {
         <div
             style={{
                 width: "100vw",
-                height: "var(--tg-viewport-stable-height, 100dvh)", // ✅ правильная высота
+                height: "var(--tg-viewport-stable-height)", // ✅ правильная высота
                 backgroundColor: "var(--surface-main)",
                 position: "relative",
                 overflow: "hidden",
                 boxSizing: "border-box",
                 display: "flex",
                 flexDirection: "column",
-                paddingTop: "env(safe-area-inset-top, 116px)",      // ✅ safe-area от CSS
+                paddingTop: "env(safe-area-inset-top, 16px)",      // ✅ safe-area от CSS
                 paddingBottom: "env(safe-area-inset-bottom, 0px)",
                 paddingLeft: "env(safe-area-inset-left, 0px)",
                 paddingRight: "env(safe-area-inset-right, 0px)",
