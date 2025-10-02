@@ -1,0 +1,39 @@
+name: Build and Deploy to FTP
+
+on:
+  push:
+    branches:
+      - wothout-safe-area   # или ваша ветка
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Клонируем код
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # 2. Ставим Node.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22
+
+      # 3. Ставим зависимости
+      - name: Install dependencies
+        run: npm install
+
+      # 4. Собираем проект
+      - name: Build project
+        run: npm run build
+
+      # 5. Деплой на FTP
+      - name: Deploy to FTP
+        uses: SamKirkland/FTP-Deploy-Action@4.3.2
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./dist/
+          server-dir: /www/hub-game.ru/
