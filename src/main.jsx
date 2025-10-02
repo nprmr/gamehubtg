@@ -8,3 +8,11 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <App />
     </React.StrictMode>
 );
+import WebApp from '@twa-dev/sdk';
+
+WebApp.ready();  // важно вызвать в начале
+
+// Пробуем fullscreen
+if (WebApp.isExpanded) {
+    WebApp.requestFullscreen();
+}
