@@ -20,11 +20,20 @@ function Home() {
     const navigate = useNavigate();
     const firstItemRef = useRef(null);
 
+    // Новые refs для измерения высоты фиксированной кнопки
+    const buttonRef = useRef(null);
+    const [buttonHeight, setButtonHeight] = useState(0);
+
     useEffect(() => {
         const measure = () => {
             if (firstItemRef.current) {
                 const w = firstItemRef.current.getBoundingClientRect().width;
                 if (w) setCardWidth(Math.round(w));
+            }
+            // измеряем высоту фиксированного контейнера кнопки
+            if (buttonRef.current) {
+                const rect = buttonRef.current.getBoundingClientRect();
+                setButtonHeight(Math.round(rect.height));
             }
             setViewportWidth(window.innerWidth);
         };
@@ -187,17 +196,18 @@ function Home() {
                     </motion.p>
                 </div>
 
-                {/* свайп-карточки */}
+                {/* свайп-карточки — центрируем авто-отступами между заголовком и спейсером */}
                 <div
                     style={{
-                        flex: 1,
+                        flex: "0 0 auto",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "flex-start",
                         width: "100%",
                         overflow: "hidden",
                         touchAction: "pan-y",
-                        marginBottom: 24,
+                        marginTop: "auto",
+                        marginBottom: "auto",
                     }}
                 >
                     <motion.div
@@ -246,15 +256,26 @@ function Home() {
                         ))}
                     </motion.div>
                 </div>
+
+                {/* СПЕЙСЕР: занимает место под фиксированную кнопку, чтобы карусель была равноудалена */}
+                <div
+                    aria-hidden
+                    style={{
+                        width: "100%",
+                        height: `${buttonHeight || 0}px`,
+                        flex: "0 0 auto",
+                    }}
+                />
             </div>
 
             {/* фиксированная нижняя кнопка */}
             <div
+                ref={buttonRef}
                 style={{
                     position: "absolute",
-                    // ✅ максимум из content-safe и системного safe, затем +24px
+                    // ✅ максимум из content-safe и системного safe, затем +24px (закрывающая скобка была потеряна)
                     bottom:
-                        "calc(max(var(--tg-content-safe-area-inset-bottom, 0px), var(--tg-safe-area-inset-bottom, 0px))",
+                        "calc(max(var(--tg-content-safe-area-inset-bottom, 0px), var(--tg-safe-area-inset-bottom, 0px)) + 24px)",
                     left: 16,
                     right: 16,
                     zIndex: 10,
