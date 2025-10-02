@@ -9,7 +9,6 @@ import FaqIcon from "../icons/faq.svg?react";
 import ArrowBackIcon from "../icons/arrowback.svg?react";
 import NoWordsCard from "../components/NoWordsCard";
 import { getQuestionsByCategories } from "../api";
-import { useSafeArea } from "../hooks/useSafeArea";
 
 function GameScreen() {
     const location = useLocation();
@@ -22,8 +21,6 @@ function GameScreen() {
     const [showSheet, setShowSheet] = useState(false);
 
     const dir = currentIndex % 2 === 0 ? 1 : -1;
-
-    const { safe, content } = useSafeArea();
 
     useEffect(() => {
         if (categories.length > 0) {
@@ -53,7 +50,18 @@ function GameScreen() {
 
     if (loading) {
         return (
-            <div style={centerStyle}>
+            <div
+                style={{
+                    width: "100vw",
+                    height: "100vh",
+                    backgroundColor: "var(--surface-main)",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    color: "var(--icotex-white)",
+                    fontFamily: "Gilroy, sans-serif",
+                }}
+            >
                 Загружаем вопросы...
             </div>
         );
@@ -64,7 +72,18 @@ function GameScreen() {
 
     if (currentIndex >= questions.length) {
         return (
-            <div style={centerStyle}>
+            <div
+                style={{
+                    width: "100vw",
+                    height: "100vh",
+                    backgroundColor: "var(--surface-main)",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    padding: "0 16px",
+                    boxSizing: "border-box",
+                }}
+            >
                 <NoWordsCard onChangeCategory={() => navigate("/neverever")} />
             </div>
         );
@@ -80,31 +99,28 @@ function GameScreen() {
                 backgroundColor: "var(--surface-main)",
                 position: "relative",
                 overflow: "hidden",
-                paddingLeft: content.left,
-                paddingRight: content.right,
+                padding: "0 16px",
                 boxSizing: "border-box",
                 display: "flex",
                 flexDirection: "column",
             }}
         >
-            {/* Левая иконка */}
+            {/* Иконки с safe area через CSS-переменные */}
             <div
                 style={{
                     position: "absolute",
-                    top: safe.top + 16,
-                    left: content.left + 16,
+                    top: "calc(var(--tg-viewport-content-safe-area-inset-top, 0px) + 16px)",
+                    left: 16,
                     zIndex: 10,
                 }}
             >
                 <IconButton icon={ArrowBackIcon} onClick={() => setShowSheet(true)} />
             </div>
-
-            {/* Правая иконка */}
             <div
                 style={{
                     position: "absolute",
-                    top: safe.top + 16,
-                    right: content.right + 16,
+                    top: "calc(var(--tg-viewport-content-safe-area-inset-top, 0px) + 16px)",
+                    right: 16,
                     zIndex: 10,
                 }}
             >
@@ -112,7 +128,7 @@ function GameScreen() {
             </div>
 
             {/* Заголовки */}
-            <div style={{ paddingTop: safe.top + 120, textAlign: "center" }}>
+            <div style={{ paddingTop: 120, textAlign: "center" }}>
                 <motion.h1
                     layoutId="title"
                     style={{
@@ -131,9 +147,9 @@ function GameScreen() {
                     <AnimatePresence mode="wait" initial={false}>
                         <motion.p
                             key={currentIndex}
-                            initial={{ y: 22, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            exit={{ y: -22, opacity: 0 }}
+                            initial={{ y: 22 }}
+                            animate={{ y: 0 }}
+                            exit={{ y: 22 }}
                             transition={{ duration: 0.35, ease: "easeOut" }}
                             style={{
                                 fontFamily: "Gilroy, sans-serif",
@@ -221,14 +237,8 @@ function GameScreen() {
                 </AnimatePresence>
             </div>
 
-            {/* Нижняя кнопка */}
-            <div
-                style={{
-                    marginTop: "auto",
-                    marginBottom: safe.bottom + 24,
-                    width: "100%",
-                }}
-            >
+            {/* Кнопка */}
+            <div style={{ marginTop: "auto", marginBottom: 24, width: "100%" }}>
                 <PrimaryButton textColor="var(--icotex-white)" onClick={nextQuestion}>
                     Дальше
                 </PrimaryButton>
@@ -250,14 +260,10 @@ function GameScreen() {
 const centerStyle = {
     width: "100vw",
     height: "100vh",
-    backgroundColor: "var(--surface-main)",
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
     color: "var(--icotex-white)",
-    fontFamily: "Gilroy, sans-serif",
-    padding: 16,
-    boxSizing: "border-box",
 };
 
 export default GameScreen;

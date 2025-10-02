@@ -4,35 +4,40 @@ import { viewport } from "@telegram-apps/sdk";
 
 export function useSafeArea() {
     const getInsets = () => ({
-        top: viewport?.safeAreaInsetTop?.() || 0,
-        bottom: viewport?.safeAreaInsetBottom?.() || 0,
-        left: viewport?.safeAreaInsetLeft?.() || 0,
-        right: viewport?.safeAreaInsetRight?.() || 0,
+        safe: {
+            top: viewport?.safeAreaInsetTop() || 0,
+            bottom: viewport?.safeAreaInsetBottom() || 0,
+            left: viewport?.safeAreaInsetLeft() || 0,
+            right: viewport?.safeAreaInsetRight() || 0,
+        },
+        content: {
+            top: viewport?.contentSafeAreaInsetTop() || 0,
+            bottom: viewport?.contentSafeAreaInsetBottom() || 0,
+            left: viewport?.contentSafeAreaInsetLeft() || 0,
+            right: viewport?.contentSafeAreaInsetRight() || 0,
+        },
     });
 
     const [insets, setInsets] = useState(getInsets);
-    const [isTelegram, setIsTelegram] = useState(false);
 
     useEffect(() => {
-        if (!viewport?.isSupported) {
-            setIsTelegram(false);
-            return;
-        }
+        if (!viewport) return;
 
-        setIsTelegram(true);
-
-        try {
-            viewport.bindCssVars();
-        } catch (e) {
-            console.warn("bindCssVars недоступен вне Mini App", e);
-        }
+        // проброс CSS-переменных
+        viewport.bindCssVars();
 
         const updateInsets = () => setInsets(getInsets());
+
         updateInsets();
 
         viewport.on("change:safeAreaInsets", updateInsets);
-        return () => viewport.off("change:safeAreaInsets", updateInsets);
+        viewport.on("change:contentSafeAreaInsets", updateInsets);
+
+        return () => {
+            viewport.off("change:safeAreaInsets", updateInsets);
+            viewport.off("change:contentSafeAreaInsets", updateInsets);
+        };
     }, []);
 
-    return { ...insets, isTelegram };
+    return insets;
 }
