@@ -46,7 +46,9 @@ function Home() {
                 if (alive) setLoading(false);
             }
         })();
-        return () => { alive = false; };
+        return () => {
+            alive = false;
+        };
     }, []);
 
     const maxIndex = Math.max(0, games.length - 1);
@@ -90,12 +92,12 @@ function Home() {
             style={{
                 width: "100vw",
                 height: "100vh",
-                backgroundColor: "var(--surface-main)", // фон всегда твой
+                backgroundColor: "var(--surface-main)",
                 position: "relative",
                 overflow: "hidden",
             }}
         >
-            {/* фоновые картинки */}
+            {/* фон */}
             <AnimatePresence mode="wait">
                 {active?.bg && (
                     <motion.img
@@ -117,22 +119,7 @@ function Home() {
                 )}
             </AnimatePresence>
 
-            {/* верхняя панель с иконкой */}
-            <div
-                style={{
-                    position: "relative",
-                    zIndex: 2,
-                    display: "flex",
-                    justifyContent: "flex-end",
-                    paddingTop: "calc(var(--tg-content-safe-area-inset-top) + 32px)", // ниже панели TG
-                    paddingRight: "calc(var(--tg-safe-area-inset-right) + 16px)",
-                    marginBottom: 16,
-                }}
-            >
-                <IconButton icon={SettingsIcon} />
-            </div>
-
-            {/* основной контент */}
+            {/* основной контейнер */}
             <div
                 style={{
                     position: "relative",
@@ -142,12 +129,25 @@ function Home() {
                     justifyContent: "space-between",
                     alignItems: "center",
                     width: "100%",
-                    height: "calc(100% - var(--tg-content-safe-area-inset-top))",
-                    paddingTop: "calc(var(--tg-content-safe-area-inset-top) + 16px)",
-                    paddingBottom: "calc(var(--tg-content-safe-area-inset-bottom) + 64px)", // выше системной панели
+                    height: "100%", // ✅ не режем высоту
+                    paddingTop: "calc(var(--tg-content-safe-area-inset-top) + 64px)", // 🔽 иконка ещё ниже
+                    paddingBottom: "calc(var(--tg-content-safe-area-inset-bottom) + 96px)", // 🔼 кнопка выше
                     boxSizing: "border-box",
                 }}
             >
+                {/* верхняя панель с иконкой */}
+                <div
+                    style={{
+                        display: "flex",
+                        justifyContent: "flex-end",
+                        width: "100%",
+                        paddingRight: "calc(var(--tg-safe-area-inset-right) + 16px)",
+                        marginBottom: 24,
+                    }}
+                >
+                    <IconButton icon={SettingsIcon} />
+                </div>
+
                 {/* заголовок */}
                 <div style={{ textAlign: "center", marginBottom: 24 }}>
                     <motion.h1
@@ -241,7 +241,7 @@ function Home() {
                 </div>
 
                 {/* кнопка */}
-                <div style={{ width: "100%", padding: "0 16px", marginBottom: "24px" }}>
+                <div style={{ width: "100%", padding: "0 16px" }}>
                     {active?.id !== "neverever" ? (
                         <PrimaryButton textColor="var(--icotex-white-alfa)" disabled withMargin>
                             Игра в разработке
