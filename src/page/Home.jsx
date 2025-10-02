@@ -107,7 +107,7 @@ function Home() {
                 )}
             </AnimatePresence>
 
-            <div style={{ position: "fixed", top: 108, right: 16, zIndex: 10 }}>
+            <div style={{ position: "fixed", top: 100, right: 16, zIndex: 10 }}>
                 <IconButton icon={SettingsIcon} />
             </div>
 
