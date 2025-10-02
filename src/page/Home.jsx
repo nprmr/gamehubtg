@@ -92,7 +92,7 @@ function Home() {
     const active = games[activeIndex];
 
     return (
-        <div style={{ width: "100vw", height: "100vh", marginTop: "var(--tg-content-safe-area-inset-top)", backgroundColor: "var(--surface-main)", position: "relative", overflow: "hidden" }}>
+        <div style={{ width: "100vw", height: "100vh", paddingTop: "calc(var(--tg-content-safe-area-inset-top) + 16px)", backgroundColor: "var(--surface-main)", position: "relative", overflow: "hidden" }}>
             <AnimatePresence mode="wait">
                 {active?.bg && (
                     <motion.img
