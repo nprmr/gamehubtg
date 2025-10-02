@@ -107,11 +107,11 @@ function Home() {
                 )}
             </AnimatePresence>
 
-            <div style={{ position: "fixed", top: 16, right: 16, zIndex: 10 }}>
+            <div style={{ position: "fixed", top: 48, right: 16, zIndex: 10 }}>
                 <IconButton icon={SettingsIcon} />
             </div>
 
-            <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "space-between", width: "100%", height: "100%", paddingTop: 120, paddingBottom: 24, boxSizing: "border-box" }}>
+            <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "space-between", width: "100%", height: "100%", paddingTop: 160, paddingBottom: 24, boxSizing: "border-box" }}>
                 <div style={{ textAlign: "center" }}>
                     <motion.h1 layoutId="title" style={{ fontFamily: "Gilroy, sans-serif", fontSize: 32, fontWeight: 700, color: "var(--icotex-white)", marginBottom: 8 }}>
                         Выбор игры
