@@ -105,7 +105,7 @@ function Home() {
                 boxSizing: "border-box",
                 display: "flex",
                 flexDirection: "column",
-                paddingTop: "env(safe-area-inset-top, 16px)",      // ✅ safe-area от CSS
+                paddingTop: "env(safe-area-inset-top, 0px)",      // ✅ safe-area от CSS
                 paddingBottom: "env(safe-area-inset-bottom, 0px)",
                 paddingLeft: "env(safe-area-inset-left, 0px)",
                 paddingRight: "env(safe-area-inset-right, 0px)",
@@ -152,7 +152,7 @@ function Home() {
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
-                    justifyContent: "space-between",
+                    justifyContent: "space-around",
                     width: "100%",
                     boxSizing: "border-box",
                     padding: "24px 0",
