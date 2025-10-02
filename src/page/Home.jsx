@@ -21,7 +21,7 @@ function Home() {
     const navigate = useNavigate();
     const firstItemRef = useRef(null);
 
-    const { safe, content } = useSafeArea();
+    const { top, bottom } = useSafeArea();
 
     // ресайз и замер ширины карточек
     useEffect(() => {
@@ -126,12 +126,12 @@ function Home() {
                 )}
             </AnimatePresence>
 
-            {/* Кнопка с учётом safe area */}
+            {/* Кнопка Settings с учётом safe area */}
             <div
                 style={{
                     position: "fixed",
-                    top: safe.top + 16,
-                    right: content.right + 16,
+                    top: top + 16,
+                    right: 16,
                     zIndex: 10,
                 }}
             >
@@ -149,8 +149,8 @@ function Home() {
                     justifyContent: "space-between",
                     width: "100%",
                     height: "100%",
-                    paddingTop: safe.top + 120,
-                    paddingBottom: safe.bottom + 24,
+                    paddingTop: top + 120,
+                    paddingBottom: bottom + 24,
                     boxSizing: "border-box",
                 }}
             >
