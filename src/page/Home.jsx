@@ -55,12 +55,6 @@ function Home() {
     const step = cardWidth + GAP;
 
     const getXForIndex = (i) => {
-        if (i === 0) return 16;
-        if (i === maxIndex) {
-            const centerOfCard = i * step + cardWidth / 2;
-            const viewportCenter = viewportWidth / 2;
-            return viewportCenter - centerOfCard;
-        }
         const centerOfCard = i * step + cardWidth / 2;
         const viewportCenter = viewportWidth / 2;
         return viewportCenter - centerOfCard;
@@ -92,7 +86,16 @@ function Home() {
     const active = games[activeIndex];
 
     return (
-        <div style={{ width: "100vw", height: "100vh", backgroundColor: "var(--surface-main)", position: "relative", overflow: "hidden" }}>
+        <div
+            style={{
+                width: "100vw",
+                height: "100vh",
+                backgroundColor: "var(--surface-main)", // фон всегда твой
+                position: "relative",
+                overflow: "hidden",
+            }}
+        >
+            {/* фоновые картинки */}
             <AnimatePresence mode="wait">
                 {active?.bg && (
                     <motion.img
@@ -102,26 +105,80 @@ function Home() {
                         animate={{ y: 0, opacity: 1 }}
                         exit={{ y: 100, opacity: 0 }}
                         transition={{ duration: 0.35 }}
-                        style={{ position: "absolute", bottom: 0, left: 0, width: "100%", height: "auto", zIndex: 0 }}
+                        style={{
+                            position: "absolute",
+                            bottom: 0,
+                            left: 0,
+                            width: "100%",
+                            height: "auto",
+                            zIndex: 0,
+                        }}
                     />
                 )}
             </AnimatePresence>
 
-            <div style={{ position: "fixed", paddingTop: "calc(var(--tg-safe-area-inset-top) + 16px)", right: 16, zIndex: 10 }}>
-                <IconButton icon={SettingsIcon} />
-            </div>
+            {/* внутренний контейнер с safe-area */}
+            <div
+                style={{
+                    position: "relative",
+                    zIndex: 1,
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                    width: "100%",
+                    height: "100%",
+                    paddingTop: "calc(var(--tg-content-safe-area-inset-top) + 16px)",
+                    paddingBottom: "calc(var(--tg-content-safe-area-inset-bottom) + 16px)",
+                    boxSizing: "border-box",
+                }}
+            >
+                {/* верхняя панель */}
+                <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 24 }}>
+                    <IconButton icon={SettingsIcon} />
+                </div>
 
-            <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "space-between", width: "100%", height: "100%", paddingTop: 200, paddingBottom: 24, boxSizing: "border-box" }}>
-                <div style={{ textAlign: "center" }}>
-                    <motion.h1 layoutId="title" style={{ fontFamily: "Gilroy, sans-serif", fontSize: 32, fontWeight: 700, color: "var(--icotex-white)", marginBottom: 8 }}>
+                {/* заголовок */}
+                <div style={{ textAlign: "center", marginBottom: 24 }}>
+                    <motion.h1
+                        layoutId="title"
+                        style={{
+                            fontFamily: "Gilroy, sans-serif",
+                            fontSize: 32,
+                            fontWeight: 700,
+                            color: "var(--icotex-white)",
+                            marginBottom: 8,
+                        }}
+                    >
                         Выбор игры
                     </motion.h1>
-                    <motion.p layoutId="subtitle" style={{ fontFamily: "Gilroy, sans-serif", fontSize: 14, fontWeight: 400, color: "var(--icotex-low)", margin: 0, lineHeight: 1.4 }}>
+                    <motion.p
+                        layoutId="subtitle"
+                        style={{
+                            fontFamily: "Gilroy, sans-serif",
+                            fontSize: 14,
+                            fontWeight: 400,
+                            color: "var(--icotex-low)",
+                            margin: 0,
+                            lineHeight: 1.4,
+                        }}
+                    >
                         наши игры рассчитаны <br /> на компании от 2 до 24 человек
                     </motion.p>
                 </div>
 
-                <div style={{ position: "relative", width: "100%", boxSizing: "border-box", overflow: "hidden", touchAction: "pan-y" }}>
+                {/* свайп-карточки */}
+                <div
+                    style={{
+                        flex: 1,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        width: "100%",
+                        overflow: "hidden",
+                        touchAction: "pan-y",
+                        marginBottom: 24,
+                    }}
+                >
                     <motion.div
                         style={{ display: "flex", gap: `${GAP}px` }}
                         drag="x"
@@ -147,7 +204,10 @@ function Home() {
                         {games.map((g, i) => (
                             <div key={g.id} ref={i === 0 ? firstItemRef : undefined} style={{ flex: "0 0 auto" }}>
                                 {i === 0 ? (
-                                    <motion.div layoutId="gamecard" transition={{ duration: 0.6, ease: "easeInOut" }}>
+                                    <motion.div
+                                        layoutId="gamecard"
+                                        transition={{ duration: 0.6, ease: "easeInOut" }}
+                                    >
                                         <GameCard
                                             label={g.label}
                                             title={g.title}
@@ -169,13 +229,18 @@ function Home() {
                     </motion.div>
                 </div>
 
-                <div style={{ width: "-webkit-fill-available", padding: "0 16px" }}>
+                {/* кнопка */}
+                <div style={{ width: "100%", padding: "0 16px" }}>
                     {active?.id !== "neverever" ? (
                         <PrimaryButton textColor="var(--icotex-white-alfa)" disabled withMargin>
                             Игра в разработке
                         </PrimaryButton>
                     ) : (
-                        <PrimaryButton textColor="var(--icotex-white)" onClick={() => navigate("/neverever")} withMargin>
+                        <PrimaryButton
+                            textColor="var(--icotex-white)"
+                            onClick={() => navigate("/neverever")}
+                            withMargin
+                        >
                             Начать игру
                         </PrimaryButton>
                     )}
