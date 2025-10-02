@@ -133,12 +133,11 @@ function Home() {
                     zIndex: 1,
                     display: "flex",
                     flexDirection: "column",
-                    justifyContent: "space-between",
+                    justifyContent: "flex-start",
                     alignItems: "center",
                     width: "100%",
                     height: "100%",
-                    paddingTop: "calc(var(--tg-content-safe-area-inset-top) + 56px)", // верхняя кнопка
-                    paddingBottom: "calc(var(--tg-content-safe-area-inset-bottom) + 66px)", // базовый safe-area
+                    paddingTop: "calc(var(--tg-content-safe-area-inset-top) + 56px)", // верхняя иконка
                     boxSizing: "border-box",
                 }}
             >
@@ -190,7 +189,7 @@ function Home() {
                         flex: 1,
                         display: "flex",
                         alignItems: "center",
-                        justifyContent: "flex-start", // начинаем от левой стороны
+                        justifyContent: "flex-start",
                         width: "100%",
                         overflow: "hidden",
                         touchAction: "pan-y",
@@ -246,23 +245,31 @@ function Home() {
                         ))}
                     </motion.div>
                 </div>
+            </div>
 
-                {/* кнопка */}
-                <div style={{ width: "100%", padding: "0 16px", marginBottom: "72px" }}>
-                    {active?.id !== "neverever" ? (
-                        <PrimaryButton textColor="var(--icotex-white-alfa)" disabled withMargin>
-                            Игра в разработке
-                        </PrimaryButton>
-                    ) : (
-                        <PrimaryButton
-                            textColor="var(--icotex-white)"
-                            onClick={() => navigate("/neverever")}
-                            withMargin
-                        >
-                            Начать игру
-                        </PrimaryButton>
-                    )}
-                </div>
+            {/* 🔥 фиксированная нижняя кнопка */}
+            <div
+                style={{
+                    position: "absolute",
+                    bottom: "calc(var(--tg-safe-area-inset-bottom) + 24px)", // 24px выше края
+                    left: 16,
+                    right: 16,
+                    zIndex: 10,
+                }}
+            >
+                {active?.id !== "neverever" ? (
+                    <PrimaryButton textColor="var(--icotex-white-alfa)" disabled withMargin>
+                        Игра в разработке
+                    </PrimaryButton>
+                ) : (
+                    <PrimaryButton
+                        textColor="var(--icotex-white)"
+                        onClick={() => navigate("/neverever")}
+                        withMargin
+                    >
+                        Начать игру
+                    </PrimaryButton>
+                )}
             </div>
         </div>
     );
