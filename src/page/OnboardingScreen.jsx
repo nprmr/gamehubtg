@@ -4,6 +4,7 @@ import { useRive, useStateMachineInput } from "@rive-app/react-canvas";
 import PrimaryButton from "../components/PrimaryButton.jsx";
 import IconPrimaryButton from "../components/IconPrimaryButton.jsx";
 import OnboardingStep from "../components/OnboardingStep.jsx";
+import onboardingBG from "../assets/onboardingBG.png";
 
 function OnboardingScreen() {
     const navigate = useNavigate();
@@ -44,7 +45,7 @@ function OnboardingScreen() {
         >
             {/* Фон */}
             <img
-                src="src/assets/onboardingBG.png"
+                src={onboardingBG}
                 alt="background"
                 style={{
                     position: "absolute",
