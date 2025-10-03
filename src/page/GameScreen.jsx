@@ -104,13 +104,30 @@ function GameScreen() {
                 flexDirection: "column",
             }}
         >
-            {/* Иконки */}
-            <div style={{ position: "absolute", top: 16, left: 16, zIndex: 10 }}>
+            {/* Кнопка "Назад" слева */}
+            <div
+                style={{
+                    position: "absolute",
+                    top: "calc(max(var(--tg-content-safe-area-inset-top, 0px), var(--tg-safe-area-inset-top, 0px)) + 48px)",
+                    left: "16px",
+                    zIndex: 10,
+                }}
+            >
                 <IconButton icon={ArrowBackIcon} onClick={() => setShowSheet(true)} />
             </div>
-            <div style={{ position: "absolute", top: 16, right: 16, zIndex: 10 }}>
+
+            {/* Кнопка FAQ справа */}
+            <div
+                style={{
+                    position: "absolute",
+                    top: "calc(max(var(--tg-content-safe-area-inset-top, 0px), var(--tg-safe-area-inset-top, 0px)) + 48px)",
+                    right: "16px",
+                    zIndex: 10,
+                }}
+            >
                 <IconButton icon={FaqIcon} />
             </div>
+
 
             {/* Заголовки */}
             <div style={{ paddingTop: 120, textAlign: "center" }}>
