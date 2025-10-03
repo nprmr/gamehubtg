@@ -1,14 +1,13 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, useMotionValue, useTransform, useAnimation } from "framer-motion";
 import IconButton from "../components/IconButton";
 import PrimaryButton from "../components/PrimaryButton";
-import CategoryRive from "../components/CategoryRive";
 import BottomSheet from "../components/BottomSheet";
+import CategoryRive from "../components/CategoryRive"; // обновлённый вариант на canvas API
 import FaqIcon from "../icons/faq.svg?react";
 import ArrowBackIcon from "../icons/arrowback.svg?react";
-import NoWordsCard from "../components/NoWordsCard";
-import { getQuestionsByCategories } from "../api"; // ✅ используем API слой
+import { getQuestionsByCategories } from "../api";
 
 function GameScreen() {
     const location = useLocation();
@@ -20,14 +19,30 @@ function GameScreen() {
     const [loading, setLoading] = useState(true);
     const [showSheet, setShowSheet] = useState(false);
 
-    const dir = currentIndex % 2 === 0 ? 1 : -1;
+    // Призраки (улетающие карты)
+    const [leavingCards, setLeavingCards] = useState([]);
+
+    // Анти-гонка при спаме
+    const [isCooldown, setIsCooldown] = useState(false);
+    const COOLDOWN_MS = 120;
+
+    // Параметры свайпа
+    const SWIPE_GOAL = 220;
+    const THRESHOLD_OFFSET = 140;
+    const THRESHOLD_VELOCITY = 500;
+
+    // Motion только для ACTIVE
+    const x = useMotionValue(0);
+    const activeRotate = useTransform(x, [-SWIPE_GOAL, 0], [-18, 0], { clamp: true });
+    const controls = useAnimation();
 
     useEffect(() => {
         if (categories.length > 0) {
             (async () => {
                 try {
                     const data = await getQuestionsByCategories(categories);
-                    const shuffled = [...data].sort(() => Math.random() - 0.5);
+                    const withIds = data.map((q, i) => ({ id: q.id ?? i, ...q }));
+                    const shuffled = [...withIds].sort(() => Math.random() - 0.5);
                     setQuestions(shuffled);
                 } catch (err) {
                     console.error("Ошибка загрузки вопросов:", err);
@@ -40,245 +55,169 @@ function GameScreen() {
         }
     }, [categories]);
 
-    const nextQuestion = () => {
-        if (currentIndex < questions.length - 1) {
-            setCurrentIndex((prev) => prev + 1);
+    const rotateFromX = (val) => {
+        const clamped = Math.max(-SWIPE_GOAL, Math.min(0, val || 0));
+        return (clamped / SWIPE_GOAL) * 18;
+    };
+
+    const screenWidth = useMemo(
+        () => (typeof window !== "undefined" ? window.innerWidth : 400),
+        []
+    );
+
+    const total = questions.length;
+    const currentQuestion = questions[currentIndex];
+    const nextQuestion = total ? questions[(currentIndex + 1) % total] : undefined;
+
+    const spawnGhostAndAdvance = (startX = 0) => {
+        if (isCooldown || !currentQuestion) return;
+
+        setIsCooldown(true);
+
+        // Добавляем верхнюю карту как призрак (улетит влево)
+        setLeavingCards((prev) => [
+            ...prev,
+            {
+                id: `${currentQuestion.id}-${Date.now()}`,
+                qid: currentQuestion.id,
+                text: currentQuestion.text,
+                riveFile: currentQuestion.riveFile,
+                stateMachine: currentQuestion.stateMachine,
+                startX,
+                startRotate: rotateFromX(startX),
+                toX: -screenWidth - 120,
+            },
+        ]);
+
+        // СБРОС перед переключением, чтобы новая активная не «прилетала слева»
+        controls.stop();
+        x.set(0);
+        controls.set({ x: 0, rotate: 0, scale: 1, opacity: 1 });
+
+        // Переключаем индекс
+        setCurrentIndex((prev) => (prev + 1) % total);
+
+        // Короткий кулдаун от гонок
+        setTimeout(() => setIsCooldown(false), COOLDOWN_MS);
+    };
+
+    const onActiveDragEnd = (_e, { offset, velocity }) => {
+        if (isCooldown) return;
+        if (offset.x < -THRESHOLD_OFFSET || velocity.x < -THRESHOLD_VELOCITY) {
+            spawnGhostAndAdvance(x.get());
         } else {
-            setCurrentIndex(questions.length);
+            controls.start({
+                x: 0,
+                rotate: 0,
+                scale: 1,
+                opacity: 1,
+                transition: { type: "spring", stiffness: 220, damping: 22 },
+            });
         }
     };
 
-    if (loading) {
-        return (
-            <div
-                style={{
-                    width: "100vw",
-                    height: "100vh",
-                    backgroundColor: "var(--surface-main)",
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    color: "var(--icotex-white)",
-                    fontFamily: "Gilroy, sans-serif",
-                }}
-            >
-                Загружаем вопросы...
-            </div>
-        );
-    }
-    if (questions.length === 0)
-        return <div style={centerStyle}>Нет вопросов для выбранных категорий</div>;
+    const onNextClick = () => {
+        if (isCooldown) return;
+        spawnGhostAndAdvance(0);
+    };
 
-    if (currentIndex >= questions.length) {
-        return (
-            <div
-                style={{
-                    width: "100vw",
-                    height: "100vh",
-                    backgroundColor: "var(--surface-main)",
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    padding: "0 16px",
-                    boxSizing: "border-box",
-                }}
-            >
-                <NoWordsCard onChangeCategory={() => navigate("/neverever")} />
-            </div>
-        );
-    }
-
-    const currentQuestion = questions[currentIndex];
+    if (loading) return <div style={centerStyle}>Загружаем вопросы...</div>;
+    if (!total) return <div style={centerStyle}>Нет вопросов для выбранных категорий</div>;
 
     return (
-        <div
-            style={{
-                width: "100vw",
-                height: "100vh",
-                backgroundColor: "var(--surface-main)",
-                position: "relative",
-                overflow: "hidden",
-                padding: "0 16px",
-                boxSizing: "border-box",
-                display: "flex",
-                flexDirection: "column",
-            }}
-        >
-            {/* Кнопка "Назад" слева */}
-            <div
-                style={{
-                    position: "absolute",
-                    top: "calc(max(var(--tg-content-safe-area-inset-top, 0px), var(--tg-safe-area-inset-top, 0px)) + 48px)",
-                    left: "16px",
-                    zIndex: 10,
-                }}
-            >
+        <div style={wrapperStyle}>
+            {/* Назад */}
+            <div style={backIconStyle}>
                 <IconButton icon={ArrowBackIcon} onClick={() => setShowSheet(true)} />
             </div>
 
-            {/* Кнопка FAQ справа */}
-            <div
-                style={{
-                    position: "absolute",
-                    top: "calc(max(var(--tg-content-safe-area-inset-top, 0px), var(--tg-safe-area-inset-top, 0px)) + 48px)",
-                    right: "16px",
-                    zIndex: 10,
-                }}
-            >
+            {/* FAQ */}
+            <div style={faqIconStyle}>
                 <IconButton icon={FaqIcon} />
             </div>
 
-
-            <div
-                style={{
-                    paddingTop: "calc(max(var(--tg-content-safe-area-inset-top, 0px), var(--tg-safe-area-inset-top, 0px)) + 110px)",
-                    textAlign: "center",
-                }}
-            >
-            <motion.h1
-                    layoutId="title"
-                    style={{
-                        fontFamily: "Gilroy, sans-serif",
-                        fontSize: 32,
-                        fontWeight: 700,
-                        color: "var(--icotex-white)",
-                        margin: 0,
-                        marginBottom: 8,
-                    }}
-                >
-                    Я никогда не:
-                </motion.h1>
-
-                {/* Подзаголовок с категорией */}
-                {/* Подзаголовок с категорией */}
-                <div style={{ minHeight: 22 }}>
-                    {(() => {
-                        const multipleCategories = new Set(questions.map(q => q.category)).size > 1;
-
-                        // одна категория — без анимации
-                        if (!multipleCategories) {
-                            return (
-                                <p
-                                    style={{
-                                        fontFamily: "Gilroy, sans-serif",
-                                        fontSize: 14,
-                                        fontWeight: 400,
-                                        color: "var(--icotex-low)",
-                                        margin: 0,
-                                    }}
-                                >
-                                    {currentQuestion.category}
-                                </p>
-                            );
-                        }
-
-                        // несколько категорий — анимируем только при смене категории
-                        return (
-                            <AnimatePresence mode="wait" initial={false}>
-                                <motion.p
-                                    key={currentQuestion.category}            // ← ключ по категории
-                                    initial={{ y: 8, opacity: 0 }}
-                                    animate={{ y: 0, opacity: 1 }}
-                                    exit={{ y: -8, opacity: 0 }}
-                                    transition={{ duration: 0.35, ease: "easeOut" }}
-                                    style={{
-                                        fontFamily: "Gilroy, sans-serif",
-                                        fontSize: 14,
-                                        fontWeight: 400,
-                                        color: "var(--icotex-low)",
-                                        margin: 0,
-                                    }}
-                                >
-                                    {currentQuestion.category}
-                                </motion.p>
-                            </AnimatePresence>
-                        );
-                    })()}
-                </div>
+            {/* Заголовок */}
+            <div style={titleBlockStyle}>
+                <h1 style={titleStyle}>Я никогда не:</h1>
+                <div style={subtitleStyle}>{currentQuestion.category}</div>
             </div>
 
-            {/* Центральная карточка */}
-            <div
-                style={{
-                    position: "absolute",
-                    top: "55%",
-                    left: 16,
-                    right: 16,
-                    transform: "translateY(-50%)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    height: 330, // фиксированная высота, как у карточки
-                }}
-            >
-                <AnimatePresence mode="popLayout" initial={false} custom={dir}>
-                    <motion.div
-                        key={currentIndex}
-                        custom={dir}
-                        initial={{ x: dir * -400, rotate: dir * 12, opacity: 0 }}
-                        animate={{
-                            x: 0,
-                            rotate: 0,
-                            opacity: 1,
-                            transition: { type: "spring", stiffness: 120, damping: 22 },
-                        }}
-                        exit={{
-                            x: dir * 400,
-                            rotate: dir * 14,
-                            opacity: 0,
-                            transition: { type: "spring", stiffness: 120, damping: 20 },
-                        }}
-                        style={{
-                            width: "100%",
-                            height: "100%",
-                            backgroundColor: "var(--surface-zero)",
-                            borderRadius: 32,
-                            padding: 24,
-                            boxSizing: "border-box",
-                            display: "flex",
-                            alignItems: "flex-start",
-                        }}
-                    >
-                        <p
-                            style={{
-                                fontFamily: "Gilroy, sans-serif",
-                                fontWeight: 700,
-                                fontSize: 24,
-                                color: "var(--icotex-normal)",
-                                lineHeight: 1.4,
-                                margin: 0,
-                            }}
-                        >
-                            {currentQuestion.text}
-                        </p>
+            {/* Общий контейнер слоёв */}
+            <div style={layersRootStyle}>
+                {/* NEXT */}
+                {nextQuestion && (
+                    <div style={nextLayerStyle}>
+                        <div style={cardBaseStyle}>
+                            <p style={nextTextStyle}>{nextQuestion.text}</p>
+                            <div style={riveContainerStyle}>
+                                <CategoryRive
+                                    riveFile={nextQuestion.riveFile}
+                                    stateMachine={nextQuestion.stateMachine}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                )}
 
-                        <div
-                            style={{
-                                position: "absolute",
-                                right: 24,
-                                bottom: 24,
-                                width: 92,
-                                height: 92,
-                            }}
-                        >
+                {/* ACTIVE */}
+                <motion.div
+                    drag="x"
+                    dragElastic={1}
+                    dragMomentum={false}
+                    animate={controls}
+                    style={{
+                        ...activeLayerStyle,
+                        x,
+                        rotate: activeRotate,
+                    }}
+                    initial={false}
+                    whileDrag={{ scale: 0.985, cursor: "grabbing" }}
+                    onDragEnd={onActiveDragEnd}
+                >
+                    <div style={cardBaseStyle}>
+                        <p style={activeTextStyle}>{currentQuestion.text}</p>
+                        <div style={riveContainerStyle}>
                             <CategoryRive
                                 riveFile={currentQuestion.riveFile}
                                 stateMachine={currentQuestion.stateMachine}
                             />
                         </div>
+                    </div>
+                </motion.div>
+
+                {/* GHOSTS */}
+                {leavingCards.map((g) => (
+                    <motion.div
+                        key={g.id}
+                        initial={{ x: g.startX, rotate: g.startRotate, opacity: 1, scale: 1 }}
+                        animate={{
+                            x: g.toX,
+                            rotate: -20,
+                            opacity: 0,
+                            scale: 0.92,
+                            transition: { type: "spring", stiffness: 150, damping: 26, mass: 0.9 },
+                        }}
+                        onAnimationComplete={() =>
+                            setLeavingCards((prev) => prev.filter((c) => c.id !== g.id))
+                        }
+                        style={ghostLayerStyle}
+                    >
+                        <div style={cardBaseStyle}>
+                            <p style={activeTextStyle}>{g.text}</p>
+                            <div style={riveContainerStyle}>
+                                <CategoryRive
+                                    riveFile={g.riveFile}
+                                    stateMachine={g.stateMachine}
+                                />
+                            </div>
+                        </div>
                     </motion.div>
-                </AnimatePresence>
+                ))}
             </div>
 
-            <div
-                style={{
-                    position: "absolute",
-                    bottom: "calc(max(var(--tg-content-safe-area-inset-bottom, 0px), var(--tg-safe-area-inset-bottom, 0px))",
-                    left: 16,
-                    right: 16,
-                }}
-            >
-                <PrimaryButton textColor="var(--icotex-white)" onClick={nextQuestion}>
+            {/* Кнопка */}
+            <div style={buttonWrapperStyle}>
+                <PrimaryButton textColor="var(--icotex-white)" onClick={onNextClick}>
                     Дальше
                 </PrimaryButton>
             </div>
@@ -296,13 +235,138 @@ function GameScreen() {
     );
 }
 
+/* ===== Styles ===== */
+
+const wrapperStyle = {
+    width: "100vw",
+    height: "100vh",
+    backgroundColor: "var(--surface-main)",
+    position: "relative",
+    overflow: "hidden",
+    padding: "0 16px",
+    boxSizing: "border-box",
+    display: "flex",
+    flexDirection: "column",
+};
+
+const backIconStyle = {
+    position: "absolute",
+    top: "calc(max(var(--tg-content-safe-area-inset-top, 0px), var(--tg-safe-area-inset-top, 0px)) + 48px)",
+    left: "16px",
+    zIndex: 100,
+};
+
+const faqIconStyle = {
+    position: "absolute",
+    top: "calc(max(var(--tg-content-safe-area-inset-top, 0px), var(--tg-safe-area-inset-top, 0px)) + 48px)",
+    right: "16px",
+    zIndex: 100,
+};
+
+const titleBlockStyle = {
+    paddingTop: "calc(max(var(--tg-content-safe-area-inset-top, 0px), var(--tg-safe-area-inset-top, 0px)) + 110px)",
+    textAlign: "center",
+};
+
+const titleStyle = {
+    fontFamily: "Gilroy, sans-serif",
+    fontSize: 32,
+    fontWeight: 700,
+    color: "var(--icotex-white)",
+    margin: 0,
+    marginBottom: 8,
+};
+
+const subtitleStyle = {
+    fontFamily: "Gilroy, sans-serif",
+    fontSize: 14,
+    color: "var(--icotex-low)",
+};
+
+const layersRootStyle = {
+    position: "absolute",
+    left: 16,
+    right: 16,
+    top: "55%",
+    transform: "translateY(-50%)",
+    height: 330,
+    touchAction: "pan-y",
+};
+
+const nextLayerStyle = {
+    position: "absolute",
+    inset: 0,
+    zIndex: 0,
+    pointerEvents: "none",
+    isolation: "isolate",
+};
+
+const activeLayerStyle = {
+    position: "absolute",
+    inset: 0,
+    zIndex: 10,
+    pointerEvents: "auto",
+    cursor: "grab",
+    willChange: "transform",
+    transform: "translateZ(0)",
+    isolation: "isolate",
+};
+
+const ghostLayerStyle = {
+    position: "absolute",
+    inset: 0,
+    zIndex: 20,
+    pointerEvents: "none",
+    transform: "translateZ(0)",
+    isolation: "isolate",
+};
+
+const cardBaseStyle = {
+    position: "absolute",
+    inset: 0,
+    backgroundColor: "var(--surface-zero)",
+    borderRadius: 32,
+    padding: 24,
+    boxSizing: "border-box",
+    overflow: "hidden",
+    boxShadow: "0 12px 24px rgba(0,0,0,0.15)",
+};
+
+const activeTextStyle = {
+    fontFamily: "Gilroy, sans-serif",
+    fontWeight: 700,
+    fontSize: 24,
+    color: "var(--icotex-normal)",
+    lineHeight: 1.4,
+    margin: 0,
+};
+
+const nextTextStyle = { ...activeTextStyle, opacity: 0.9 };
+
+const riveContainerStyle = {
+    position: "absolute",
+    right: 24,
+    bottom: 24,
+    width: 92,
+    height: 92,
+};
+
+const buttonWrapperStyle = {
+    position: "absolute",
+    bottom: "calc(max(var(--tg-content-safe-area-inset-bottom, 0px), var(--tg-safe-area-inset-bottom, 0px))",
+    left: 16,
+    right: 16,
+};
+
 const centerStyle = {
     width: "100vw",
     height: "100vh",
+    backgroundColor: "var(--surface-main)",
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
     color: "var(--icotex-white)",
+    fontFamily: "Gilroy, sans-serif",
 };
 
 export default GameScreen;
