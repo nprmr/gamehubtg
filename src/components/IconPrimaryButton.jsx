@@ -9,6 +9,7 @@ function IconPrimaryButton({ onClick }) {
             style={{
                 display: "flex",
                 width: "64px",
+                minWidth: "64px",
                 height: "64px",
                 justifyContent: "center",
                 alignItems: "center",
