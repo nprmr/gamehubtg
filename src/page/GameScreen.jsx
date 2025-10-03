@@ -149,25 +149,51 @@ function GameScreen() {
                     Я никогда не:
                 </motion.h1>
 
+                {/* Подзаголовок с категорией */}
+                {/* Подзаголовок с категорией */}
                 <div style={{ minHeight: 22 }}>
-                    <AnimatePresence mode="wait" initial={false}>
-                        <motion.p
-                            key={currentIndex}
-                            initial={{ y: 22 }}
-                            animate={{ y: 0 }}
-                            exit={{ y: 22 }}
-                            transition={{ duration: 0.35, ease: "easeOut" }}
-                            style={{
-                                fontFamily: "Gilroy, sans-serif",
-                                fontSize: 14,
-                                fontWeight: 400,
-                                color: "var(--icotex-low)",
-                                margin: 0,
-                            }}
-                        >
-                            {currentQuestion.category}
-                        </motion.p>
-                    </AnimatePresence>
+                    {(() => {
+                        const multipleCategories = new Set(questions.map(q => q.category)).size > 1;
+
+                        // одна категория — без анимации
+                        if (!multipleCategories) {
+                            return (
+                                <p
+                                    style={{
+                                        fontFamily: "Gilroy, sans-serif",
+                                        fontSize: 14,
+                                        fontWeight: 400,
+                                        color: "var(--icotex-low)",
+                                        margin: 0,
+                                    }}
+                                >
+                                    {currentQuestion.category}
+                                </p>
+                            );
+                        }
+
+                        // несколько категорий — анимируем только при смене категории
+                        return (
+                            <AnimatePresence mode="wait" initial={false}>
+                                <motion.p
+                                    key={currentQuestion.category}            // ← ключ по категории
+                                    initial={{ y: 8, opacity: 0 }}
+                                    animate={{ y: 0, opacity: 1 }}
+                                    exit={{ y: -8, opacity: 0 }}
+                                    transition={{ duration: 0.35, ease: "easeOut" }}
+                                    style={{
+                                        fontFamily: "Gilroy, sans-serif",
+                                        fontSize: 14,
+                                        fontWeight: 400,
+                                        color: "var(--icotex-low)",
+                                        margin: 0,
+                                    }}
+                                >
+                                    {currentQuestion.category}
+                                </motion.p>
+                            </AnimatePresence>
+                        );
+                    })()}
                 </div>
             </div>
 
