@@ -13,6 +13,8 @@ function FlatButton({
     const handleClick = (e) => {
         if (disabled) return;
         onClick?.(e);
+        // 👇 сбрасываем флаг после клика
+        hapticTriggered.current = false;
     };
 
     const handlePressStart = () => {

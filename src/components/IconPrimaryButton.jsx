@@ -7,6 +7,8 @@ function IconPrimaryButton({ onClick }) {
 
     const handleClick = (e) => {
         onClick?.(e);
+        // 👇 сброс после клика
+        hapticTriggered.current = false;
     };
 
     const handlePressStart = () => {

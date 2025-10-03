@@ -9,12 +9,13 @@ function PrimaryButton({
                            disabled = false,
                            description,
                        }) {
-    // флаг, чтобы хаптик не срабатывал дважды
     const hapticTriggered = useRef(false);
 
     const handleClick = (e) => {
         if (disabled) return;
         onClick?.(e);
+        // 👇 сброс после клика, чтобы следующий клик снова дал хаптик
+        hapticTriggered.current = false;
     };
 
     const handlePressStart = () => {
