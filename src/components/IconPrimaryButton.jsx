@@ -1,18 +1,32 @@
-import React from "react";
+import React, { useRef } from "react";
 import "../theme.css";
 import ArrowBackIcon from "../icons/arrowback.svg?react";
 
 function IconPrimaryButton({ onClick }) {
-    const handleClick = (e) => {
-        // Хаптик medium
-        window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("medium");
+    const hapticTriggered = useRef(false);
 
+    const handleClick = (e) => {
         onClick?.(e);
+    };
+
+    const handlePressStart = () => {
+        if (!hapticTriggered.current) {
+            hapticTriggered.current = true;
+            window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("medium");
+        }
+    };
+
+    const handlePressEnd = () => {
+        hapticTriggered.current = false;
     };
 
     return (
         <button
             onClick={handleClick}
+            onMouseDown={handlePressStart}
+            onTouchStart={handlePressStart}
+            onMouseUp={handlePressEnd}
+            onTouchEnd={handlePressEnd}
             style={{
                 display: "flex",
                 width: "64px",
@@ -28,11 +42,23 @@ function IconPrimaryButton({ onClick }) {
                 WebkitBackdropFilter: "blur(20px)",
                 transition: "transform 0.1s ease",
                 outline: "none",
-                boxShadow: "none"
+                boxShadow: "none",
+                WebkitTapHighlightColor: "transparent",
+                WebkitTouchCallout: "none",
+                userSelect: "none",
             }}
-            onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.93)")}
-            onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
-            onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+            onMouseLeave={(e) =>
+                (e.currentTarget.style.transform = "scale(1)")
+            }
+            onMouseUp={(e) =>
+                (e.currentTarget.style.transform = "scale(1)")
+            }
+            onTouchEnd={(e) =>
+                (e.currentTarget.style.transform = "scale(1)")
+            }
+            onMouseDownCapture={(e) =>
+                (e.currentTarget.style.transform = "scale(0.93)")
+            }
         >
             <ArrowBackIcon
                 width={24}

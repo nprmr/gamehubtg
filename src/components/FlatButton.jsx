@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import "../theme.css";
 
@@ -8,17 +8,31 @@ function FlatButton({
                         disabled = false,
                         description,
                     }) {
+    const hapticTriggered = useRef(false);
+
     const handleClick = (e) => {
         if (disabled) return;
-        // Лёгкий haptic
-        window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("light");
-
         onClick?.(e);
+    };
+
+    const handlePressStart = () => {
+        if (!disabled && !hapticTriggered.current) {
+            hapticTriggered.current = true;
+            window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("light");
+        }
+    };
+
+    const handlePressEnd = () => {
+        hapticTriggered.current = false;
     };
 
     return (
         <button
             onClick={handleClick}
+            onMouseDown={handlePressStart}
+            onTouchStart={handlePressStart}
+            onMouseUp={handlePressEnd}
+            onTouchEnd={handlePressEnd}
             disabled={disabled}
             style={{
                 display: "flex",
@@ -39,16 +53,22 @@ function FlatButton({
                 boxSizing: "border-box",
                 overflow: "hidden",
                 outline: "none",
-                boxShadow: "none"
+                boxShadow: "none",
+                WebkitTapHighlightColor: "transparent",
+                WebkitTouchCallout: "none",
+                userSelect: "none",
             }}
-            onMouseDown={(e) =>
-                !disabled && (e.currentTarget.style.transform = "scale(0.985)")
+            onMouseLeave={(e) =>
+                !disabled && (e.currentTarget.style.transform = "scale(1)")
             }
             onMouseUp={(e) =>
                 !disabled && (e.currentTarget.style.transform = "scale(1)")
             }
-            onMouseLeave={(e) =>
+            onTouchEnd={(e) =>
                 !disabled && (e.currentTarget.style.transform = "scale(1)")
+            }
+            onMouseDownCapture={(e) =>
+                !disabled && (e.currentTarget.style.transform = "scale(0.985)")
             }
         >
       <span
