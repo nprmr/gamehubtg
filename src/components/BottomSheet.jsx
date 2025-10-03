@@ -76,9 +76,14 @@ export default function BottomSheet({
         return () => rive.cleanup();
     }, [riveFile, stateMachine, trigger, open, size]);
 
+    // 👇 клик по canvas → триггер + мягкий хаптик
     const handleClick = () => {
         if (!triggerInputRef.current) return;
+
         try {
+            // Телеграм хаптик
+            window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("soft");
+
             if (typeof triggerInputRef.current.value === "boolean") {
                 triggerInputRef.current.value = !triggerInputRef.current.value;
             } else if (triggerInputRef.current.fire) {
