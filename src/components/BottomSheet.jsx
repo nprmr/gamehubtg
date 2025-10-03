@@ -11,6 +11,7 @@ export default function BottomSheet({
                                         riveFile = "/rive/tv.riv",
                                         stateMachine = "State Machine 1",
                                         trigger = "clickActivation",
+                                        size = 128, // 👈 можно менять размер
                                     }) {
     const controls = useDragControls();
     const canvasRef = useRef(null);
@@ -22,15 +23,25 @@ export default function BottomSheet({
         if (draggedDownEnough) onClose?.();
     };
 
-    // Инициализация rive
+    // инициализация rive
     useEffect(() => {
         if (!canvasRef.current || !open) return;
 
+        const ratio = window.devicePixelRatio || 1;
+        const canvas = canvasRef.current;
+
+        // атрибуты canvas → high DPI
+        canvas.width = size * ratio;
+        canvas.height = size * ratio;
+        canvas.style.width = `${size}px`;
+        canvas.style.height = `${size}px`;
+
         const rive = new Rive({
             src: riveFile,
-            canvas: canvasRef.current,
+            canvas,
             autoplay: true,
             stateMachines: stateMachine,
+            fit: "cover",
             onLoad: () => {
                 const inputs = rive.stateMachineInputs(stateMachine);
                 if (inputs) {
@@ -39,10 +50,11 @@ export default function BottomSheet({
             },
         });
 
+        // прозрачный фон вместо черного
         try {
-            rive.renderer.clearColor = [0, 0, 0, 0]; // прозрачный фон, без черного моргания
+            rive.renderer.clearColor = [0, 0, 0, 0];
         } catch (e) {
-            console.warn("Не удалось выставить clearColor:", e);
+            console.warn("clearColor не поддержан:", e);
         }
 
         riveRef.current = rive;
@@ -50,9 +62,9 @@ export default function BottomSheet({
         return () => {
             rive.cleanup();
         };
-    }, [riveFile, stateMachine, trigger, open]);
+    }, [riveFile, stateMachine, trigger, open, size]);
 
-    // Клик по canvas → триггерим stateMachine input
+    // клик по canvas → триггер
     const handleClick = () => {
         if (!triggerInputRef.current) return;
 
@@ -132,12 +144,10 @@ export default function BottomSheet({
                         {/* Rive canvas */}
                         <canvas
                             ref={canvasRef}
-                            width={128}
-                            height={128}
                             onClick={handleClick}
                             style={{
-                                width: 128,
-                                height: 128,
+                                width: size,
+                                height: size,
                                 marginBottom: 16,
                                 display: "block",
                                 background: "transparent",
