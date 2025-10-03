@@ -31,6 +31,8 @@ function IconButton({ icon: Icon, onClick, size = 48 }) {
                 backdropFilter: "blur(12px)",
                 WebkitBackdropFilter: "blur(12px)",
                 transition: "transform 0.1s ease",
+                outline: "none",
+                boxShadow: "none"
             }}
             onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.93)")}
             onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}

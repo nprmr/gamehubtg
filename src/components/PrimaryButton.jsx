@@ -43,6 +43,8 @@ function PrimaryButton({
                 marginBottom: "24px",
                 boxSizing: "border-box",
                 overflow: "hidden",
+                outline: "none",
+                boxShadow: "none"
             }}
             onMouseDown={(e) =>
                 !disabled && (e.currentTarget.style.transform = "scale(0.985)")

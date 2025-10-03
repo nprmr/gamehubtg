@@ -38,6 +38,8 @@ function FlatButton({
                 transition: "transform 0.1s ease",
                 boxSizing: "border-box",
                 overflow: "hidden",
+                outline: "none",
+                boxShadow: "none"
             }}
             onMouseDown={(e) =>
                 !disabled && (e.currentTarget.style.transform = "scale(0.985)")

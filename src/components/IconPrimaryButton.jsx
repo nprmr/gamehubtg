@@ -27,6 +27,8 @@ function IconPrimaryButton({ onClick }) {
                 backdropFilter: "blur(20px)",
                 WebkitBackdropFilter: "blur(20px)",
                 transition: "transform 0.1s ease",
+                outline: "none",
+                boxShadow: "none"
             }}
             onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.93)")}
             onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
