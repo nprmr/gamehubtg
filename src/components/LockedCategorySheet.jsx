@@ -23,7 +23,7 @@ export default function LockedCategorySheet({
     const { rive, RiveComponent } = useRive({
         src: riveFile,
         stateMachines: "State Machine 1",
-        autoplay: true, // включаем рендер-цикл сразу
+        autoplay: true, // сразу запускаем рендер-цикл
     });
 
     const activation = useStateMachineInput(
@@ -33,28 +33,38 @@ export default function LockedCategorySheet({
         false
     );
 
+    // управляем только активацией state machine
     useEffect(() => {
-        if (!activation || !rive) return;
+        if (!open || !activation) return;
 
-        let timer;
-        if (open) {
-            activation.value = false; // начинаем с первого кадра
-            rive.play(); // запустить анимацию
-
-            // включаем активацию state machine после задержки
-            timer = setTimeout(() => {
+        activation.value = false; // сброс
+        const timer = setTimeout(() => {
+            if (activation) {
                 activation.value = true;
-            }, delay);
+            }
+        }, delay);
+
+        return () => clearTimeout(timer);
+    }, [open, activation, delay]);
+
+    // управляем самим rive-плеером
+    useEffect(() => {
+        if (!rive) return;
+
+        if (open) {
+            rive.play();
         } else {
-            activation.value = false;
-            rive.pause(); // можно при закрытии останавливать цикл
+            try {
+                rive.pause();
+            } catch {}
         }
 
         return () => {
-            if (timer) clearTimeout(timer);
-            rive?.stop();
+            try {
+                rive?.stop();
+            } catch {}
         };
-    }, [open, activation, rive, delay]);
+    }, [open, rive]);
 
     // motion values
     const y = useMotionValue(0);
@@ -65,12 +75,12 @@ export default function LockedCategorySheet({
         if (draggedDownEnough) {
             animate(y, window.innerHeight, {
                 type: "spring",
-                stiffness: 200,
-                damping: 30,
+                stiffness: 120,
+                damping: 22,
                 onComplete: onClose,
             });
         } else {
-            animate(y, 0, { type: "spring", stiffness: 300, damping: 30 });
+            animate(y, 0, { type: "spring", stiffness: 120, damping: 22 });
         }
     };
 
