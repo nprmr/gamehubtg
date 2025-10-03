@@ -47,19 +47,23 @@ button {
     background-color: #1a1a1a;
     cursor: pointer;
     transition: border-color 0.25s, transform 0.1s ease;
-    outline: none; /* убираем фокус */
+    outline: none !important;
+
+    /* убираем подсветку при тапе/фокусе */
+    -webkit-tap-highlight-color: transparent !important;
+    -webkit-focus-ring-color: transparent !important;
 }
 
 button:hover {
     border-color: #646cff;
 }
 
-/* Убираем "синий" фокус у всех браузеров */
 button:focus,
 button:focus-visible,
 button:active {
     outline: none !important;
     box-shadow: none !important;
+    border-color: transparent !important;
 }
 
 /* === Light scheme === */
