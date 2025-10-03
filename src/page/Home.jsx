@@ -79,6 +79,7 @@ function Home() {
                     height: "100vh",
                     backgroundColor: "var(--surface-main)",
                     display: "flex",
+                    justifyContent: "center",
                     alignItems: "center",
                     color: "var(--icotex-white)",
                     fontFamily: "Gilroy, sans-serif",
@@ -135,8 +136,7 @@ function Home() {
                     width: "100%",
                     height: "100%",
                     boxSizing: "border-box",
-                    paddingTop:
-                        "calc(max(var(--tg-content-safe-area-inset-top, 0px), var(--tg-safe-area-inset-top, 0px)) + 20px)",
+                    paddingTop: "calc(max(var(--tg-content-safe-area-inset-top, 0px), var(--tg-safe-area-inset-top, 0px)) + 32px)",
                 }}
             >
                 {/* верхняя панель с иконкой */}
@@ -145,8 +145,7 @@ function Home() {
                         display: "flex",
                         justifyContent: "flex-end",
                         width: "100%",
-                        paddingRight:
-                            "calc(max(var(--tg-content-safe-area-inset-right, 0px), var(--tg-safe-area-inset-right, 0px)) + 16px)",
+                        paddingRight: "calc(max(var(--tg-content-safe-area-inset-right, 0px), var(--tg-safe-area-inset-right, 0px))",
                         marginBottom: 16,
                     }}
                 >
@@ -191,7 +190,6 @@ function Home() {
                         right: 0,
                         transform: "translateY(-50%)",
                         display: "flex",
-                        justifyContent: "center",
                         overflow: "hidden",
                     }}
                 >
