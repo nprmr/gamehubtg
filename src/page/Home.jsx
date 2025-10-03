@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useLayoutEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import "../theme.css";
@@ -19,12 +19,7 @@ function Home() {
     const GAP = 16;
     const navigate = useNavigate();
     const firstItemRef = useRef(null);
-    const headerRef = useRef(null);
-    const carouselBoxRef = useRef(null);
-    const buttonRef = useRef(null);
-    const [yOffset, setYOffset] = useState(0);
 
-    // ------------------------ размеры карточки и вьюпорта ------------------------
     useEffect(() => {
         const measure = () => {
             if (firstItemRef.current) {
@@ -38,7 +33,6 @@ function Home() {
         return () => window.removeEventListener("resize", measure);
     }, []);
 
-    // ------------------------ загрузка игр --------------------------------------
     useEffect(() => {
         let alive = true;
         (async () => {
@@ -57,7 +51,6 @@ function Home() {
         };
     }, []);
 
-    // ------------------------ карусель: расчёт X --------------------------------
     const maxIndex = Math.max(0, games.length - 1);
     const clamp = (n) => Math.max(0, Math.min(maxIndex, n));
     const goTo = (i) => setActiveIndex(clamp(i));
@@ -65,6 +58,11 @@ function Home() {
 
     const getXForIndex = (i) => {
         if (i === 0) return 16;
+        if (i === maxIndex) {
+            const centerOfCard = i * step + cardWidth / 2;
+            const viewportCenter = viewportWidth / 2;
+            return viewportCenter - centerOfCard;
+        }
         const centerOfCard = i * step + cardWidth / 2;
         const viewportCenter = viewportWidth / 2;
         return viewportCenter - centerOfCard;
@@ -72,30 +70,6 @@ function Home() {
 
     const minX = getXForIndex(maxIndex);
     const maxX = 16;
-
-    // ------------------------ точное вертикальное центрирование -----------------
-    const recomputeCentering = () => {
-        if (!headerRef.current || !carouselBoxRef.current || !buttonRef.current) return;
-
-        const headerRect = headerRef.current.getBoundingClientRect();
-        const carouselRect = carouselBoxRef.current.getBoundingClientRect();
-        const buttonRect = buttonRef.current.getBoundingClientRect();
-
-        const topBoundary = headerRect.bottom;
-        const bottomBoundary = buttonRect.top;
-        const targetCenterY = (topBoundary + bottomBoundary) / 2;
-        const carouselCenterY = carouselRect.top + carouselRect.height / 2;
-
-        const delta = Math.round(targetCenterY - carouselCenterY);
-        setYOffset(delta);
-    };
-
-    useLayoutEffect(() => {
-        recomputeCentering();
-        const onResize = () => recomputeCentering();
-        window.addEventListener("resize", onResize);
-        return () => window.removeEventListener("resize", onResize);
-    }, [games, viewportWidth, activeIndex]);
 
     if (loading) {
         return (
@@ -105,7 +79,6 @@ function Home() {
                     height: "100vh",
                     backgroundColor: "var(--surface-main)",
                     display: "flex",
-                    justifyContent: "center",
                     alignItems: "center",
                     color: "var(--icotex-white)",
                     fontFamily: "Gilroy, sans-serif",
@@ -132,9 +105,13 @@ function Home() {
             {/* фон */}
             <AnimatePresence mode="wait">
                 {active?.bg && (
-                    <img
+                    <motion.img
                         key={activeIndex}
                         src={active.bg}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.3 }}
                         style={{
                             position: "absolute",
                             bottom: 0,
@@ -143,7 +120,6 @@ function Home() {
                             height: "auto",
                             zIndex: 0,
                         }}
-                        alt="background"
                     />
                 )}
             </AnimatePresence>
@@ -160,7 +136,7 @@ function Home() {
                     height: "100%",
                     boxSizing: "border-box",
                     paddingTop:
-                        "calc(max(var(--tg-content-safe-area-inset-top, 0px), var(--tg-safe-area-inset-top, 0px)) + 48px)",
+                        "calc(max(var(--tg-content-safe-area-inset-top, 0px), var(--tg-safe-area-inset-top, 0px)) + 20px)",
                 }}
             >
                 {/* верхняя панель с иконкой */}
@@ -170,16 +146,17 @@ function Home() {
                         justifyContent: "flex-end",
                         width: "100%",
                         paddingRight:
-                            "calc(max(var(--tg-content-safe-area-inset-right, 0px), var(--tg-safe-area-inset-right, 0px)) + 32px)",
-                        marginBottom: 24,
+                            "calc(max(var(--tg-content-safe-area-inset-right, 0px), var(--tg-safe-area-inset-right, 0px)) + 16px)",
+                        marginBottom: 16,
                     }}
                 >
                     <IconButton icon={SettingsIcon} />
                 </div>
 
                 {/* заголовок */}
-                <div ref={headerRef} style={{ textAlign: "center", marginBottom: 0 }}>
-                    <h1
+                <div style={{ textAlign: "center", marginBottom: 16 }}>
+                    <motion.h1
+                        layoutId="title"
                         style={{
                             fontFamily: "Gilroy, sans-serif",
                             fontSize: 32,
@@ -189,8 +166,9 @@ function Home() {
                         }}
                     >
                         Выбор игры
-                    </h1>
-                    <p
+                    </motion.h1>
+                    <motion.p
+                        layoutId="subtitle"
                         style={{
                             fontFamily: "Gilroy, sans-serif",
                             fontSize: 14,
@@ -201,26 +179,43 @@ function Home() {
                         }}
                     >
                         наши игры рассчитаны <br /> на компании от 2 до 24 человек
-                    </p>
+                    </motion.p>
                 </div>
 
-                {/* КАРУСЕЛЬ */}
+                {/* карусель */}
                 <div
-                    ref={carouselBoxRef}
                     style={{
-                        transform: `translateY(${yOffset}px)`,
+                        position: "absolute",
+                        top: "50%",
+                        left: 0,
+                        right: 0,
+                        transform: "translateY(-50%)",
                         display: "flex",
-                        alignItems: "center",
-                        justifyContent: "flex-start",
-                        width: "100%",
+                        justifyContent: "center",
                         overflow: "hidden",
-                        touchAction: "pan-y",
-                        marginTop: 16,
-                        marginBottom: 16,
                     }}
                 >
-                    <div
-                        style={{ display: "flex", gap: `${GAP}px`, transform: `translateX(${getXForIndex(activeIndex)}px)` }}
+                    <motion.div
+                        style={{ display: "flex", gap: `${GAP}px` }}
+                        drag="x"
+                        dragConstraints={{ left: minX, right: maxX }}
+                        dragElastic={0.05}
+                        dragMomentum={false}
+                        animate={{ x: getXForIndex(activeIndex) }}
+                        transition={{ type: "spring", stiffness: 250, damping: 35 }}
+                        onDragEnd={(_, info) => {
+                            const { offset, velocity } = info;
+                            const dx = offset.x;
+                            const vx = velocity.x;
+                            const swipePower = Math.abs(dx) * 0.5 + Math.abs(vx) * 20;
+                            const passed = Math.abs(dx) > step * 0.25 || swipePower > 300;
+                            if (passed) {
+                                if (dx < 0) goTo(activeIndex + 1);
+                                else goTo(activeIndex - 1);
+                            } else {
+                                goTo(activeIndex);
+                            }
+                        }}
                     >
                         {games.map((g, i) => (
                             <div key={g.id} ref={i === 0 ? firstItemRef : undefined} style={{ flex: "0 0 auto" }}>
@@ -234,19 +229,18 @@ function Home() {
                                 />
                             </div>
                         ))}
-                    </div>
+                    </motion.div>
                 </div>
             </div>
 
             {/* фиксированная нижняя кнопка */}
             <div
-                ref={buttonRef}
                 style={{
-                    position: "fixed",
-                    left: 16,
-                    right: 16,
+                    position: "absolute",
                     bottom:
                         "calc(max(var(--tg-content-safe-area-inset-bottom, 0px), var(--tg-safe-area-inset-bottom, 0px)) + 24px)",
+                    left: 16,
+                    right: 16,
                     zIndex: 10,
                 }}
             >
