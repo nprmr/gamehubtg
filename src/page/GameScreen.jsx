@@ -4,7 +4,7 @@ import { motion, useMotionValue, useTransform, useAnimation } from "framer-motio
 import IconButton from "../components/IconButton";
 import PrimaryButton from "../components/PrimaryButton";
 import BottomSheet from "../components/BottomSheet";
-import CategoryRive from "../components/CategoryRive"; // обновлённый вариант на canvas API
+import CategoryRive from "../components/CategoryRive"; // canvas-версия
 import FaqIcon from "../icons/faq.svg?react";
 import ArrowBackIcon from "../icons/arrowback.svg?react";
 import { getQuestionsByCategories } from "../api";
@@ -35,6 +35,9 @@ function GameScreen() {
     const x = useMotionValue(0);
     const activeRotate = useTransform(x, [-SWIPE_GOAL, 0], [-18, 0], { clamp: true });
     const controls = useAnimation();
+
+    // Масштаб нижней карточки (NEXT)
+    const scaleNext = useTransform(x, [-SWIPE_GOAL, 0], [1, 0.94], { clamp: false });
 
     useEffect(() => {
         if (categories.length > 0) {
@@ -89,7 +92,7 @@ function GameScreen() {
             },
         ]);
 
-        // СБРОС перед переключением, чтобы новая активная не «прилетала слева»
+        // СБРОС перед переключением
         controls.stop();
         x.set(0);
         controls.set({ x: 0, rotate: 0, scale: 1, opacity: 1 });
@@ -97,7 +100,7 @@ function GameScreen() {
         // Переключаем индекс
         setCurrentIndex((prev) => (prev + 1) % total);
 
-        // Короткий кулдаун от гонок
+        // Короткий кулдаун
         setTimeout(() => setIsCooldown(false), COOLDOWN_MS);
     };
 
@@ -146,7 +149,12 @@ function GameScreen() {
             <div style={layersRootStyle}>
                 {/* NEXT */}
                 {nextQuestion && (
-                    <div style={nextLayerStyle}>
+                    <motion.div
+                        style={{
+                            ...nextLayerStyle,
+                            scale: scaleNext,
+                        }}
+                    >
                         <div style={cardBaseStyle}>
                             <p style={nextTextStyle}>{nextQuestion.text}</p>
                             <div style={riveContainerStyle}>
@@ -156,7 +164,7 @@ function GameScreen() {
                                 />
                             </div>
                         </div>
-                    </div>
+                    </motion.div>
                 )}
 
                 {/* ACTIVE */}
