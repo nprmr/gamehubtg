@@ -64,6 +64,7 @@ export default function RivePlayer({
                 display: "block",
                 cursor: clickToTrigger ? "pointer" : "default",
                 pointerEvents: "auto",
+                outline: "none",
                 ...style,
             }}
         />
