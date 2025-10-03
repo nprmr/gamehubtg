@@ -12,6 +12,8 @@ function IconButton({ icon: Icon, onClick, size = 48 }) {
 
     const handleClick = (e) => {
         onClick?.(e);
+        // 👇 сброс после клика
+        hapticTriggered.current = false;
     };
 
     const handlePressStart = () => {
@@ -51,15 +53,9 @@ function IconButton({ icon: Icon, onClick, size = 48 }) {
                 WebkitTouchCallout: "none",
                 userSelect: "none",
             }}
-            onMouseLeave={(e) =>
-                (e.currentTarget.style.transform = "scale(1)")
-            }
-            onMouseUp={(e) =>
-                (e.currentTarget.style.transform = "scale(1)")
-            }
-            onTouchEnd={(e) =>
-                (e.currentTarget.style.transform = "scale(1)")
-            }
+            onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+            onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
+            onTouchEnd={(e) => (e.currentTarget.style.transform = "scale(1)")}
             onMouseDownCapture={(e) =>
                 (e.currentTarget.style.transform = "scale(0.93)")
             }
