@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import "../theme.css";
 
@@ -9,24 +9,32 @@ function PrimaryButton({
                            disabled = false,
                            description,
                        }) {
-    // клик без хаптика (только колбэк)
+    // флаг, чтобы хаптик не срабатывал дважды
+    const hapticTriggered = useRef(false);
+
     const handleClick = (e) => {
         if (disabled) return;
         onClick?.(e);
     };
 
-    // хаптик выносим сюда
-    const handleMouseDown = () => {
-        if (!disabled) {
+    const handlePressStart = () => {
+        if (!disabled && !hapticTriggered.current) {
+            hapticTriggered.current = true;
             window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("medium");
         }
+    };
+
+    const handlePressEnd = () => {
+        hapticTriggered.current = false;
     };
 
     return (
         <button
             onClick={handleClick}
-            onMouseDown={handleMouseDown}
-            onTouchStart={handleMouseDown} // для мобилок
+            onMouseDown={handlePressStart}
+            onTouchStart={handlePressStart}
+            onMouseUp={handlePressEnd}
+            onTouchEnd={handlePressEnd}
             disabled={disabled}
             style={{
                 display: "flex",
@@ -52,11 +60,13 @@ function PrimaryButton({
                 outline: "none",
                 boxShadow: "none",
                 WebkitTapHighlightColor: "transparent",
+                WebkitTouchCallout: "none",
+                userSelect: "none",
             }}
-            onMouseUp={(e) =>
+            onMouseLeave={(e) =>
                 !disabled && (e.currentTarget.style.transform = "scale(1)")
             }
-            onMouseLeave={(e) =>
+            onMouseUp={(e) =>
                 !disabled && (e.currentTarget.style.transform = "scale(1)")
             }
             onTouchEnd={(e) =>
