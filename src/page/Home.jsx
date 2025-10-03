@@ -185,7 +185,7 @@ function Home() {
                 <div
                     style={{
                         position: "absolute",
-                        top: "50%",
+                        top: "55%",
                         left: 0,
                         right: 0,
                         transform: "translateY(-50%)",
