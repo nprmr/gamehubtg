@@ -8,8 +8,9 @@ export default function RivePlayer({
                                        clickToTrigger = true,
                                        autoTrigger = false,
                                        style,
-                                       width = 128,   // 👈 дефолтный размер
-                                       height = 128,  // 👈 дефолтный размер
+                                       width = 128,   // дефолтный размер
+                                       height = 128,  // дефолтный размер
+                                       background = "transparent", // можно задать фон
                                    }) {
     const { rive, RiveComponent } = useRive({
         src,
@@ -57,7 +58,7 @@ export default function RivePlayer({
         }
     };
 
-    // 🔹 Фикс размеров для Telegram WebApp (canvas 128x19)
+    // 🔹 Фикс размеров + clearColor для Telegram WebApp
     useEffect(() => {
         const canvas = document.querySelector(".rive-container canvas");
         if (canvas) {
@@ -66,8 +67,18 @@ export default function RivePlayer({
             canvas.style.width = `${width}px`;
             canvas.style.height = `${height}px`;
             canvas.style.display = "block";
+            canvas.style.background = background;
         }
-    }, [width, height]);
+
+        if (rive && rive.renderer) {
+            // Прозрачный фон вместо черного
+            try {
+                rive.renderer.clearColor = [0, 0, 0, 0]; // RGBA → прозрачный
+            } catch (e) {
+                console.warn("Не удалось выставить clearColor:", e);
+            }
+        }
+    }, [width, height, rive, background]);
 
     return (
         <div
@@ -91,6 +102,7 @@ export default function RivePlayer({
                     outline: "none",
                     WebkitTapHighlightColor: "transparent",
                     WebkitFocusRingColor: "transparent",
+                    background, // фон canvas
                     ...style,
                 }}
             />
