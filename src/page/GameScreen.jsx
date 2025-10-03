@@ -174,13 +174,15 @@ function GameScreen() {
             {/* Центральная карточка */}
             <div
                 style={{
-                    flex: 1,
+                    position: "absolute",
+                    top: "55%",
+                    left: 16,
+                    right: 16,
+                    transform: "translateY(-50%)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    position: "relative",
-                    marginTop: 24,
-                    marginBottom: 24,
+                    height: 330, // фиксированная высота, как у карточки
                 }}
             >
                 <AnimatePresence mode="popLayout" initial={false} custom={dir}>
@@ -202,12 +204,11 @@ function GameScreen() {
                         }}
                         style={{
                             width: "100%",
-                            height: 330,
+                            height: "100%",
                             backgroundColor: "var(--surface-zero)",
                             borderRadius: 32,
                             padding: 24,
                             boxSizing: "border-box",
-                            position: "absolute",
                             display: "flex",
                             alignItems: "flex-start",
                         }}
