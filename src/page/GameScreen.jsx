@@ -129,9 +129,13 @@ function GameScreen() {
             </div>
 
 
-            {/* Заголовки */}
-            <div style={{ paddingTop: 120, textAlign: "center" }}>
-                <motion.h1
+            <div
+                style={{
+                    paddingTop: "calc(max(var(--tg-content-safe-area-inset-top, 0px), var(--tg-safe-area-inset-top, 0px)) + 110px)",
+                    textAlign: "center",
+                }}
+            >
+            <motion.h1
                     layoutId="title"
                     style={{
                         fontFamily: "Gilroy, sans-serif",
@@ -239,8 +243,14 @@ function GameScreen() {
                 </AnimatePresence>
             </div>
 
-            {/* Кнопка */}
-            <div style={{ marginTop: "auto", marginBottom: 24, width: "100%" }}>
+            <div
+                style={{
+                    position: "absolute",
+                    bottom: "calc(max(var(--tg-content-safe-area-inset-bottom, 0px), var(--tg-safe-area-inset-bottom, 0px))",
+                    left: 16,
+                    right: 16,
+                }}
+            >
                 <PrimaryButton textColor="var(--icotex-white)" onClick={nextQuestion}>
                     Дальше
                 </PrimaryButton>
