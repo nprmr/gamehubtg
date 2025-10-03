@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
-import { motion, AnimatePresence, useDragControls } from "framer-motion";
-import RivePlayer from "./RivePlayer";
+import { motion, AnimatePresence } from "framer-motion";
+import { useRive, useStateMachineInput } from "@rive-app/react-canvas";
 import FlatButton from "./FlatButton";
 import SecondaryButton from "./SecondaryButton";
 
@@ -11,8 +11,41 @@ export default function LockedCategorySheet({
                                                 riveFile,
                                                 phrases = [],
                                                 price = "199₽",
+                                                delay = 600, // задержка запуска анимации после открытия (мс)
                                             }) {
-    const controls = useDragControls();
+    // Инициализируем Rive с нужной SM
+    const { rive, RiveComponent } = useRive({
+        src: riveFile,
+        stateMachines: "State Machine 1",
+        autoplay: true, // запускаем рендер-цикл; переходы контролим инпутом
+    });
+
+    // Достаём bool-инпут Activation (точно так же, как в .riv)
+    const activation = useStateMachineInput(rive, "State Machine 1", "Activation", false);
+
+    // Управляем анимацией: при открытии — ждём delay и ставим Activation=true; при закрытии — сбрасываем
+    useEffect(() => {
+        if (!activation || !rive) return;
+
+        let timer;
+        if (open) {
+            // на старте держим false, чтобы был первый кадр
+            activation.value = false;
+            // гарантируем, что цикл рендера запущен
+            rive.play();
+            // после анимации открытия шита дёргаем bool в true
+            timer = setTimeout(() => {
+                activation.value = true;
+            }, delay);
+        } else {
+            // сброс при закрытии
+            activation.value = false;
+        }
+
+        return () => {
+            if (timer) clearTimeout(timer);
+        };
+    }, [open, activation, rive, delay]);
 
     const handleDragEnd = (_e, info) => {
         const draggedDownEnough = info.offset.y > 100 || info.velocity.y > 600;
@@ -47,10 +80,8 @@ export default function LockedCategorySheet({
                         exit={{ y: "100%" }}
                         transition={{ type: "spring", stiffness: 180, damping: 20 }}
                         drag="y"
-                        dragControls={controls}
-                        dragListener={false} // тянем только за хэндл
                         dragConstraints={{ top: 0, bottom: 0 }}
-                        dragElastic={0.2}
+                        dragElastic={0.7}
                         onDragEnd={handleDragEnd}
                         style={{
                             position: "fixed",
@@ -70,7 +101,6 @@ export default function LockedCategorySheet({
                     >
                         {/* Drag handle */}
                         <div
-                            onPointerDown={(e) => controls.start(e)}
                             style={{
                                 width: 48,
                                 height: 4,
@@ -81,13 +111,15 @@ export default function LockedCategorySheet({
                             }}
                         />
 
-                        {/* Rive анимация */}
+                        {/* Rive */}
                         <div style={{ width: 128, height: 128, marginBottom: 16 }}>
-                            <RivePlayer
-                                src={riveFile}
-                                stateMachine="State Machine 1"
-                                trigger="Activation"   // bool input
-                                autoTrigger            // автозапуск при открытии
+                            <RiveComponent
+                                style={{
+                                    width: "100%",
+                                    height: "100%",
+                                    outline: "none",
+                                    userSelect: "none",
+                                }}
                             />
                         </div>
 
@@ -126,9 +158,10 @@ export default function LockedCategorySheet({
                             style={{
                                 background: "var(--surface-light)",
                                 borderRadius: 20,
-                                width: "-webkit-fill-available",
+                                width: "100%",
                                 padding: 16,
-                                margin: "0 0 20px 0", // отступы слева/справа
+                                margin: "0 0 20px 0",
+                                boxSizing: "border-box",
                             }}
                         >
                             <p
