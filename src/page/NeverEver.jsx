@@ -166,7 +166,7 @@ function NeverEver() {
                         boxSizing: "border-box",
                         scrollbarWidth: "none",
                         msOverflowStyle: "none",
-                        transform: "translateY(-50%)"
+                        transform: "translateY(-50%)",
                     }}
                 >
                     {topRow.map((cat, i) => (
@@ -184,8 +184,13 @@ function NeverEver() {
                                 adult={cat.adult}
                                 riveFile={cat.riveFile}
                                 selected={selectedCategories.includes(cat.title)}
-                                onClick={() => !cat.locked && toggleCategory(cat.title)}
+                                onClick={() =>
+                                    cat.locked
+                                        ? openLockedCategory(cat) // ✅ открываем BottomSheet
+                                        : toggleCategory(cat.title) // ✅ выбираем категорию
+                                }
                             />
+
                             {bottomRow[i] && (
                                 <CategoryCard
                                     title={bottomRow[i].title}
@@ -194,8 +199,9 @@ function NeverEver() {
                                     riveFile={bottomRow[i].riveFile}
                                     selected={selectedCategories.includes(bottomRow[i].title)}
                                     onClick={() =>
-                                        !bottomRow[i].locked &&
-                                        toggleCategory(bottomRow[i].title)
+                                        bottomRow[i].locked
+                                            ? openLockedCategory(bottomRow[i]) // ✅ открываем BottomSheet
+                                            : toggleCategory(bottomRow[i].title) // ✅ выбираем категорию
                                     }
                                 />
                             )}
