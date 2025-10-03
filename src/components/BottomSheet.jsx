@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { motion, AnimatePresence, useDragControls } from "framer-motion";
+import { Rive } from "@rive-app/canvas";
 import FlatButton from "./FlatButton";
 import SecondaryButton from "./SecondaryButton";
-import RivePlayer from "./RivePlayer";
 
 export default function BottomSheet({
                                         open,
@@ -13,10 +13,58 @@ export default function BottomSheet({
                                         trigger = "clickActivation",
                                     }) {
     const controls = useDragControls();
+    const canvasRef = useRef(null);
+    const riveRef = useRef(null);
+    const triggerInputRef = useRef(null);
 
     const handleDragEnd = (_e, info) => {
         const draggedDownEnough = info.offset.y > 100 || info.velocity.y > 600;
         if (draggedDownEnough) onClose?.();
+    };
+
+    // Инициализация rive
+    useEffect(() => {
+        if (!canvasRef.current || !open) return;
+
+        const rive = new Rive({
+            src: riveFile,
+            canvas: canvasRef.current,
+            autoplay: true,
+            stateMachines: stateMachine,
+            onLoad: () => {
+                const inputs = rive.stateMachineInputs(stateMachine);
+                if (inputs) {
+                    triggerInputRef.current = inputs.find((i) => i.name === trigger);
+                }
+            },
+        });
+
+        try {
+            rive.renderer.clearColor = [0, 0, 0, 0]; // прозрачный фон, без черного моргания
+        } catch (e) {
+            console.warn("Не удалось выставить clearColor:", e);
+        }
+
+        riveRef.current = rive;
+
+        return () => {
+            rive.cleanup();
+        };
+    }, [riveFile, stateMachine, trigger, open]);
+
+    // Клик по canvas → триггерим stateMachine input
+    const handleClick = () => {
+        if (!triggerInputRef.current) return;
+
+        try {
+            if (typeof triggerInputRef.current.value === "boolean") {
+                triggerInputRef.current.value = !triggerInputRef.current.value;
+            } else if (triggerInputRef.current.fire) {
+                triggerInputRef.current.fire();
+            }
+        } catch (e) {
+            console.warn("Ошибка при handleClick:", e);
+        }
     };
 
     return (
@@ -60,7 +108,7 @@ export default function BottomSheet({
                             background: "var(--surface-zero)",
                             borderTopLeftRadius: 24,
                             borderTopRightRadius: 24,
-                            padding: 16,                    // общий отступ 16px
+                            padding: 16,
                             zIndex: 101,
                             display: "flex",
                             flexDirection: "column",
@@ -81,32 +129,24 @@ export default function BottomSheet({
                             }}
                         />
 
-                        {/* Rive 128x128 */}
-                        <div
+                        {/* Rive canvas */}
+                        <canvas
+                            ref={canvasRef}
+                            width={128}
+                            height={128}
+                            onClick={handleClick}
                             style={{
                                 width: 128,
                                 height: 128,
                                 marginBottom: 16,
-                                userSelect: "none",
+                                display: "block",
+                                background: "transparent",
                                 outline: "none",
+                                userSelect: "none",
+                                WebkitTapHighlightColor: "transparent",
+                                cursor: "pointer",
                             }}
-                            tabIndex={-1}   // убираем фокусировку по умолчанию
-                        >
-                            <RivePlayer
-                                src={riveFile}
-                                stateMachine={stateMachine}
-                                trigger="clickTrigger"
-                                clickToTrigger
-                                style={{
-                                    width: "100%",
-                                    height: "100%",
-                                    userSelect: "none",
-                                    outline: "none",
-                                    pointerEvents: "auto",  // но клики всё ещё работают
-                                }}
-                            />
-                        </div>
-
+                        />
 
                         {/* Заголовок */}
                         <h2
@@ -138,7 +178,7 @@ export default function BottomSheet({
                             В следующий раз игру придется начать заново
                         </p>
 
-                        {/* Кнопки — gap ровно 8px */}
+                        {/* Кнопки */}
                         <div
                             style={{
                                 width: "100%",
