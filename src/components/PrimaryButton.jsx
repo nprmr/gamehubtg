@@ -7,11 +7,20 @@ function PrimaryButton({
                            textColor = "var(--icotex-white)",
                            onClick,
                            disabled = false,
-                           description, // теперь строка, анимацию делаем внутри
+                           description,
                        }) {
+    // Обертка для клика с хаптиком
+    const handleClick = (e) => {
+        if (disabled) return;
+        // Хаптик medium
+        window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("medium");
+
+        onClick?.(e);
+    };
+
     return (
         <button
-            onClick={disabled ? undefined : onClick}
+            onClick={handleClick}
             disabled={disabled}
             style={{
                 display: "flex",
@@ -19,7 +28,7 @@ function PrimaryButton({
                 justifyContent: "center",
                 alignItems: "center",
                 width: "100%",
-                height: "64px", // фиксированная высота
+                height: "64px",
                 padding: "8px 16px",
                 borderRadius: "20px",
                 background: disabled
@@ -33,7 +42,7 @@ function PrimaryButton({
                 transition: "transform 0.1s ease",
                 marginBottom: "24px",
                 boxSizing: "border-box",
-                overflow: "hidden", // чтобы анимация не вылезала за границы
+                overflow: "hidden",
             }}
             onMouseDown={(e) =>
                 !disabled && (e.currentTarget.style.transform = "scale(0.985)")

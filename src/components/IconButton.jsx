@@ -8,9 +8,16 @@ import "../theme.css";
  * @param {number} size - размер кнопки (по умолчанию 48px)
  */
 function IconButton({ icon: Icon, onClick, size = 48 }) {
+    const handleClick = (e) => {
+        // Хаптик light
+        window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("light");
+
+        onClick?.(e);
+    };
+
     return (
         <button
-            onClick={onClick}
+            onClick={handleClick}
             style={{
                 width: `${size}px`,
                 height: `${size}px`,
@@ -23,9 +30,19 @@ function IconButton({ icon: Icon, onClick, size = 48 }) {
                 cursor: "pointer",
                 backdropFilter: "blur(12px)",
                 WebkitBackdropFilter: "blur(12px)",
+                transition: "transform 0.1s ease",
             }}
+            onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.93)")}
+            onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
+            onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
         >
-            {Icon && <Icon width={size / 2} height={size / 2} fill="var(--icotex-white)" />}
+            {Icon && (
+                <Icon
+                    width={size / 2}
+                    height={size / 2}
+                    fill="var(--icotex-white)"
+                />
+            )}
         </button>
     );
 }

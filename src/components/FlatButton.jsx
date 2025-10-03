@@ -8,9 +8,17 @@ function FlatButton({
                         disabled = false,
                         description,
                     }) {
+    const handleClick = (e) => {
+        if (disabled) return;
+        // Лёгкий haptic
+        window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("light");
+
+        onClick?.(e);
+    };
+
     return (
         <button
-            onClick={disabled ? undefined : onClick}
+            onClick={handleClick}
             disabled={disabled}
             style={{
                 display: "flex",

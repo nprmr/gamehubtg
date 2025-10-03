@@ -3,9 +3,16 @@ import "../theme.css";
 import ArrowBackIcon from "../icons/arrowback.svg?react";
 
 function IconPrimaryButton({ onClick }) {
+    const handleClick = (e) => {
+        // Хаптик medium
+        window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("medium");
+
+        onClick?.(e);
+    };
+
     return (
         <button
-            onClick={onClick}
+            onClick={handleClick}
             style={{
                 display: "flex",
                 width: "64px",

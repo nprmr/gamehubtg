@@ -8,9 +8,18 @@ function SecondaryButton({
                              disabled = false,
                              description,
                          }) {
+    // Клик с хаптиком
+    const handleClick = (e) => {
+        if (disabled) return;
+        // Лёгкий хаптик
+        window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("medium");
+
+        onClick?.(e);
+    };
+
     return (
         <button
-            onClick={disabled ? undefined : onClick}
+            onClick={handleClick}
             disabled={disabled}
             style={{
                 display: "flex",
