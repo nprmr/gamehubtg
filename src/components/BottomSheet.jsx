@@ -1,5 +1,12 @@
 import React, { useEffect, useRef } from "react";
-import { motion, AnimatePresence, useDragControls } from "framer-motion";
+import {
+    motion,
+    AnimatePresence,
+    useDragControls,
+    useMotionValue,
+    useTransform,
+    animate,
+} from "framer-motion";
 import { Rive } from "@rive-app/canvas";
 import FlatButton from "./FlatButton";
 import SecondaryButton from "./SecondaryButton";
@@ -11,26 +18,35 @@ export default function BottomSheet({
                                         riveFile = "/rive/tv.riv",
                                         stateMachine = "State Machine 1",
                                         trigger = "clickActivation",
-                                        size = 128, // 👈 можно менять размер
+                                        size = 128,
                                     }) {
     const controls = useDragControls();
     const canvasRef = useRef(null);
     const riveRef = useRef(null);
     const triggerInputRef = useRef(null);
 
+    const y = useMotionValue(0);
+    const overlayOpacity = useTransform(y, [0, 300], [0.5, 0]);
+
     const handleDragEnd = (_e, info) => {
-        const draggedDownEnough = info.offset.y > 100 || info.velocity.y > 600;
-        if (draggedDownEnough) onClose?.();
+        const draggedDownEnough = info.offset.y > 120 || info.velocity.y > 600;
+        if (draggedDownEnough) {
+            animate(y, window.innerHeight, {
+                type: "spring",
+                stiffness: 200,
+                damping: 30,
+                onComplete: onClose,
+            });
+        } else {
+            animate(y, 0, { type: "spring", stiffness: 300, damping: 30 });
+        }
     };
 
-    // инициализация rive
     useEffect(() => {
         if (!canvasRef.current || !open) return;
 
         const ratio = window.devicePixelRatio || 1;
         const canvas = canvasRef.current;
-
-        // атрибуты canvas → high DPI
         canvas.width = size * ratio;
         canvas.height = size * ratio;
         canvas.style.width = `${size}px`;
@@ -50,7 +66,6 @@ export default function BottomSheet({
             },
         });
 
-        // прозрачный фон вместо черного
         try {
             rive.renderer.clearColor = [0, 0, 0, 0];
         } catch (e) {
@@ -58,16 +73,11 @@ export default function BottomSheet({
         }
 
         riveRef.current = rive;
-
-        return () => {
-            rive.cleanup();
-        };
+        return () => rive.cleanup();
     }, [riveFile, stateMachine, trigger, open, size]);
 
-    // клик по canvas → триггер
     const handleClick = () => {
         if (!triggerInputRef.current) return;
-
         try {
             if (typeof triggerInputRef.current.value === "boolean") {
                 triggerInputRef.current.value = !triggerInputRef.current.value;
@@ -83,34 +93,30 @@ export default function BottomSheet({
         <AnimatePresence>
             {open && (
                 <>
-                    {/* Overlay */}
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 0.5 }}
                         exit={{ opacity: 0 }}
-                        transition={{ duration: 0.2 }}
                         style={{
                             position: "fixed",
                             inset: 0,
                             backgroundColor: "rgba(0,0,0,0.5)",
                             zIndex: 100,
+                            opacity: overlayOpacity,
                         }}
                         onClick={onClose}
                     />
 
-                    {/* Sheet */}
                     <motion.div
                         role="dialog"
                         aria-modal="true"
-                        initial={{ y: "100%" }}
+                        initial={{ y: window.innerHeight }}
                         animate={{ y: 0 }}
-                        exit={{ y: "100%" }}
-                        transition={{ type: "spring", stiffness: 180, damping: 20 }}
+                        exit={{ y: window.innerHeight }}
+                        transition={{ type: "spring", stiffness: 120, damping: 22 }}
                         drag="y"
-                        dragControls={controls}
-                        dragListener={true}
-                        dragConstraints={{ top: 0, bottom: 0 }}
-                        dragElastic={0.7}
+                        dragConstraints={{ top: 0, bottom: window.innerHeight }}
+                        dragElastic={{ top: 0, bottom: 0.2 }}
                         onDragEnd={handleDragEnd}
                         style={{
                             position: "fixed",
@@ -126,9 +132,10 @@ export default function BottomSheet({
                             flexDirection: "column",
                             alignItems: "center",
                             touchAction: "none",
+                            transformOrigin: "bottom center",
+                            y,
                         }}
                     >
-                        {/* Drag handle */}
                         <div
                             onPointerDown={(e) => controls.start(e)}
                             style={{
@@ -141,7 +148,6 @@ export default function BottomSheet({
                             }}
                         />
 
-                        {/* Rive canvas */}
                         <canvas
                             ref={canvasRef}
                             onClick={handleClick}
@@ -158,45 +164,14 @@ export default function BottomSheet({
                             }}
                         />
 
-                        {/* Заголовок */}
-                        <h2
-                            style={{
-                                fontFamily: "Gilroy, sans-serif",
-                                fontSize: 24,
-                                fontWeight: 700,
-                                margin: 0,
-                                marginBottom: 8,
-                                color: "var(--icotex-normal)",
-                                textAlign: "center",
-                            }}
-                        >
+                        <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>
                             Завершить игру?
                         </h2>
-
-                        {/* Подзаголовок */}
-                        <p
-                            style={{
-                                fontFamily: "Gilroy, sans-serif",
-                                fontSize: 14,
-                                fontWeight: 400,
-                                margin: 0,
-                                marginBottom: 20,
-                                color: "var(--icotex-normal)",
-                                textAlign: "center",
-                            }}
-                        >
+                        <p style={{ fontSize: 14, marginBottom: 20, textAlign: "center" }}>
                             В следующий раз игру придется начать заново
                         </p>
 
-                        {/* Кнопки */}
-                        <div
-                            style={{
-                                width: "100%",
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: 8,
-                            }}
-                        >
+                        <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 8 }}>
                             <FlatButton onClick={onConfirm}>Завершить</FlatButton>
                             <SecondaryButton onClick={onClose}>Отменить</SecondaryButton>
                         </div>

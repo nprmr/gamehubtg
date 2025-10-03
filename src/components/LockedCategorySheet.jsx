@@ -1,87 +1,122 @@
-import React, { useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { useRive, useStateMachineInput } from "@rive-app/react-canvas";
+import React, { useEffect, useRef } from "react";
+import {
+    motion,
+    AnimatePresence,
+    useDragControls,
+    useMotionValue,
+    useTransform,
+    animate,
+} from "framer-motion";
+import { Rive } from "@rive-app/canvas";
 import FlatButton from "./FlatButton";
 import SecondaryButton from "./SecondaryButton";
 
-export default function LockedCategorySheet({
-                                                open,
-                                                onClose,
-                                                categoryTitle,
-                                                riveFile,
-                                                phrases = [],
-                                                price = "199₽",
-                                                delay = 600, // задержка запуска анимации после открытия (мс)
-                                            }) {
-    // Инициализируем Rive с нужной SM
-    const { rive, RiveComponent } = useRive({
-        src: riveFile,
-        stateMachines: "State Machine 1",
-        autoplay: true, // запускаем рендер-цикл; переходы контролим инпутом
-    });
+export default function BottomSheet({
+                                        open,
+                                        onClose,
+                                        onConfirm,
+                                        riveFile = "/rive/tv.riv",
+                                        stateMachine = "State Machine 1",
+                                        trigger = "clickActivation",
+                                        size = 128,
+                                    }) {
+    const controls = useDragControls();
+    const canvasRef = useRef(null);
+    const riveRef = useRef(null);
+    const triggerInputRef = useRef(null);
 
-    // Достаём bool-инпут Activation (точно так же, как в .riv)
-    const activation = useStateMachineInput(rive, "State Machine 1", "Activation", false);
-
-    // Управляем анимацией: при открытии — ждём delay и ставим Activation=true; при закрытии — сбрасываем
-    useEffect(() => {
-        if (!activation || !rive) return;
-
-        let timer;
-        if (open) {
-            // на старте держим false, чтобы был первый кадр
-            activation.value = false;
-            // гарантируем, что цикл рендера запущен
-            rive.play();
-            // после анимации открытия шита дёргаем bool в true
-            timer = setTimeout(() => {
-                activation.value = true;
-            }, delay);
-        } else {
-            // сброс при закрытии
-            activation.value = false;
-        }
-
-        return () => {
-            if (timer) clearTimeout(timer);
-        };
-    }, [open, activation, rive, delay]);
+    const y = useMotionValue(0);
+    const overlayOpacity = useTransform(y, [0, 300], [0.5, 0]);
 
     const handleDragEnd = (_e, info) => {
-        const draggedDownEnough = info.offset.y > 100 || info.velocity.y > 600;
-        if (draggedDownEnough) onClose?.();
+        const draggedDownEnough = info.offset.y > 120 || info.velocity.y > 600;
+        if (draggedDownEnough) {
+            animate(y, window.innerHeight, {
+                type: "spring",
+                stiffness: 200,
+                damping: 30,
+                onComplete: onClose,
+            });
+        } else {
+            animate(y, 0, { type: "spring", stiffness: 300, damping: 30 });
+        }
+    };
+
+    useEffect(() => {
+        if (!canvasRef.current || !open) return;
+
+        const ratio = window.devicePixelRatio || 1;
+        const canvas = canvasRef.current;
+        canvas.width = size * ratio;
+        canvas.height = size * ratio;
+        canvas.style.width = `${size}px`;
+        canvas.style.height = `${size}px`;
+
+        const rive = new Rive({
+            src: riveFile,
+            canvas,
+            autoplay: true,
+            stateMachines: stateMachine,
+            fit: "cover",
+            onLoad: () => {
+                const inputs = rive.stateMachineInputs(stateMachine);
+                if (inputs) {
+                    triggerInputRef.current = inputs.find((i) => i.name === trigger);
+                }
+            },
+        });
+
+        try {
+            rive.renderer.clearColor = [0, 0, 0, 0];
+        } catch (e) {
+            console.warn("clearColor не поддержан:", e);
+        }
+
+        riveRef.current = rive;
+        return () => rive.cleanup();
+    }, [riveFile, stateMachine, trigger, open, size]);
+
+    const handleClick = () => {
+        if (!triggerInputRef.current) return;
+        try {
+            if (typeof triggerInputRef.current.value === "boolean") {
+                triggerInputRef.current.value = !triggerInputRef.current.value;
+            } else if (triggerInputRef.current.fire) {
+                triggerInputRef.current.fire();
+            }
+        } catch (e) {
+            console.warn("Ошибка при handleClick:", e);
+        }
     };
 
     return (
         <AnimatePresence>
             {open && (
                 <>
-                    {/* Overlay */}
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 0.5 }}
                         exit={{ opacity: 0 }}
-                        transition={{ duration: 0.2 }}
                         style={{
                             position: "fixed",
                             inset: 0,
                             backgroundColor: "rgba(0,0,0,0.5)",
                             zIndex: 100,
+                            opacity: overlayOpacity,
                         }}
                         onClick={onClose}
                     />
 
-                    {/* Sheet */}
                     <motion.div
                         role="dialog"
                         aria-modal="true"
-                        initial={{ y: "100%" }}
+                        initial={{ y: window.innerHeight }}
                         animate={{ y: 0 }}
-                        exit={{ y: "100%" }}
-                        transition={{ type: "spring", stiffness: 180, damping: 20 }}
+                        exit={{ y: window.innerHeight }}
+                        transition={{ type: "spring", stiffness: 120, damping: 22 }}
                         drag="y"
-                        dragConstraints={{ top: 0, bottom: 0 }}
-                        dragElastic={0.7}
+                        dragConstraints={{ top: 0, bottom: window.innerHeight }}
+                        dragElastic={{ top: 0, bottom: 0.2 }}
                         onDragEnd={handleDragEnd}
                         style={{
                             position: "fixed",
@@ -97,10 +132,12 @@ export default function LockedCategorySheet({
                             flexDirection: "column",
                             alignItems: "center",
                             touchAction: "none",
+                            transformOrigin: "bottom center",
+                            y,
                         }}
                     >
-                        {/* Drag handle */}
                         <div
+                            onPointerDown={(e) => controls.start(e)}
                             style={{
                                 width: 48,
                                 height: 4,
@@ -111,104 +148,32 @@ export default function LockedCategorySheet({
                             }}
                         />
 
-                        {/* Rive */}
-                        <div style={{ width: 128, height: 128, marginBottom: 16 }}>
-                            <RiveComponent
-                                style={{
-                                    width: "100%",
-                                    height: "100%",
-                                    outline: "none",
-                                    userSelect: "none",
-                                }}
-                            />
-                        </div>
-
-                        {/* Заголовок */}
-                        <h2
+                        <canvas
+                            ref={canvasRef}
+                            onClick={handleClick}
                             style={{
-                                fontFamily: "Gilroy, sans-serif",
-                                fontSize: 24,
-                                fontWeight: 700,
-                                margin: 0,
-                                marginBottom: 8,
-                                color: "var(--icotex-normal)",
-                                textAlign: "center",
+                                width: size,
+                                height: size,
+                                marginBottom: 16,
+                                display: "block",
+                                background: "transparent",
+                                outline: "none",
+                                userSelect: "none",
+                                WebkitTapHighlightColor: "transparent",
+                                cursor: "pointer",
                             }}
-                        >
-                            {categoryTitle}
+                        />
+
+                        <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>
+                            Завершить игру?
                         </h2>
-
-                        {/* Подзаголовок */}
-                        <p
-                            style={{
-                                fontFamily: "Gilroy, sans-serif",
-                                fontSize: 14,
-                                fontWeight: 400,
-                                margin: 0,
-                                marginBottom: 8,
-                                color: "var(--icotex-normal)",
-                                textAlign: "center",
-                            }}
-                        >
-                            Примеры фраз
+                        <p style={{ fontSize: 14, marginBottom: 20, textAlign: "center" }}>
+                            В следующий раз игру придется начать заново
                         </p>
 
-                        {/* Блок с примерами */}
-                        <div
-                            style={{
-                                background: "var(--surface-light)",
-                                borderRadius: 20,
-                                width: "100%",
-                                padding: 16,
-                                margin: "0 0 20px 0",
-                                boxSizing: "border-box",
-                            }}
-                        >
-                            <p
-                                style={{
-                                    fontFamily: "Gilroy, sans-serif",
-                                    fontSize: 16,
-                                    fontWeight: 700,
-                                    margin: 0,
-                                    marginBottom: 8,
-                                    color: "var(--icotex-normal)",
-                                }}
-                            >
-                                Я никогда не:
-                            </p>
-
-                            {phrases.slice(0, 3).map((phrase, idx) => (
-                                <p
-                                    key={idx}
-                                    style={{
-                                        fontFamily: "Gilroy, sans-serif",
-                                        fontSize: 14,
-                                        fontWeight: 400,
-                                        margin: 0,
-                                        marginBottom: 4,
-                                        color: "var(--icotex-lowest)",
-                                    }}
-                                >
-                                    – {phrase}
-                                </p>
-                            ))}
-                        </div>
-
-                        {/* Кнопки */}
-                        <div
-                            style={{
-                                width: "100%",
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: 8,
-                            }}
-                        >
-                            <FlatButton description="покупка сохранится навсегда">
-                                Купить за {price}
-                            </FlatButton>
-                            <SecondaryButton description="ежемесячная подписка">
-                                Премиум за 399₽
-                            </SecondaryButton>
+                        <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 8 }}>
+                            <FlatButton onClick={onConfirm}>Завершить</FlatButton>
+                            <SecondaryButton onClick={onClose}>Отменить</SecondaryButton>
                         </div>
                     </motion.div>
                 </>
