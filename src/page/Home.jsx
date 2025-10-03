@@ -136,7 +136,7 @@ function Home() {
                     width: "100%",
                     height: "100%",
                     boxSizing: "border-box",
-                    paddingTop: "calc(max(var(--tg-content-safe-area-inset-top, 0px), var(--tg-safe-area-inset-top, 0px)) + 32px)",
+                    paddingTop: "calc(max(var(--tg-content-safe-area-inset-top, 0px), var(--tg-safe-area-inset-top, 0px)) + 48px)",
                 }}
             >
                 {/* верхняя панель с иконкой */}
@@ -145,7 +145,7 @@ function Home() {
                         display: "flex",
                         justifyContent: "flex-end",
                         width: "100%",
-                        paddingRight: "calc(max(var(--tg-content-safe-area-inset-right, 0px), var(--tg-safe-area-inset-right, 0px))",
+                        paddingRight: "calc(max(var(--tg-content-safe-area-inset-right, 0px), var(--tg-safe-area-inset-right, 32px))",
                         marginBottom: 16,
                     }}
                 >
