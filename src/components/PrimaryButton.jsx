@@ -9,18 +9,24 @@ function PrimaryButton({
                            disabled = false,
                            description,
                        }) {
-    // Обертка для клика с хаптиком
+    // клик без хаптика (только колбэк)
     const handleClick = (e) => {
         if (disabled) return;
-        // Хаптик medium
-        window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("medium");
-
         onClick?.(e);
+    };
+
+    // хаптик выносим сюда
+    const handleMouseDown = () => {
+        if (!disabled) {
+            window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("medium");
+        }
     };
 
     return (
         <button
             onClick={handleClick}
+            onMouseDown={handleMouseDown}
+            onTouchStart={handleMouseDown} // для мобилок
             disabled={disabled}
             style={{
                 display: "flex",
@@ -44,16 +50,20 @@ function PrimaryButton({
                 boxSizing: "border-box",
                 overflow: "hidden",
                 outline: "none",
-                boxShadow: "none"
+                boxShadow: "none",
+                WebkitTapHighlightColor: "transparent",
             }}
-            onMouseDown={(e) =>
-                !disabled && (e.currentTarget.style.transform = "scale(0.985)")
-            }
             onMouseUp={(e) =>
                 !disabled && (e.currentTarget.style.transform = "scale(1)")
             }
             onMouseLeave={(e) =>
                 !disabled && (e.currentTarget.style.transform = "scale(1)")
+            }
+            onTouchEnd={(e) =>
+                !disabled && (e.currentTarget.style.transform = "scale(1)")
+            }
+            onMouseDownCapture={(e) =>
+                !disabled && (e.currentTarget.style.transform = "scale(0.985)")
             }
         >
       <span
