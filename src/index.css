@@ -68,3 +68,13 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+.rive-container canvas {
+    outline: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+    -webkit-focus-ring-color: transparent !important;
+    width: 100% !important;   /* растягивается внутри родителя */
+    height: 100% !important;  /* работает, если родитель имеет фикс. высоту */
+    display: block !important;
+}
+
