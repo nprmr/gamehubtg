@@ -46,16 +46,25 @@ button {
     font-family: inherit;
     background-color: #1a1a1a;
     cursor: pointer;
-    transition: border-color 0.25s, transform 0.1s ease;
-    outline: none !important;
+    transition: transform 0.1s ease;
 
-    /* убираем подсветку при тапе/фокусе */
+    /* 👇 убираем все дефолтные эффекты браузера */
+    outline: none !important;
+    box-shadow: none !important;
+    background-image: none !important;
     -webkit-tap-highlight-color: transparent !important;
     -webkit-focus-ring-color: transparent !important;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
 }
 
 button:hover {
-    border-color: #646cff;
+    border-color: transparent; /* убираем hover border */
 }
 
 button:focus,
@@ -64,6 +73,7 @@ button:active {
     outline: none !important;
     box-shadow: none !important;
     border-color: transparent !important;
+    background-image: none !important;
 }
 
 /* === Light scheme === */
