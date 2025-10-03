@@ -48,9 +48,9 @@ export default function BottomSheet({
                         transition={{ type: "spring", stiffness: 180, damping: 20 }}
                         drag="y"
                         dragControls={controls}
-                        dragListener={false}             // тянем только за хэндл
+                        dragListener={true}
                         dragConstraints={{ top: 0, bottom: 0 }}
-                        dragElastic={0.2}
+                        dragElastic={0.7}
                         onDragEnd={handleDragEnd}
                         style={{
                             position: "fixed",
@@ -82,14 +82,31 @@ export default function BottomSheet({
                         />
 
                         {/* Rive 128x128 */}
-                        <div style={{ width: 128, height: 128, marginBottom: 16 }}>
+                        <div
+                            style={{
+                                width: 128,
+                                height: 128,
+                                marginBottom: 16,
+                                userSelect: "none",
+                                outline: "none",
+                            }}
+                            tabIndex={-1}   // убираем фокусировку по умолчанию
+                        >
                             <RivePlayer
                                 src={riveFile}
                                 stateMachine={stateMachine}
                                 trigger="clickTrigger"
                                 clickToTrigger
+                                style={{
+                                    width: "100%",
+                                    height: "100%",
+                                    userSelect: "none",
+                                    outline: "none",
+                                    pointerEvents: "auto",  // но клики всё ещё работают
+                                }}
                             />
                         </div>
+
 
                         {/* Заголовок */}
                         <h2
