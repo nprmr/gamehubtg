@@ -9,7 +9,7 @@ import PrimaryButton from "../components/PrimaryButton";
 import IconPrimaryButton from "../components/IconPrimaryButton";
 import bg1 from "../assets/bg1.png";
 import { useCategories } from "../hooks/useCategories";
-import { getQuestionsByCategory } from "../api"; // ✅ используем API-слой
+import { getQuestionsByCategory } from "../api";
 import LockedCategorySheet from "../components/LockedCategorySheet";
 
 function NeverEver() {
@@ -30,10 +30,9 @@ function NeverEver() {
         );
     };
 
-    // 🔹 Открытие шита для заблокированной категории
     const openLockedCategory = async (cat) => {
         try {
-            const data = await getQuestionsByCategory(cat.title); // ✅ теперь через API (моки/реал)
+            const data = await getQuestionsByCategory(cat.title);
             setLockedSheet({
                 open: true,
                 category: cat,
@@ -66,7 +65,6 @@ function NeverEver() {
         );
     }
 
-    // ✅ защита от undefined
     const safeCategories = Array.isArray(categories) ? categories : [];
     const half = Math.ceil(safeCategories.length / 2);
     const topRow = safeCategories.slice(0, half);
@@ -96,14 +94,21 @@ function NeverEver() {
                 }}
             />
 
-            {/* Кнопка Settings */}
+            {/* Иконка Settings */}
             <div
-                style={{ position: "fixed", top: "16px", right: "16px", zIndex: 10 }}
+                style={{
+                    position: "absolute",
+                    top:
+                        "calc(max(var(--tg-content-safe-area-inset-top, 0px), var(--tg-safe-area-inset-top, 0px)) + 48px)",
+                    right:
+                        "calc(max(var(--tg-content-safe-area-inset-right, 0px), var(--tg-safe-area-inset-right, 0px)) + 16px)",
+                    zIndex: 10,
+                }}
             >
                 <IconButton icon={SettingsIcon} />
             </div>
 
-            {/* VStack */}
+            {/* Контент */}
             <div
                 style={{
                     position: "relative",
@@ -111,24 +116,23 @@ function NeverEver() {
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
-                    justifyContent: "space-between",
                     width: "100%",
                     height: "100%",
-                    paddingTop: "120px",
-                    paddingBottom: "24px",
+                    paddingTop:
+                        "calc(max(var(--tg-content-safe-area-inset-top, 0px), var(--tg-safe-area-inset-top, 0px)) + 110px)",
                     boxSizing: "border-box",
                 }}
             >
                 {/* Заголовок */}
-                <div style={{ textAlign: "center" }}>
+                <div style={{ textAlign: "center", marginBottom: 16 }}>
                     <motion.h1
                         layoutId="title"
                         style={{
                             fontFamily: "Gilroy, sans-serif",
-                            fontSize: "32px",
-                            fontWeight: "700",
+                            fontSize: 32,
+                            fontWeight: 700,
                             color: "var(--icotex-white)",
-                            marginBottom: "8px",
+                            marginBottom: 8,
                         }}
                     >
                         Я никогда НЕ
@@ -137,44 +141,42 @@ function NeverEver() {
                         layoutId="subtitle"
                         style={{
                             fontFamily: "Gilroy, sans-serif",
-                            fontSize: "14px",
-                            fontWeight: "400",
+                            fontSize: 14,
+                            fontWeight: 400,
                             color: "var(--icotex-low)",
                             margin: 0,
-                            lineHeight: "1.4",
+                            lineHeight: 1.4,
                         }}
                     >
                         выбери одну или несколько категорий для игры
                     </motion.p>
                 </div>
 
-                {/* Горизонтальная карусель */}
-                <motion.div
-                    initial={{ gap: "0px" }}
-                    animate={{ gap: "16px" }}
-                    transition={{ duration: 0.6, ease: "easeOut" }}
+                {/* Горизонтальная карусель 2 ряда */}
+                <div
                     style={{
                         display: "flex",
+                        position: "absolute",
+                        top: "55%",
                         flexDirection: "row",
                         overflowX: "auto",
                         padding: "16px 16px",
+                        gap: "16px",
                         width: "100%",
                         boxSizing: "border-box",
                         scrollbarWidth: "none",
                         msOverflowStyle: "none",
+                        transform: "translateY(-50%)"
                     }}
                 >
                     {topRow.map((cat, i) => (
-                        <motion.div
-                            key={cat.title}
+                        <div
+                            key={i}
                             style={{
                                 display: "flex",
                                 flexDirection: "column",
                                 gap: "16px",
                             }}
-                            initial={{ x: -10 }}
-                            animate={{ x: 0 }}
-                            transition={{ duration: 0.5, delay: i * 0.05 }}
                         >
                             <CategoryCard
                                 title={cat.title}
@@ -182,11 +184,7 @@ function NeverEver() {
                                 adult={cat.adult}
                                 riveFile={cat.riveFile}
                                 selected={selectedCategories.includes(cat.title)}
-                                onClick={() =>
-                                    cat.locked
-                                        ? openLockedCategory(cat)
-                                        : toggleCategory(cat.title)
-                                }
+                                onClick={() => !cat.locked && toggleCategory(cat.title)}
                             />
                             {bottomRow[i] && (
                                 <CategoryCard
@@ -194,72 +192,53 @@ function NeverEver() {
                                     locked={bottomRow[i].locked}
                                     adult={bottomRow[i].adult}
                                     riveFile={bottomRow[i].riveFile}
-                                    selected={selectedCategories.includes(
-                                        bottomRow[i].title
-                                    )}
+                                    selected={selectedCategories.includes(bottomRow[i].title)}
                                     onClick={() =>
-                                        bottomRow[i].locked
-                                            ? openLockedCategory(bottomRow[i])
-                                            : toggleCategory(bottomRow[i].title)
+                                        !bottomRow[i].locked &&
+                                        toggleCategory(bottomRow[i].title)
                                     }
                                 />
                             )}
-                        </motion.div>
+                        </div>
                     ))}
-                </motion.div>
-
-                {/* Кнопки снизу */}
-                <motion.div
-                    initial={{ gap: "0px" }}
-                    animate={{ gap: "8px" }}
-                    transition={{ duration: 0.4, ease: "easeOut" }}
-                    style={{
-                        width: "100%",
-                        display: "flex",
-                        justifyContent: "center",
-                        padding: "0 16px",
-                        boxSizing: "border-box",
-                    }}
-                >
-                    {/* Кнопка-стрелка */}
-                    <motion.div
-                        initial={{ x: 40 }}
-                        animate={{ x: 0 }}
-                        transition={{ duration: 0.5, ease: "easeOut" }}
-                    >
-                        <IconPrimaryButton
-                            onClick={() => navigate("/", { replace: true })}
-                        />
-                    </motion.div>
-
-                    {/* Основная кнопка */}
-                    <motion.div
-                        initial={{ width: "100%" }}
-                        animate={{ width: "calc(100% - 72px)" }}
-                        transition={{ duration: 0.4, ease: "easeOut" }}
-                    >
-                        {selectedCategories.length === 0 ? (
-                            <PrimaryButton textColor="var(--icotex-white-alfa)" disabled>
-                                Выберите категории
-                            </PrimaryButton>
-                        ) : (
-                            <PrimaryButton
-                                textColor="var(--icotex-white)"
-                                onClick={() =>
-                                    navigate("/game", {
-                                        state: { categories: selectedCategories },
-                                    })
-                                }
-                                description={`Выбрано категорий ${selectedCategories.length}`}
-                            >
-                                Играть
-                            </PrimaryButton>
-                        )}
-                    </motion.div>
-                </motion.div>
+                </div>
             </div>
 
-            {/* 👇 BottomSheet для заблокированных */}
+            {/* Кнопки снизу */}
+            <div
+                style={{
+                    position: "absolute",
+                    bottom:
+                        "calc(max(var(--tg-content-safe-area-inset-bottom, 0px), var(--tg-safe-area-inset-bottom, 0px)) + 24px)",
+                    left: 16,
+                    right: 16,
+                    zIndex: 10,
+                    display: "flex",
+                    justifyContent: "center",
+                    gap: 8,
+                }}
+            >
+                <IconPrimaryButton onClick={() => navigate("/", { replace: true })} />
+                {selectedCategories.length === 0 ? (
+                    <PrimaryButton textColor="var(--icotex-white-alfa)" disabled>
+                        Выберите категории
+                    </PrimaryButton>
+                ) : (
+                    <PrimaryButton
+                        textColor="var(--icotex-white)"
+                        onClick={() =>
+                            navigate("/game", {
+                                state: { categories: selectedCategories },
+                            })
+                        }
+                        description={`Выбрано категорий ${selectedCategories.length}`}
+                    >
+                        Играть
+                    </PrimaryButton>
+                )}
+            </div>
+
+            {/* BottomSheet для заблокированных */}
             <LockedCategorySheet
                 open={lockedSheet.open}
                 onClose={() =>
