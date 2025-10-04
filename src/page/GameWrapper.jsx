@@ -10,9 +10,16 @@ function GameWrapper() {
 
     useEffect(() => {
         if (!hasOnboarded()) {
-            navigate("/onboarding", { state: { categories, from: "/game" } });
+            if (categories.length > 0) {
+                navigate("/onboarding", { state: { categories, from: "/game" } });
+            } else {
+                // если категорий нет — отправляем на экран выбора
+                navigate("/neverever", { replace: true });
+            }
         }
     }, [navigate, categories]);
+
+    console.log("GameWrapper categories:", categories);
 
     return <GameScreen />;
 }

@@ -1,4 +1,3 @@
-// src/utils/onboarding.js
 export function hasOnboarded() {
     const tg = window.Telegram?.WebApp;
     const userId = tg?.initDataUnsafe?.user?.id;
