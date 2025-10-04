@@ -1,4 +1,3 @@
-// src/screens/GameWrapper.js
 import React, { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import GameScreen from "./GameScreen";
@@ -11,7 +10,7 @@ function GameWrapper() {
 
     useEffect(() => {
         if (!hasOnboarded()) {
-            navigate("/onboarding", { state: { categories } });
+            navigate("/onboarding", { state: { categories, from: "/game" } });
         }
     }, [navigate, categories]);
 

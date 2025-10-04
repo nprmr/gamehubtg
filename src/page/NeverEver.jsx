@@ -1,3 +1,4 @@
+// src/screens/NeverEver.jsx
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -11,6 +12,7 @@ import bg1 from "../assets/bg1.png";
 import { useCategories } from "../hooks/useCategories";
 import { getQuestionsByCategory } from "../api";
 import LockedCategorySheet from "../components/LockedCategorySheet";
+import { hasOnboarded } from "../utils/onboarding";
 
 function NeverEver() {
     const { categories, loading } = useCategories();
@@ -186,8 +188,8 @@ function NeverEver() {
                                 selected={selectedCategories.includes(cat.title)}
                                 onClick={() =>
                                     cat.locked
-                                        ? openLockedCategory(cat) // ✅ открываем BottomSheet
-                                        : toggleCategory(cat.title) // ✅ выбираем категорию
+                                        ? openLockedCategory(cat)
+                                        : toggleCategory(cat.title)
                                 }
                             />
 
@@ -200,8 +202,8 @@ function NeverEver() {
                                     selected={selectedCategories.includes(bottomRow[i].title)}
                                     onClick={() =>
                                         bottomRow[i].locked
-                                            ? openLockedCategory(bottomRow[i]) // ✅ открываем BottomSheet
-                                            : toggleCategory(bottomRow[i].title) // ✅ выбираем категорию
+                                            ? openLockedCategory(bottomRow[i])
+                                            : toggleCategory(bottomRow[i].title)
                                     }
                                 />
                             )}
@@ -232,11 +234,17 @@ function NeverEver() {
                 ) : (
                     <PrimaryButton
                         textColor="var(--icotex-white)"
-                        onClick={() =>
-                            navigate("/game", {
-                                state: { categories: selectedCategories },
-                            })
-                        }
+                        onClick={() => {
+                            if (hasOnboarded()) {
+                                navigate("/game", {
+                                    state: { categories: selectedCategories },
+                                });
+                            } else {
+                                navigate("/onboarding", {
+                                    state: { categories: selectedCategories, from: "/neverever" },
+                                });
+                            }
+                        }}
                         description={`Выбрано категорий ${selectedCategories.length}`}
                     >
                         Играть
