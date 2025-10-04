@@ -136,8 +136,12 @@ function GameScreen() {
 
             {/* FAQ */}
             <div style={faqIconStyle}>
-                <IconButton icon={FaqIcon} />
+                <IconButton
+                    icon={FaqIcon}
+                    onClick={() => navigate("/onboarding")}
+                />
             </div>
+
 
             {/* Заголовок */}
             <div style={titleBlockStyle}>
