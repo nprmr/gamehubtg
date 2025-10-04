@@ -22,11 +22,11 @@ function OnboardingScreen() {
     // === Rive шаг 1 ===
     const { rive: rive1, RiveComponent: Rive1 } = useRive({
         src: "/rive/ineverever.riv",
-        stateMachines: "Activation",
+        stateMachines: "State Machine 1",
         autoplay: true,
         layout: new Layout({ fit: Fit.Contain, alignment: Alignment.Center }),
     });
-    const trigger = useStateMachineInput(rive1, "Activation", "State Machine 1");
+    const trigger = useStateMachineInput(rive1, "State Machine 1", "Activation");
 
     // === Rive шаг 2 (адаптивный) ===
     const { rive: rive2, RiveComponent: Rive2 } = useRive({
