@@ -22,11 +22,11 @@ function OnboardingScreen() {
     // === Rive шаг 1 ===
     const { rive: rive1, RiveComponent: Rive1 } = useRive({
         src: "/rive/ineverever.riv",
-        stateMachines: "State Machine 1",
+        stateMachines: "Activation",
         autoplay: true,
         layout: new Layout({ fit: Fit.Contain, alignment: Alignment.Center }),
     });
-    const trigger = useStateMachineInput(rive1, "State Machine 1", "Activation");
+    const trigger = useStateMachineInput(rive1, "Activation", "State Machine 1");
 
     // === Rive шаг 2 (адаптивный) ===
     const { rive: rive2, RiveComponent: Rive2 } = useRive({
@@ -51,16 +51,16 @@ function OnboardingScreen() {
         }),
     };
 
-    // 👉 Первый Rive — направления инвертированы
+    // 👉 Первый Rive — направления инвертированы и вращение увеличено
     const rive1Variants = {
         enter: (dir) => ({
-            x: dir > 0 ? "100vw" : "-100vw", // теперь наоборот
-            rotate: dir > 0 ? 180 : -180,
+            x: dir > 0 ? "100vw" : "-100vw", // инверсия
+            rotate: dir > 0 ? 180 : -180,    // больше вращение
             opacity: 0,
         }),
         center: { x: 0, rotate: 0, opacity: 1 },
         exit: (dir) => ({
-            x: dir > 0 ? "100vw" : "-100vw", // тоже наоборот
+            x: dir > 0 ? "100vw" : "-100vw",
             rotate: dir > 0 ? -180 : 180,
             opacity: 0,
         }),
@@ -178,7 +178,12 @@ function OnboardingScreen() {
                                             width: "100%",
                                             height: "100%",
                                         }}
-                                        onClick={() => trigger?.fire()}
+                                        onClick={() => {
+                                            trigger?.fire();
+                                            // ✅ Haptic Feedback (Telegram WebApp)
+                                            const tg = window.Telegram?.WebApp;
+                                            tg?.HapticFeedback?.impactOccurred("soft");
+                                        }}
                                     />
                                 </motion.div>
                             </div>
@@ -228,7 +233,7 @@ function OnboardingScreen() {
                                 justifyContent: "space-between",
                             }}
                         >
-                            {/* Контейнер Rive 2 (адаптивный) */}
+                            {/* Контейнер Rive 2 (ещё больше и адаптивный) */}
                             <motion.div
                                 initial="enter"
                                 animate="center"
@@ -247,7 +252,7 @@ function OnboardingScreen() {
                             >
                                 <div
                                     style={{
-                                        width: "clamp(200px, 80%, 400px)", // адаптивная ширина
+                                        width: "clamp(240px, 95%, 600px)", // ✅ ещё больше
                                         aspectRatio: "1 / 1",
                                     }}
                                 >
