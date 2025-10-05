@@ -1,5 +1,5 @@
-// components/OnboardingStep.js
 import React from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 const stepWrapper = {
     display: "flex",
@@ -9,6 +9,7 @@ const stepWrapper = {
     borderRadius: 20,
     padding: 12,
     gap: 12,
+    overflow: "hidden", // важно, чтобы старый шаг не вылезал
 };
 
 const numberBlock = {
@@ -31,6 +32,7 @@ const textBlock = {
     flexDirection: "column",
     textAlign: "left",
     gap: 0,
+    overflow: "hidden",
 };
 
 const titleStyle = {
@@ -50,14 +52,55 @@ const subtitleStyle = {
     margin: 0,
 };
 
+const numberVariants = {
+    enter: { y: 40, opacity: 0 },
+    center: {
+        y: 0,
+        opacity: 1,
+        transition: { type: "spring", stiffness: 120, damping: 14 },
+    },
+    exit: { y: -40, opacity: 0, transition: { duration: 0.3 } },
+};
+
+const textVariants = {
+    enter: { y: 40, opacity: 0 },
+    center: {
+        y: 0,
+        opacity: 1,
+        transition: { type: "spring", stiffness: 120, damping: 14 },
+    },
+    exit: { y: -40, opacity: 0, transition: { duration: 0.3 } },
+};
+
 function OnboardingStep({ number, title, subtitle }) {
     return (
         <div style={stepWrapper}>
-            <div style={numberBlock}>{number}</div>
-            <div style={textBlock}>
-                <p style={titleStyle}>{title}</p>
-                <p style={subtitleStyle}>{subtitle}</p>
-            </div>
+            <AnimatePresence mode="wait">
+                <motion.div
+                    key={number}
+                    variants={numberVariants}
+                    initial="enter"
+                    animate="center"
+                    exit="exit"
+                    style={numberBlock}
+                >
+                    {number}
+                </motion.div>
+            </AnimatePresence>
+
+            <AnimatePresence mode="wait">
+                <motion.div
+                    key={title}
+                    variants={textVariants}
+                    initial="enter"
+                    animate="center"
+                    exit="exit"
+                    style={textBlock}
+                >
+                    <p style={titleStyle}>{title}</p>
+                    <p style={subtitleStyle}>{subtitle}</p>
+                </motion.div>
+            </AnimatePresence>
         </div>
     );
 }

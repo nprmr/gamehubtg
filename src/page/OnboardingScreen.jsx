@@ -1,3 +1,4 @@
+// screens/OnboardingScreen.jsx
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -20,14 +21,16 @@ function OnboardingScreen() {
     const { categories = [], from } = location.state || {};
 
     const [step, setStep] = useState(1);
-    const [direction, setDirection] = useState(1);
 
     // === Rive шаг 1 ===
     const { rive: rive1, RiveComponent: Rive1 } = useRive({
         src: "/rive/ineverever.riv",
         stateMachines: "State Machine 1",
         autoplay: true,
-        layout: new Layout({ fit: Fit.Contain, alignment: Alignment.Center }),
+        layout: new Layout({
+            fit: Fit.Contain,
+            alignment: Alignment.Center,
+        }),
     });
     const trigger = useStateMachineInput(rive1, "State Machine 1", "Activation");
 
@@ -36,41 +39,79 @@ function OnboardingScreen() {
         src: "/rive/inevereverrules.riv",
         stateMachines: "State Machine 1",
         autoplay: false,
-        layout: new Layout({ fit: Fit.Cover, alignment: Alignment.Center }),
+        layout: new Layout({
+            fit: Fit.Cover,
+            alignment: Alignment.Center,
+        }),
     });
 
-    const riveVariants = {
-        enter: (dir) => ({
-            x: dir > 0 ? "100vw" : "-100vw",
-            rotate: dir > 0 ? 20 : -20,
+    // === Варианты анимаций ===
+    const rive1Variants = {
+        hidden: { x: "-100vw", rotate: -90, opacity: 0, scale: 0.8 },
+        visible: {
+            x: 0,
+            rotate: 0,
+            opacity: 1,
+            scale: 1,
+            transition: { type: "spring", stiffness: 120, damping: 15 },
+        },
+        exit: {
+            x: "-100vw",
+            rotate: -60,
             opacity: 0,
-        }),
-        center: { x: 0, rotate: 0, opacity: 1 },
-        exit: (dir) => ({
-            x: dir > 0 ? "-100vw" : "100vw",
-            rotate: dir > 0 ? -20 : 20,
-            opacity: 0,
-        }),
+            transition: { duration: 0.8, ease: "easeInOut" },
+        },
     };
 
+    const rive2Variants = {
+        enter: { x: "100vw", opacity: 0, scale: 0.95 },
+        center: {
+            x: 0,
+            opacity: 1,
+            scale: 1,
+            transition: { type: "spring", stiffness: 120, damping: 15 },
+        },
+        exit: {
+            x: "100vw",
+            opacity: 0,
+            transition: { duration: 0.8, ease: "easeInOut" },
+        },
+    };
+
+    // Заголовок + блок шага — bounce-появление, без сдвига при выходе
     const textVariants = {
-        enter: { opacity: 0, y: 40 },
-        center: { opacity: 1, y: 0 },
-        exit: { opacity: 0, y: 40 },
+        hidden: { opacity: 0, y: 40, scale: 0.95 },
+        visible: {
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            transition: {
+                delay: 0.3,
+                type: "spring",
+                bounce: 0.6,
+                stiffness: 120,
+                damping: 10,
+            },
+        },
+        exit: { opacity: 0, transition: { duration: 0.2 } }, // не двигаем внешний контейнер
     };
 
+    const buttonsVariants = {
+        hidden: { opacity: 0, y: 30 },
+        visible: {
+            opacity: 1,
+            y: 0,
+            transition: { delay: 0.6, duration: 0.4, ease: "easeOut" },
+        },
+    };
+
+    // === Обработчики ===
     const handleNext = () => {
         if (step === 1) {
-            setDirection(1);
             setStep(2);
         } else {
             setOnboarded();
-
-            console.log("Onboarding finished:", { from, categories });
-
-            if (from === "/neverever") {
-                navigate("/game", { replace: true, state: { categories } });
-            } else if (from === "/game") {
+            if (from === "/neverever" || from === "/game") {
                 navigate("/game", { replace: true, state: { categories } });
             } else {
                 navigate("/neverever", { replace: true });
@@ -80,10 +121,20 @@ function OnboardingScreen() {
 
     const handleBack = () => {
         if (step === 2) {
-            setDirection(-1);
             setStep(1);
         } else {
             navigate("/", { replace: true });
+        }
+    };
+
+    // Хаптик (soft) при клике по первой Rive
+    const handleSoftHaptic = () => {
+        if (window?.Telegram?.WebApp?.HapticFeedback) {
+            try {
+                window.Telegram.WebApp.HapticFeedback.impactOccurred("soft");
+            } catch (e) {
+                console.warn("Haptic feedback failed:", e);
+            }
         }
     };
 
@@ -99,7 +150,7 @@ function OnboardingScreen() {
                 flexDirection: "column",
             }}
         >
-            {/* Фон */}
+            {/* Фон без анимации */}
             <img
                 src={onboardingBG}
                 alt="background"
@@ -132,7 +183,8 @@ function OnboardingScreen() {
                         "calc(max(var(--tg-content-safe-area-inset-bottom, 0px), var(--tg-safe-area-inset-bottom, 0px)) + 88px)",
                 }}
             >
-                <AnimatePresence mode="wait" initial={false}>
+                {/* ВАЖНО: убрали initial={false}, чтобы была анимация при первом монтировании */}
+                <AnimatePresence mode="wait">
                     {step === 1 && (
                         <motion.div
                             key="step1"
@@ -143,35 +195,42 @@ function OnboardingScreen() {
                                 justifyContent: "space-between",
                             }}
                         >
-                            <div
+                            <motion.div
+                                variants={rive1Variants}
+                                initial="hidden"
+                                animate="visible"
+                                exit="exit"
                                 style={{
                                     flex: 1,
                                     display: "flex",
                                     justifyContent: "center",
                                     alignItems: "center",
+                                    willChange: "transform, opacity",
                                 }}
                             >
-                                <motion.div
-                                    initial="enter"
-                                    animate="center"
-                                    exit="exit"
-                                    variants={riveVariants}
-                                    custom={direction}
-                                    transition={{ duration: 0.7, ease: "easeInOut" }}
-                                    style={{ width: "100%", maxWidth: 256, aspectRatio: "1/1" }}
+                                <div
+                                    style={{
+                                        width: "100%",
+                                        maxWidth: 256,
+                                        aspectRatio: "1/1",
+                                    }}
                                 >
                                     <Rive1
                                         style={{ width: "100%", height: "100%" }}
-                                        onClick={() => trigger?.fire()}
+                                        onClick={() => {
+                                            handleSoftHaptic();
+                                            trigger?.fire();
+                                        }}
                                     />
-                                </motion.div>
-                            </div>
+                                </div>
+                            </motion.div>
+
                             <motion.div
-                                initial="enter"
-                                animate="center"
-                                exit="exit"
+                                key="text1"
                                 variants={textVariants}
-                                transition={{ duration: 0.5 }}
+                                initial="hidden"
+                                animate="visible"
+                                exit="exit"
                                 style={{
                                     marginBottom: 20,
                                     padding: "0 16px",
@@ -213,9 +272,7 @@ function OnboardingScreen() {
                                 initial="enter"
                                 animate="center"
                                 exit="exit"
-                                variants={riveVariants}
-                                custom={direction}
-                                transition={{ duration: 0.7, ease: "easeOut" }}
+                                variants={rive2Variants}
                                 onAnimationComplete={() => rive2?.play()}
                                 style={{
                                     flex: 1,
@@ -223,6 +280,7 @@ function OnboardingScreen() {
                                     justifyContent: "center",
                                     alignItems: "center",
                                     padding: 40,
+                                    willChange: "transform, opacity",
                                 }}
                             >
                                 <div
@@ -234,12 +292,13 @@ function OnboardingScreen() {
                                     <Rive2 style={{ width: "100%", height: "100%" }} />
                                 </div>
                             </motion.div>
+
                             <motion.div
-                                initial="enter"
-                                animate="center"
+                                key="text2"
+                                initial="hidden"
+                                animate="visible"
                                 exit="exit"
                                 variants={textVariants}
-                                transition={{ duration: 0.6, delay: 0.2 }}
                                 style={{
                                     marginBottom: 20,
                                     padding: "0 16px",
@@ -251,8 +310,7 @@ function OnboardingScreen() {
                                     title="Ход игры"
                                     subtitle={
                                         <>
-                                            Игрок читает фразу “Я никогда НЕ:...” <br />
-                                            <br />
+                                            Игрок читает фразу “Я никогда НЕ:...” <br /> <br />
                                             Кто это делал – реагирует (пьет, поднимает руку или
                                             выполняет любое другое действие)
                                         </>
@@ -265,7 +323,10 @@ function OnboardingScreen() {
             </div>
 
             {/* Кнопки */}
-            <div
+            <motion.div
+                variants={buttonsVariants}
+                initial="hidden"
+                animate="visible"
                 style={{
                     position: "absolute",
                     bottom:
@@ -278,11 +339,15 @@ function OnboardingScreen() {
                     gap: 8,
                 }}
             >
-                <IconPrimaryButton onClick={handleBack} />
+                <IconPrimaryButton
+                    onClick={handleBack}
+                    whileTap={{ scale: 0.9 }}
+                    whileHover={{ scale: 1.05 }}
+                />
                 <PrimaryButton textColor="var(--icotex-white)" onClick={handleNext}>
                     {step === 1 ? "Дальше" : "Играть"}
                 </PrimaryButton>
-            </div>
+            </motion.div>
         </div>
     );
 }
