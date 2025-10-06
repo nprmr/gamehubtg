@@ -35,7 +35,18 @@ export default function PlayerCard({
         }
     }, [emojiData]);
 
-    const handleEmojiClick = () => setEmojiData(randomEmojiData());
+    const handleEmojiClick = () => {
+        setEmojiData(randomEmojiData());
+
+        // 🔔 Haptic feedback (работает только в Telegram MiniApp)
+        if (window.Telegram?.WebApp?.HapticFeedback) {
+            try {
+                window.Telegram.WebApp.HapticFeedback.impactOccurred("soft");
+            } catch (e) {
+                console.warn("HapticFeedback failed:", e);
+            }
+        }
+    };
 
     const handleTitleClick = () => {
         const newTitle = prompt("Введите новый заголовок", emojiData.name);
