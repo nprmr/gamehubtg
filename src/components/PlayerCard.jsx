@@ -12,7 +12,7 @@ export default function PlayerCard({
                                        onAdd = () => {},
                                        onEditTitle = () => {},
                                        onOpenPremium = () => {},
-                                       onStartEditing = () => {}, // 👈 новый проп
+                                       onStartEditing = () => {},
                                    }) {
     const [emojiData, setEmojiData] = useState(randomEmojiData());
     const [isEditing, setIsEditing] = useState(false);
@@ -20,10 +20,17 @@ export default function PlayerCard({
     const emojiRef = useRef(null);
     const inputRef = useRef(null);
 
+    // 🎲 случайный emoji
     function randomEmojiData() {
         return emojiMap[Math.floor(Math.random() * emojiMap.length)];
     }
 
+    // 🧠 при изменении emojiData обновляем name
+    useEffect(() => {
+        setTitleValue(emojiData.name);
+    }, [emojiData]);
+
+    // 🖼️ парсим emoji в SVG
     useEffect(() => {
         if (emojiRef.current) {
             twemoji.parse(emojiRef.current, {
@@ -40,24 +47,21 @@ export default function PlayerCard({
     }, [emojiData]);
 
     const handleEmojiClick = () => {
-        setEmojiData(randomEmojiData());
+        const newEmoji = randomEmojiData();
+        setEmojiData(newEmoji);
         window.Telegram?.WebApp?.HapticFeedback?.impactOccurred?.("soft");
     };
 
-    const handleTitleClick = () => {
-        onStartEditing(); // 👉 просим родителя центрировать карточку
-        setIsEditing(true);
+    // ✏️ редактирование имени
+    const handleTitleClick = (e) => {
+        e.stopPropagation();
+        onStartEditing();
 
-        // надёжный фокус после layout
-        requestAnimationFrame(() => {
-            inputRef.current?.focus({ preventScroll: true });
-            setTimeout(() => {
-                inputRef.current?.scrollIntoView({
-                    behavior: "smooth",
-                    block: "center",
-                });
-            }, 200);
-        });
+        setIsEditing(true);
+        // ✅ фокусим инпут сразу (в том же event loop — нужно для Telegram)
+        if (inputRef.current) {
+            inputRef.current.focus({ preventScroll: true });
+        }
     };
 
     const handleBlur = () => {
@@ -73,6 +77,7 @@ export default function PlayerCard({
         }
     };
 
+    // 🎨 стили
     const styles = {
         cardBase: {
             width: 260,
@@ -83,7 +88,7 @@ export default function PlayerCard({
             alignItems: "center",
             justifyContent: "flex-start",
             flex: "0 0 auto",
-            transition: "transform 0.2s ease, background 0.2s ease",
+            transition: "transform 0.25s ease, background 0.25s ease",
             boxSizing: "border-box",
             overflow: "hidden",
             userSelect: "none",
@@ -97,6 +102,7 @@ export default function PlayerCard({
             justifyContent: "center",
             marginTop: 24,
             cursor: "pointer",
+            transition: "transform 0.3s ease",
         },
         title: {
             fontSize: 24,
@@ -111,7 +117,6 @@ export default function PlayerCard({
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            overflow: "hidden",
             width: "-webkit-fill-available",
         },
         subtitle: {
@@ -123,9 +128,12 @@ export default function PlayerCard({
             justifyContent: "center",
             width: "-webkit-fill-available",
             height: 20,
+            transition: "opacity 0.3s ease",
+            opacity: isEditing ? 0.2 : 1,
         },
     };
 
+    // 🟢 ACTIVE CARD
     if (state === "active") {
         return (
             <div
@@ -133,6 +141,7 @@ export default function PlayerCard({
                 style={{
                     ...styles.cardBase,
                     backgroundColor: theme.surface.zero,
+                    transform: isEditing ? "translateY(-16px)" : "translateY(0)",
                 }}
             >
                 <div style={styles.emoji} ref={emojiRef} onClick={handleEmojiClick}>
@@ -159,6 +168,7 @@ export default function PlayerCard({
                                 width: "100%",
                                 height: "100%",
                                 caretColor: theme.icotex.white,
+                                transition: "transform 0.3s ease",
                             }}
                         />
                     ) : (
@@ -171,6 +181,7 @@ export default function PlayerCard({
         );
     }
 
+    // 🟣 ADD CARD
     if (state === "add") {
         return (
             <div
@@ -197,6 +208,8 @@ export default function PlayerCard({
                         style={{
                             width: "128px",
                             height: "128px",
+                            display: "block",
+                            flexShrink: 0,
                         }}
                     />
                 </div>
@@ -223,6 +236,7 @@ export default function PlayerCard({
         );
     }
 
+    // 💎 PREMIUM CARD
     if (state === "premium") {
         return (
             <PremiumCard
