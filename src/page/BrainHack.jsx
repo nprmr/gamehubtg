@@ -33,7 +33,7 @@ function Mozgolomka() {
             : { id: "add-player", state: "add", __kind: "add" },
     ];
 
-    // измеряем ширину карточки
+    // 📏 измеряем ширину карточки
     useEffect(() => {
         const measure = () => {
             if (firstItemRef.current) {
@@ -47,12 +47,13 @@ function Mozgolomka() {
         return () => window.removeEventListener("resize", measure);
     }, [cardWidth]);
 
-    // плавный подъём при клавиатуре
+    // 📱 фиксированный подъем при появлении клавиатуры (~40px)
     useEffect(() => {
         if (!window.visualViewport) return;
         const handleResize = () => {
             const diff = window.innerHeight - window.visualViewport.height;
-            setKeyboardShift(diff > 0 ? diff / 1.8 : 0);
+            // если клавиатура активна → поднимаем контент на 40px
+            setKeyboardShift(diff > 80 ? 40 : 0);
         };
         window.visualViewport.addEventListener("resize", handleResize);
         return () => window.visualViewport.removeEventListener("resize", handleResize);
@@ -86,7 +87,7 @@ function Mozgolomka() {
         setEditingId(id);
     };
 
-    // логика карусели (1:1 как в Home)
+    // 🎠 логика карусели (1:1 как Home)
     const maxIndex = Math.max(0, items.length - 1);
     const clamp = (n) => Math.max(0, Math.min(maxIndex, n));
     const goTo = (i) => setActiveIndex(clamp(i));
@@ -134,7 +135,7 @@ function Mozgolomka() {
                 />
             </AnimatePresence>
 
-            {/* контент */}
+            {/* контент (только верхняя часть поднимается на 40px) */}
             <motion.div
                 animate={{ y: -keyboardShift }}
                 transition={{ type: "spring", stiffness: 200, damping: 30 }}
@@ -274,7 +275,7 @@ function Mozgolomka() {
                 </div>
             </motion.div>
 
-            {/* нижние кнопки */}
+            {/* нижние кнопки (не двигаются при клавиатуре) */}
             <div
                 style={{
                     position: "absolute",
