@@ -15,6 +15,7 @@ function Mozgolomka() {
     const [keyboardHeight, setKeyboardHeight] = useState(0);
     const maxPlayers = 4;
 
+    // Подписка на событие изменения viewport Telegram
     useEffect(() => {
         const tg = window.Telegram?.WebApp;
         if (!tg) return;
@@ -45,8 +46,11 @@ function Mozgolomka() {
 
     const isMaxPlayers = players.length >= maxPlayers;
 
-    // вычисляем смещение: карусель 12–16 px над клавиатурой
-    const contentShift = keyboardHeight > 0 ? keyboardHeight - 16 : 0;
+    // Сдвигаем контент ровно до верхней границы клавиатуры (чуть выше)
+    const contentShift =
+        keyboardHeight > 0
+            ? Math.min(keyboardHeight - 16, window.innerHeight * 0.4)
+            : 0;
 
     return (
         <div
@@ -58,7 +62,7 @@ function Mozgolomka() {
                 overflow: "hidden",
             }}
         >
-            {/* фон */}
+            {/* Фон */}
             <img
                 src={bg}
                 alt="background"
@@ -66,12 +70,13 @@ function Mozgolomka() {
                     position: "absolute",
                     bottom: 0,
                     width: "100%",
+                    height: "auto",
                     opacity: 0.6,
                     zIndex: 0,
                 }}
             />
 
-            {/* настройки */}
+            {/* Иконка настроек */}
             <div
                 style={{
                     position: "absolute",
@@ -85,10 +90,10 @@ function Mozgolomka() {
                 <IconButton icon={SettingsIcon} />
             </div>
 
-            {/* контент */}
+            {/* Контентная часть (только она двигается) */}
             <motion.div
                 animate={{ y: -contentShift }}
-                transition={{ type: "spring", stiffness: 150, damping: 22 }}
+                transition={{ type: "spring", stiffness: 160, damping: 24 }}
                 style={{
                     position: "absolute",
                     top: 0,
@@ -100,10 +105,17 @@ function Mozgolomka() {
                     alignItems: "center",
                     justifyContent: "center",
                     zIndex: 1,
-                    pointerEvents: "none",
+                    pointerEvents: "none", // чтобы фон не блокировал клики
                 }}
             >
-                <div style={{ textAlign: "center", marginBottom: 24, pointerEvents: "auto" }}>
+                {/* Заголовки */}
+                <div
+                    style={{
+                        textAlign: "center",
+                        marginBottom: 24,
+                        pointerEvents: "auto",
+                    }}
+                >
                     <motion.h1
                         layoutId="title"
                         style={{
@@ -124,6 +136,7 @@ function Mozgolomka() {
                             fontSize: 14,
                             color: theme.icotex.low,
                             margin: 0,
+                            lineHeight: 1.4,
                         }}
                     >
                         Можно добавить до 4 игроков
@@ -141,7 +154,7 @@ function Mozgolomka() {
                     </motion.p>
                 </div>
 
-                {/* карусель */}
+                {/* Карусель */}
                 <motion.div
                     layout
                     style={{
@@ -165,6 +178,7 @@ function Mozgolomka() {
                             playerNumber={index + 1}
                         />
                     ))}
+
                     {!isMaxPlayers ? (
                         <PlayerCard
                             id="add-player"
@@ -182,10 +196,8 @@ function Mozgolomka() {
                 </motion.div>
             </motion.div>
 
-            {/* кнопки */}
-            <motion.div
-                animate={{ y: -keyboardHeight }}
-                transition={{ type: "spring", stiffness: 150, damping: 22 }}
+            {/* Кнопки — фиксированы, НЕ двигаются */}
+            <div
                 style={{
                     position: "absolute",
                     bottom:
@@ -205,7 +217,7 @@ function Mozgolomka() {
                 >
                     Играть
                 </PrimaryButton>
-            </motion.div>
+            </div>
         </div>
     );
 }
