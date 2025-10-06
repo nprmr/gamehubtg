@@ -13,9 +13,9 @@ function Mozgolomka() {
     const navigate = useNavigate();
     const [players, setPlayers] = useState([{ id: 1, state: "active" }]);
     const [keyboardHeight, setKeyboardHeight] = useState(0);
+    const [viewportHeight, setViewportHeight] = useState(window.innerHeight);
     const maxPlayers = 4;
 
-    // Подписка на событие изменения viewport Telegram
     useEffect(() => {
         const tg = window.Telegram?.WebApp;
         if (!tg) return;
@@ -23,6 +23,7 @@ function Mozgolomka() {
         const handleViewport = () => {
             const diff = window.innerHeight - tg.viewportStableHeight;
             setKeyboardHeight(diff > 0 ? diff : 0);
+            setViewportHeight(tg.viewportStableHeight);
         };
 
         tg.onEvent("viewportChanged", handleViewport);
@@ -46,20 +47,19 @@ function Mozgolomka() {
 
     const isMaxPlayers = players.length >= maxPlayers;
 
-    // Сдвигаем контент ровно до верхней границы клавиатуры (чуть выше)
+    // Контент поднимается, чтобы нижний край был в 12–16px над клавиатурой
     const contentShift =
-        keyboardHeight > 0
-            ? Math.min(keyboardHeight - 16, window.innerHeight * 0.4)
-            : 0;
+        keyboardHeight > 0 ? keyboardHeight - 16 : 0;
 
     return (
         <div
             style={{
                 width: "100vw",
-                height: "100vh",
+                height: `${viewportHeight}px`, // контент адаптируется к уменьшенному viewport
                 backgroundColor: theme.surface.main,
                 position: "relative",
                 overflow: "hidden",
+                transition: "height 0.25s ease",
             }}
         >
             {/* Фон */}
@@ -70,13 +70,12 @@ function Mozgolomka() {
                     position: "absolute",
                     bottom: 0,
                     width: "100%",
-                    height: "auto",
                     opacity: 0.6,
                     zIndex: 0,
                 }}
             />
 
-            {/* Иконка настроек */}
+            {/* Кнопка настроек */}
             <div
                 style={{
                     position: "absolute",
@@ -90,10 +89,10 @@ function Mozgolomka() {
                 <IconButton icon={SettingsIcon} />
             </div>
 
-            {/* Контентная часть (только она двигается) */}
+            {/* Контент (двигается только он) */}
             <motion.div
                 animate={{ y: -contentShift }}
-                transition={{ type: "spring", stiffness: 160, damping: 24 }}
+                transition={{ type: "spring", stiffness: 150, damping: 20 }}
                 style={{
                     position: "absolute",
                     top: 0,
@@ -105,17 +104,10 @@ function Mozgolomka() {
                     alignItems: "center",
                     justifyContent: "center",
                     zIndex: 1,
-                    pointerEvents: "none", // чтобы фон не блокировал клики
+                    pointerEvents: "none",
                 }}
             >
-                {/* Заголовки */}
-                <div
-                    style={{
-                        textAlign: "center",
-                        marginBottom: 24,
-                        pointerEvents: "auto",
-                    }}
-                >
+                <div style={{ textAlign: "center", marginBottom: 24, pointerEvents: "auto" }}>
                     <motion.h1
                         layoutId="title"
                         style={{
@@ -196,18 +188,19 @@ function Mozgolomka() {
                 </motion.div>
             </motion.div>
 
-            {/* Кнопки — фиксированы, НЕ двигаются */}
+            {/* Нижние кнопки — зафиксированы по window.innerHeight, не двигаются */}
             <div
                 style={{
-                    position: "absolute",
+                    position: "fixed",
                     bottom:
                         "calc(max(var(--tg-content-safe-area-inset-bottom, 0px), var(--tg-safe-area-inset-bottom, 0px)) + 16px)",
                     left: 16,
                     right: 16,
-                    zIndex: 10,
+                    zIndex: 20,
                     display: "flex",
                     justifyContent: "center",
                     gap: 8,
+                    pointerEvents: "auto",
                 }}
             >
                 <IconPrimaryButton onClick={() => navigate("/", { replace: true })} />
