@@ -12,7 +12,7 @@ import IconPrimaryButton from "../components/IconPrimaryButton";
 function Mozgolomka() {
     const navigate = useNavigate();
     const [players, setPlayers] = useState([{ id: 1, state: "active" }]);
-    const [keyboardShift, setKeyboardShift] = useState(0);
+    const [keyboardHeight, setKeyboardHeight] = useState(0);
     const maxPlayers = 4;
 
     useEffect(() => {
@@ -21,8 +21,7 @@ function Mozgolomka() {
 
         const handleViewport = () => {
             const diff = window.innerHeight - tg.viewportStableHeight;
-            // плавное ограничение, чтобы не прыгало резко
-            setKeyboardShift(diff > 0 ? Math.min(diff, 300) : 0);
+            setKeyboardHeight(diff > 0 ? diff : 0);
         };
 
         tg.onEvent("viewportChanged", handleViewport);
@@ -46,6 +45,9 @@ function Mozgolomka() {
 
     const isMaxPlayers = players.length >= maxPlayers;
 
+    // вычисляем смещение: карусель 12–16 px над клавиатурой
+    const contentShift = keyboardHeight > 0 ? keyboardHeight - 16 : 0;
+
     return (
         <div
             style={{
@@ -56,7 +58,7 @@ function Mozgolomka() {
                 overflow: "hidden",
             }}
         >
-            {/* Фон */}
+            {/* фон */}
             <img
                 src={bg}
                 alt="background"
@@ -69,7 +71,7 @@ function Mozgolomka() {
                 }}
             />
 
-            {/* Кнопка настроек */}
+            {/* настройки */}
             <div
                 style={{
                     position: "absolute",
@@ -83,10 +85,10 @@ function Mozgolomka() {
                 <IconButton icon={SettingsIcon} />
             </div>
 
-            {/* Основной контент (заголовок + карусель) */}
+            {/* контент */}
             <motion.div
-                animate={{ y: -keyboardShift * 0.5 }}
-                transition={{ type: "spring", stiffness: 120, damping: 18 }}
+                animate={{ y: -contentShift }}
+                transition={{ type: "spring", stiffness: 150, damping: 22 }}
                 style={{
                     position: "absolute",
                     top: 0,
@@ -96,18 +98,12 @@ function Mozgolomka() {
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
-                    justifyContent: "center", // центрирование по вертикали
+                    justifyContent: "center",
                     zIndex: 1,
-                    pointerEvents: "none", // чтобы фон не перехватывал клики
+                    pointerEvents: "none",
                 }}
             >
-                <div
-                    style={{
-                        textAlign: "center",
-                        marginBottom: 24,
-                        pointerEvents: "auto",
-                    }}
-                >
+                <div style={{ textAlign: "center", marginBottom: 24, pointerEvents: "auto" }}>
                     <motion.h1
                         layoutId="title"
                         style={{
@@ -128,7 +124,6 @@ function Mozgolomka() {
                             fontSize: 14,
                             color: theme.icotex.low,
                             margin: 0,
-                            lineHeight: 1.4,
                         }}
                     >
                         Можно добавить до 4 игроков
@@ -146,7 +141,7 @@ function Mozgolomka() {
                     </motion.p>
                 </div>
 
-                {/* Карусель */}
+                {/* карусель */}
                 <motion.div
                     layout
                     style={{
@@ -158,7 +153,6 @@ function Mozgolomka() {
                         width: "100%",
                         boxSizing: "border-box",
                         scrollbarWidth: "none",
-                        msOverflowStyle: "none",
                         justifyContent: "center",
                         pointerEvents: "auto",
                     }}
@@ -171,7 +165,6 @@ function Mozgolomka() {
                             playerNumber={index + 1}
                         />
                     ))}
-
                     {!isMaxPlayers ? (
                         <PlayerCard
                             id="add-player"
@@ -189,10 +182,10 @@ function Mozgolomka() {
                 </motion.div>
             </motion.div>
 
-            {/* Нижние кнопки */}
+            {/* кнопки */}
             <motion.div
-                animate={{ y: -keyboardShift }}
-                transition={{ type: "spring", stiffness: 140, damping: 18 }}
+                animate={{ y: -keyboardHeight }}
+                transition={{ type: "spring", stiffness: 150, damping: 22 }}
                 style={{
                     position: "absolute",
                     bottom:
