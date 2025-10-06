@@ -13,24 +13,18 @@ import { theme } from "../theme";
 function Mozgolomka() {
     const navigate = useNavigate();
 
-    // базовые игроки
     const [players, setPlayers] = useState([{ id: 1, state: "active", name: "Игрок 1" }]);
-
     const [activeIndex, setActiveIndex] = useState(0);
     const [cardWidth, setCardWidth] = useState(260);
     const [viewportWidth, setViewportWidth] = useState(window.innerWidth);
-    const [viewportHeight, setViewportHeight] = useState(window.innerHeight);
-    const [ignoreResize, setIgnoreResize] = useState(false);
-
     const firstItemRef = useRef(null);
     const lastW = useRef(viewportWidth);
-    const lastH = useRef(viewportHeight);
 
     const GAP = 16;
     const maxPlayers = 4;
     const isMaxPlayers = players.length >= maxPlayers;
+    const [ignoreResize, setIgnoreResize] = useState(false);
 
-    // 👇 формируем список карточек
     const items = [
         ...players.map((p) => ({ ...p, __kind: "player" })),
         isMaxPlayers
@@ -38,7 +32,6 @@ function Mozgolomka() {
             : { id: "add-player", state: "add", __kind: "add" },
     ];
 
-    // ➕ Добавить игрока
     const handleAddPlayer = () => {
         if (players.length < maxPlayers) {
             setPlayers((prev) => [
@@ -48,14 +41,12 @@ function Mozgolomka() {
         }
     };
 
-    // ✏️ Изменить имя игрока
     const handleEditTitle = (id, newTitle) => {
         setPlayers((prev) =>
             prev.map((p) => (p.id === id ? { ...p, name: newTitle } : p))
         );
     };
 
-    // 💎 Премиум окно
     const handleOpenPremium = () => {
         window.Telegram?.WebApp?.showPopup({
             title: "Премиум",
@@ -65,29 +56,20 @@ function Mozgolomka() {
         });
     };
 
-    // 📏 измерения, без скачков при клавиатуре
+    // измерения
     useEffect(() => {
         const measure = () => {
-            if (ignoreResize) return; // 🔒 не пересчитываем при клавиатуре
-
+            if (ignoreResize) return;
             if (firstItemRef.current) {
                 const w = Math.round(firstItemRef.current.getBoundingClientRect().width || 0);
                 if (w && w !== cardWidth) setCardWidth(w);
             }
-
             const w = window.innerWidth;
-            const h = window.innerHeight;
-
             if (w !== lastW.current) {
                 lastW.current = w;
                 setViewportWidth(w);
             }
-            if (h !== lastH.current) {
-                lastH.current = h;
-                setViewportHeight(h);
-            }
         };
-
         measure();
         window.addEventListener("resize", measure);
         return () => window.removeEventListener("resize", measure);
@@ -97,7 +79,6 @@ function Mozgolomka() {
     const clamp = (n) => Math.max(0, Math.min(maxIndex, n));
     const step = cardWidth + GAP;
 
-    // 📍 расчёт позиций
     const getXForIndex = (i) => {
         if (i === 0) return 16;
         const centerOfCard = i * step + cardWidth / 2;
@@ -110,12 +91,9 @@ function Mozgolomka() {
     const minX = Math.min(16, viewportWidth - totalWidth - 16);
     const spring = { type: "spring", stiffness: 250, damping: 35 };
 
-    // 🎯 Центрирование при редактировании
     const handleStartEditing = (index) => {
         setIgnoreResize(true);
         setActiveIndex(index);
-
-        // через 1.5 секунды снова можно обрабатывать resize
         setTimeout(() => setIgnoreResize(false), 1500);
     };
 
@@ -129,7 +107,6 @@ function Mozgolomka() {
                 overflow: "hidden",
             }}
         >
-            {/* фон */}
             <AnimatePresence mode="wait">
                 <motion.img
                     key="bg"
@@ -150,7 +127,6 @@ function Mozgolomka() {
                 />
             </AnimatePresence>
 
-            {/* кнопка настроек */}
             <div
                 style={{
                     position: "absolute",
@@ -164,7 +140,6 @@ function Mozgolomka() {
                 <IconButton icon={SettingsIcon} />
             </div>
 
-            {/* контент */}
             <div
                 style={{
                     position: "relative",
@@ -179,7 +154,6 @@ function Mozgolomka() {
                     boxSizing: "border-box",
                 }}
             >
-                {/* заголовок */}
                 <div style={{ textAlign: "center", marginBottom: 16 }}>
                     <motion.h1
                         layoutId="title"
@@ -221,7 +195,6 @@ function Mozgolomka() {
                     </motion.p>
                 </div>
 
-                {/* карусель игроков */}
                 <div
                     style={{
                         position: "absolute",
@@ -261,8 +234,6 @@ function Mozgolomka() {
                             if (passed) {
                                 if (dx < 0) setActiveIndex(clamp(activeIndex + 1));
                                 else setActiveIndex(clamp(activeIndex - 1));
-                            } else {
-                                setActiveIndex(clamp(activeIndex));
                             }
                         }}
                     >
@@ -291,7 +262,7 @@ function Mozgolomka() {
                                     onEditTitle={(newTitle) =>
                                         handleEditTitle(item.id, newTitle)
                                     }
-                                    onStartEditing={() => handleStartEditing(index)} // 🎯 центрирование
+                                    onStartEditing={() => handleStartEditing(index)}
                                     onOpenPremium={
                                         item.__kind === "premium"
                                             ? handleOpenPremium
@@ -304,7 +275,6 @@ function Mozgolomka() {
                 </div>
             </div>
 
-            {/* нижние кнопки */}
             <div
                 style={{
                     position: "absolute",

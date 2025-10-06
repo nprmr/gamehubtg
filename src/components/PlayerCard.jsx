@@ -15,22 +15,22 @@ export default function PlayerCard({
                                        onStartEditing = () => {},
                                    }) {
     const [emojiData, setEmojiData] = useState(randomEmojiData());
-    const [isEditing, setIsEditing] = useState(false);
     const [titleValue, setTitleValue] = useState(emojiData.name);
+    const [isEditing, setIsEditing] = useState(false);
+    const [keyboardOffset, setKeyboardOffset] = useState(0);
     const emojiRef = useRef(null);
     const inputRef = useRef(null);
 
-    // 🎲 случайный emoji
     function randomEmojiData() {
         return emojiMap[Math.floor(Math.random() * emojiMap.length)];
     }
 
-    // 🧠 при изменении emojiData обновляем name
+    // 🧠 обновляем title при смене emoji
     useEffect(() => {
         setTitleValue(emojiData.name);
     }, [emojiData]);
 
-    // 🖼️ парсим emoji в SVG
+    // 🎨 emoji → SVG
     useEffect(() => {
         if (emojiRef.current) {
             twemoji.parse(emojiRef.current, {
@@ -46,27 +46,39 @@ export default function PlayerCard({
         }
     }, [emojiData]);
 
+    // 📱 отслеживаем клавиатуру через visualViewport
+    useEffect(() => {
+        if (!window.visualViewport) return;
+        const handleResize = () => {
+            const offset = window.innerHeight - window.visualViewport.height;
+            setKeyboardOffset(offset > 0 ? offset / 2 : 0);
+        };
+        window.visualViewport.addEventListener("resize", handleResize);
+        return () => window.visualViewport.removeEventListener("resize", handleResize);
+    }, []);
+
     const handleEmojiClick = () => {
-        const newEmoji = randomEmojiData();
-        setEmojiData(newEmoji);
-        window.Telegram?.WebApp?.HapticFeedback?.impactOccurred?.("soft");
+        setEmojiData(randomEmojiData());
+        if (window.Telegram?.WebApp?.HapticFeedback) {
+            try {
+                window.Telegram.WebApp.HapticFeedback.impactOccurred("soft");
+            } catch (e) {
+                console.warn("HapticFeedback failed:", e);
+            }
+        }
     };
 
-    // ✏️ редактирование имени
     const handleTitleClick = (e) => {
         e.stopPropagation();
-        onStartEditing();
-
+        onStartEditing?.();
         setIsEditing(true);
-        // ✅ фокусим инпут сразу (в том же event loop — нужно для Telegram)
-        if (inputRef.current) {
-            inputRef.current.focus({ preventScroll: true });
-        }
+        // фокус в том же событии (важно для Telegram)
+        inputRef.current?.focus({ preventScroll: true });
     };
 
     const handleBlur = () => {
         setIsEditing(false);
-        setEmojiData({ ...emojiData, name: titleValue });
+        setKeyboardOffset(0);
         onEditTitle(titleValue);
     };
 
@@ -77,7 +89,6 @@ export default function PlayerCard({
         }
     };
 
-    // 🎨 стили
     const styles = {
         cardBase: {
             width: 260,
@@ -88,7 +99,7 @@ export default function PlayerCard({
             alignItems: "center",
             justifyContent: "flex-start",
             flex: "0 0 auto",
-            transition: "transform 0.25s ease, background 0.25s ease",
+            transition: "transform 0.3s ease",
             boxSizing: "border-box",
             overflow: "hidden",
             userSelect: "none",
@@ -102,7 +113,7 @@ export default function PlayerCard({
             justifyContent: "center",
             marginTop: 24,
             cursor: "pointer",
-            transition: "transform 0.3s ease",
+            transition: "transform 0.2s ease",
         },
         title: {
             fontSize: 24,
@@ -112,12 +123,12 @@ export default function PlayerCard({
             marginLeft: 16,
             marginRight: 16,
             color: theme.icotex.normal,
-            cursor: "pointer",
             minHeight: 60,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             width: "-webkit-fill-available",
+            position: "relative",
         },
         subtitle: {
             fontSize: 16,
@@ -141,7 +152,7 @@ export default function PlayerCard({
                 style={{
                     ...styles.cardBase,
                     backgroundColor: theme.surface.zero,
-                    transform: isEditing ? "translateY(-16px)" : "translateY(0)",
+                    transform: `translateY(-${keyboardOffset}px)`,
                 }}
             >
                 <div style={styles.emoji} ref={emojiRef} onClick={handleEmojiClick}>
@@ -149,31 +160,33 @@ export default function PlayerCard({
                 </div>
 
                 <div style={styles.title} onClick={!isEditing ? handleTitleClick : undefined}>
-                    {isEditing ? (
-                        <input
-                            ref={inputRef}
-                            type="text"
-                            value={titleValue}
-                            onChange={(e) => setTitleValue(e.target.value)}
-                            onBlur={handleBlur}
-                            onKeyDown={handleKeyDown}
-                            style={{
-                                fontSize: 24,
-                                fontWeight: 700,
-                                textAlign: "center",
-                                color: theme.icotex.normal,
-                                background: "transparent",
-                                border: "none",
-                                outline: "none",
-                                width: "100%",
-                                height: "100%",
-                                caretColor: theme.icotex.white,
-                                transition: "transform 0.3s ease",
-                            }}
-                        />
-                    ) : (
-                        <span>{titleValue}</span>
-                    )}
+                    <input
+                        ref={inputRef}
+                        type="text"
+                        value={titleValue}
+                        onChange={(e) => setTitleValue(e.target.value)}
+                        onBlur={handleBlur}
+                        onKeyDown={handleKeyDown}
+                        style={{
+                            fontSize: 24,
+                            fontWeight: 700,
+                            textAlign: "center",
+                            color: theme.icotex.normal,
+                            background: "transparent",
+                            border: "none",
+                            outline: "none",
+                            width: "100%",
+                            height: "100%",
+                            caretColor: theme.icotex.white,
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            pointerEvents: isEditing ? "auto" : "none",
+                            opacity: isEditing ? 1 : 0,
+                            transition: "opacity 0.2s ease",
+                        }}
+                    />
+                    {!isEditing && <span>{titleValue}</span>}
                 </div>
 
                 <div style={styles.subtitle}>Нажмите, чтобы изменить</div>
