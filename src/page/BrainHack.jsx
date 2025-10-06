@@ -47,12 +47,12 @@ function Mozgolomka() {
         return () => window.removeEventListener("resize", measure);
     }, [cardWidth]);
 
-    // 📱 фиксированный подъем при появлении клавиатуры (~40px)
+    // 📱 плавный подъем ТОЛЬКО верхнего блока при клавиатуре (~40px)
     useEffect(() => {
         if (!window.visualViewport) return;
         const handleResize = () => {
             const diff = window.innerHeight - window.visualViewport.height;
-            // если клавиатура активна → поднимаем контент на 40px
+            // если клавиатура активна → поднимаем только верхний блок на 40px
             setKeyboardShift(diff > 80 ? 40 : 0);
         };
         window.visualViewport.addEventListener("resize", handleResize);
@@ -135,18 +135,19 @@ function Mozgolomka() {
                 />
             </AnimatePresence>
 
-            {/* контент (только верхняя часть поднимается на 40px) */}
+            {/* ---------- ВЕРХНИЙ БЛОК (анимируется при клавиатуре) ---------- */}
             <motion.div
                 animate={{ y: -keyboardShift }}
                 transition={{ type: "spring", stiffness: 200, damping: 30 }}
                 style={{
-                    position: "relative",
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
                     zIndex: 1,
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
-                    width: "100%",
-                    height: "100%",
                     paddingTop:
                         "calc(max(var(--tg-content-safe-area-inset-top, 0px), var(--tg-safe-area-inset-top, 0px)) + 80px)",
                     boxSizing: "border-box",
@@ -211,13 +212,11 @@ function Mozgolomka() {
                 {/* 🎠 Карусель */}
                 <div
                     style={{
-                        position: "absolute",
-                        top: "55%",
-                        left: 0,
-                        right: 0,
-                        transform: "translateY(-50%)",
+                        position: "relative",
+                        top: "10vh",
                         display: "flex",
                         overflow: "hidden",
+                        justifyContent: "center",
                     }}
                 >
                     <motion.div
@@ -275,7 +274,7 @@ function Mozgolomka() {
                 </div>
             </motion.div>
 
-            {/* нижние кнопки (не двигаются при клавиатуре) */}
+            {/* ---------- НИЖНИЕ КНОПКИ (НЕ двигаются) ---------- */}
             <div
                 style={{
                     position: "absolute",
