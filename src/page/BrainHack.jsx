@@ -13,8 +13,8 @@ function Mozgolomka() {
     const navigate = useNavigate();
     const [players, setPlayers] = useState([{ id: 1, state: "active" }]);
     const [cardWidth, setCardWidth] = useState(260);
-    const [viewportWidth, setViewportWidth] = useState(window.innerWidth);
     const firstItemRef = useRef(null);
+    const carouselRef = useRef(null);
 
     const GAP = 8;
     const maxPlayers = 4;
@@ -26,28 +26,11 @@ function Mozgolomka() {
                 const w = firstItemRef.current.getBoundingClientRect().width;
                 if (w) setCardWidth(Math.round(w));
             }
-            setViewportWidth(window.innerWidth);
         };
         measure();
         window.addEventListener("resize", measure);
         return () => window.removeEventListener("resize", measure);
     }, []);
-
-    const maxIndex = Math.max(0, players.length - 1);
-    const clamp = (n) => Math.max(0, Math.min(maxIndex, n));
-    const [activeIndex, setActiveIndex] = useState(0);
-    const goTo = (i) => setActiveIndex(clamp(i));
-    const step = cardWidth + GAP;
-
-    const getXForIndex = (i) => {
-        if (i === 0) return 16;
-        const centerOfCard = i * step + cardWidth / 2;
-        const viewportCenter = viewportWidth / 2;
-        return viewportCenter - centerOfCard;
-    };
-
-    const minX = getXForIndex(maxIndex);
-    const maxX = 16;
 
     const handleAddPlayer = () => {
         if (players.length < maxPlayers) {
@@ -135,6 +118,7 @@ function Mozgolomka() {
                     >
                         Мозголомка
                     </motion.h1>
+
                     <motion.p
                         layoutId="subtitle"
                         style={{
@@ -147,6 +131,7 @@ function Mozgolomka() {
                     >
                         Можно добавить до 4 игроков
                     </motion.p>
+
                     <motion.p
                         style={{
                             fontFamily: "Gilroy, sans-serif",
@@ -159,77 +144,63 @@ function Mozgolomka() {
                     </motion.p>
                 </div>
 
-                {/* центрированная draggable-карусель, как на Home */}
+                {/* горизонтальная карусель со свободным scroll */}
                 <div
+                    ref={carouselRef}
                     style={{
-                        position: "absolute",
-                        top: "55%",
-                        left: 0,
-                        right: 0,
-                        transform: "translateY(-50%)",
                         display: "flex",
-                        overflow: "hidden",
+                        flexDirection: "row",
+                        overflowX: "auto",
+                        gap: GAP,
+                        padding: "16px 24px",
+                        width: "100%",
+                        boxSizing: "border-box",
+                        scrollbarWidth: "none",
+                        msOverflowStyle: "none",
+                        justifyContent: players.length === 1 ? "center" : "flex-start",
+                        scrollSnapType: "x mandatory",
+                        scrollBehavior: "smooth",
                     }}
                 >
-                    <motion.div
-                        style={{ display: "flex", gap: `${GAP}px` }}
-                        drag="x"
-                        dragConstraints={{ left: minX, right: maxX }}
-                        dragElastic={0.05}
-                        dragMomentum={false}
-                        animate={{ x: getXForIndex(activeIndex) }}
-                        transition={{ type: "spring", stiffness: 250, damping: 35 }}
-                        onDragEnd={(_, info) => {
-                            const { offset, velocity } = info;
-                            const dx = offset.x;
-                            const vx = velocity.x;
-                            const swipePower = Math.abs(dx) * 0.5 + Math.abs(vx) * 20;
-                            const passed = Math.abs(dx) > step * 0.25 || swipePower > 300;
-                            if (passed) {
-                                if (dx < 0) setActiveIndex(clamp(activeIndex + 1));
-                                else setActiveIndex(clamp(activeIndex - 1));
-                            } else {
-                                setActiveIndex(activeIndex);
-                            }
-                        }}
-                    >
-                        {players.map((player, i) => (
-                            <div
-                                key={player.id}
-                                ref={i === 0 ? firstItemRef : undefined}
-                                style={{ flex: "0 0 auto" }}
-                            >
-                                <PlayerCard
-                                    id={`player-${player.id}`}
-                                    state={player.state}
-                                    playerNumber={i + 1}
-                                />
-                            </div>
-                        ))}
+                    {players.map((player, i) => (
+                        <div
+                            key={player.id}
+                            ref={i === 0 ? firstItemRef : undefined}
+                            style={{
+                                flex: "0 0 auto",
+                                scrollSnapAlign: "center",
+                            }}
+                        >
+                            <PlayerCard
+                                id={`player-${player.id}`}
+                                state={player.state}
+                                playerNumber={i + 1}
+                            />
+                        </div>
+                    ))}
 
-                        {!isMaxPlayers ? (
-                            <div style={{ flex: "0 0 auto" }}>
-                                <PlayerCard
-                                    id="add-player"
-                                    state="add"
-                                    playerNumber={players.length + 1}
-                                    onAdd={handleAddPlayer}
-                                />
-                            </div>
-                        ) : (
-                            <div style={{ flex: "0 0 auto" }}>
-                                <PlayerCard
-                                    id="premium-card"
-                                    state="premium"
-                                    onOpenPremium={handleOpenPremium}
-                                />
-                            </div>
-                        )}
-                    </motion.div>
+                    {!isMaxPlayers ? (
+                        <div style={{ flex: "0 0 auto", scrollSnapAlign: "center" }}>
+                            <PlayerCard
+                                id="add-player"
+                                state="add"
+                                playerNumber={players.length + 1}
+                                onAdd={handleAddPlayer}
+                            />
+                        </div>
+                    ) : (
+                        <div style={{ flex: "0 0 auto", scrollSnapAlign: "center" }}>
+                            <PlayerCard
+                                id="premium-card"
+                                state="premium"
+                                onOpenPremium={handleOpenPremium}
+                            />
+                        </div>
+                    )}
                 </div>
             </div>
 
-            {/* нижние кнопки, фиксированные, клавиатура поверх */}
+            {/* нижние кнопки — фиксированы, клавиатура поверх */}
             <div
                 style={{
                     position: "fixed",
@@ -237,10 +208,11 @@ function Mozgolomka() {
                         "calc(max(var(--tg-content-safe-area-inset-bottom, 0px), var(--tg-safe-area-inset-bottom, 0px)) + 16px)",
                     left: 16,
                     right: 16,
-                    zIndex: 10,
+                    zIndex: 100,
                     display: "flex",
                     justifyContent: "center",
                     gap: 8,
+                    pointerEvents: "auto",
                 }}
             >
                 <IconPrimaryButton onClick={() => navigate("/", { replace: true })} />
