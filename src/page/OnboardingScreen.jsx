@@ -93,7 +93,7 @@ function OnboardingScreen() {
                 damping: 10,
             },
         },
-        exit: { opacity: 0, transition: { duration: 0.2 } }, // не двигаем внешний контейнер
+        exit: { opacity: 0, y: 40, transition: { duration: 0.2 } }, // не двигаем внешний контейнер
     };
 
     const buttonsVariants = {
