@@ -7,11 +7,12 @@ import twemoji from "twemoji";
 
 export default function PlayerCard({
                                        id,
-                                       state = "active", // "active" | "add" | "premium"
+                                       state = "active",
                                        playerNumber = 1,
                                        onAdd = () => {},
                                        onEditTitle = () => {},
                                        onOpenPremium = () => {},
+                                       onStartEditing = () => {}, // 👈 новый проп
                                    }) {
     const [emojiData, setEmojiData] = useState(randomEmojiData());
     const [isEditing, setIsEditing] = useState(false);
@@ -40,26 +41,23 @@ export default function PlayerCard({
 
     const handleEmojiClick = () => {
         setEmojiData(randomEmojiData());
-
-        // 🔔 Haptic feedback (работает только в Telegram MiniApp)
-        if (window.Telegram?.WebApp?.HapticFeedback) {
-            try {
-                window.Telegram.WebApp.HapticFeedback.impactOccurred("soft");
-            } catch (e) {
-                console.warn("HapticFeedback failed:", e);
-            }
-        }
+        window.Telegram?.WebApp?.HapticFeedback?.impactOccurred?.("soft");
     };
 
     const handleTitleClick = () => {
+        onStartEditing(); // 👉 просим родителя центрировать карточку
         setIsEditing(true);
-        setTimeout(() => {
-            inputRef.current?.focus();
-            inputRef.current?.scrollIntoView({
-                behavior: "smooth",
-                block: "center",
-            });
-        }, 50);
+
+        // надёжный фокус после layout
+        requestAnimationFrame(() => {
+            inputRef.current?.focus({ preventScroll: true });
+            setTimeout(() => {
+                inputRef.current?.scrollIntoView({
+                    behavior: "smooth",
+                    block: "center",
+                });
+            }, 200);
+        });
     };
 
     const handleBlur = () => {
@@ -75,7 +73,6 @@ export default function PlayerCard({
         }
     };
 
-    // 🎨 Общие стили
     const styles = {
         cardBase: {
             width: 260,
@@ -86,7 +83,7 @@ export default function PlayerCard({
             alignItems: "center",
             justifyContent: "flex-start",
             flex: "0 0 auto",
-            transition: "all 0.2s ease",
+            transition: "transform 0.2s ease, background 0.2s ease",
             boxSizing: "border-box",
             overflow: "hidden",
             userSelect: "none",
@@ -100,9 +97,6 @@ export default function PlayerCard({
             justifyContent: "center",
             marginTop: 24,
             cursor: "pointer",
-            userSelect: "none",
-            pointer: "none",
-            WebkitTapHighlightColor: "transparent",
         },
         title: {
             fontSize: 24,
@@ -117,9 +111,7 @@ export default function PlayerCard({
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            textOverflow: "ellipsis",
             overflow: "hidden",
-            whiteSpace: "nowrap",
             width: "-webkit-fill-available",
         },
         subtitle: {
@@ -134,7 +126,6 @@ export default function PlayerCard({
         },
     };
 
-    // 🟢 ACTIVE CARD
     if (state === "active") {
         return (
             <div
@@ -144,18 +135,11 @@ export default function PlayerCard({
                     backgroundColor: theme.surface.zero,
                 }}
             >
-                <div
-                    style={styles.emoji}
-                    ref={emojiRef}
-                    onClick={handleEmojiClick}
-                >
+                <div style={styles.emoji} ref={emojiRef} onClick={handleEmojiClick}>
                     {emojiData.emoji}
                 </div>
 
-                <div
-                    style={styles.title}
-                    onClick={!isEditing ? handleTitleClick : undefined}
-                >
+                <div style={styles.title} onClick={!isEditing ? handleTitleClick : undefined}>
                     {isEditing ? (
                         <input
                             ref={inputRef}
@@ -174,9 +158,7 @@ export default function PlayerCard({
                                 outline: "none",
                                 width: "100%",
                                 height: "100%",
-                                textAlign: "center",
                                 caretColor: theme.icotex.white,
-                                padding: 0,
                             }}
                         />
                     ) : (
@@ -189,7 +171,6 @@ export default function PlayerCard({
         );
     }
 
-    // 🟣 ADD CARD
     if (state === "add") {
         return (
             <div
@@ -216,8 +197,6 @@ export default function PlayerCard({
                         style={{
                             width: "128px",
                             height: "128px",
-                            display: "block",
-                            flexShrink: 0,
                         }}
                     />
                 </div>
@@ -244,7 +223,6 @@ export default function PlayerCard({
         );
     }
 
-    // 💎 PREMIUM CARD
     if (state === "premium") {
         return (
             <PremiumCard
