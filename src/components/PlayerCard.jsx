@@ -9,23 +9,26 @@ export default function PlayerCard({
                                        id,
                                        state = "active",
                                        playerNumber = 1,
-                                       isEditing = false,
+                                       name = "",
                                        onAdd = () => {},
                                        onEditTitle = () => {},
                                        onOpenPremium = () => {},
-                                       onStartEditing = () => {},
                                    }) {
     const [emojiData, setEmojiData] = useState(randomEmojiData());
-    const [titleValue, setTitleValue] = useState(emojiData.name);
+    const [titleValue, setTitleValue] = useState(name || emojiData.name);
+    const [isEditing, setIsEditing] = useState(false);
+    const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+
     const emojiRef = useRef(null);
     const inputRef = useRef(null);
+    const containerRef = useRef(null);
 
     function randomEmojiData() {
         return emojiMap[Math.floor(Math.random() * emojiMap.length)];
     }
 
     // 🧠 обновляем имя при смене emoji
-    useEffect(() => setTitleValue(emojiData.name), [emojiData]);
+    useEffect(() => setTitleValue((prev) => prev || emojiData.name), [emojiData]);
 
     // 🖼️ emoji → SVG
     useEffect(() => {
@@ -43,27 +46,42 @@ export default function PlayerCard({
         }
     }, [emojiData]);
 
+    // 🎹 Отслеживаем подъем клавиатуры (VisualViewport)
+    useEffect(() => {
+        if (!window.visualViewport) return;
+        const handleResize = () => {
+            const diff = window.innerHeight - window.visualViewport.height;
+            setKeyboardVisible(diff > 80);
+            if (diff > 80 && isEditing) {
+                containerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+        };
+        window.visualViewport.addEventListener("resize", handleResize);
+        return () => window.visualViewport.removeEventListener("resize", handleResize);
+    }, [isEditing]);
+
+    // 🎯 Обработка клика по эмоджи
     const handleEmojiClick = () => {
         setEmojiData(randomEmojiData());
-        if (window.Telegram?.WebApp?.HapticFeedback) {
-            try {
-                window.Telegram.WebApp.HapticFeedback.impactOccurred("soft");
-            } catch (e) {
-                console.warn("HapticFeedback failed:", e);
-            }
-        }
+        window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("soft");
     };
 
+    // ✏️ Начало редактирования
     const handleTitleClick = (e) => {
         e.stopPropagation();
-        onStartEditing?.();
-        inputRef.current?.focus({ preventScroll: true });
+        setIsEditing(true);
+        setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 100);
     };
 
+    // ✅ Завершение редактирования
     const handleBlur = () => {
-        onEditTitle(titleValue);
+        setIsEditing(false);
+        const cleanTitle = titleValue.trim() || emojiData.name;
+        setTitleValue(cleanTitle);
+        onEditTitle(id, cleanTitle);
     };
 
+    // ⌨️ Обработка Enter
     const handleKeyDown = (e) => {
         if (e.key === "Enter") {
             e.preventDefault();
@@ -82,11 +100,12 @@ export default function PlayerCard({
             alignItems: "center",
             justifyContent: "flex-start",
             flex: "0 0 auto",
-            transition: "transform 0.3s ease, background 0.3s ease",
             boxSizing: "border-box",
             overflow: "hidden",
-            userSelect: "none",
             position: "relative",
+            transform: isKeyboardVisible && isEditing ? "translateY(-20px)" : "none",
+            transition: "transform 0.3s ease",
+            backgroundColor: theme.surface.zero,
         },
         emoji: {
             width: "-webkit-fill-available",
@@ -103,40 +122,42 @@ export default function PlayerCard({
             fontWeight: 700,
             textAlign: "center",
             marginTop: 16,
-            marginLeft: 16,
-            marginRight: 16,
             color: theme.icotex.normal,
-            minHeight: 60,
+            position: "relative",
+            width: "100%",
+            height: 60,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            width: "-webkit-fill-available",
-            position: "relative",
         },
         subtitle: {
             fontSize: 16,
             color: theme.icotex.lowest,
             marginBottom: 24,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: "-webkit-fill-available",
-            height: 20,
-            opacity: isEditing ? 0.2 : 1,
             transition: "opacity 0.3s ease",
+            opacity: isEditing ? 0.2 : 1,
+        },
+        input: {
+            position: "absolute",
+            inset: 0,
+            width: "100%",
+            height: "100%",
+            background: "transparent",
+            border: "none",
+            outline: "none",
+            textAlign: "center",
+            fontSize: 24,
+            fontWeight: 700,
+            color: theme.icotex.normal,
+            opacity: isEditing ? 1 : 0,
+            pointerEvents: isEditing ? "auto" : "none",
+            transition: "opacity 0.25s ease",
         },
     };
 
-    // 🟢 ACTIVE CARD
     if (state === "active") {
         return (
-            <div
-                id={id}
-                style={{
-                    ...styles.cardBase,
-                    backgroundColor: theme.surface.zero,
-                }}
-            >
+            <div ref={containerRef} id={id} style={styles.cardBase}>
                 <div style={styles.emoji} ref={emojiRef} onClick={handleEmojiClick}>
                     {emojiData.emoji}
                 </div>
@@ -149,22 +170,7 @@ export default function PlayerCard({
                         onChange={(e) => setTitleValue(e.target.value)}
                         onBlur={handleBlur}
                         onKeyDown={handleKeyDown}
-                        style={{
-                            position: "absolute",
-                            inset: 0,
-                            width: "100%",
-                            height: "100%",
-                            background: "transparent",
-                            border: "none",
-                            outline: "none",
-                            textAlign: "center",
-                            fontSize: 24,
-                            fontWeight: 700,
-                            color: theme.icotex.normal,
-                            opacity: isEditing ? 1 : 0,
-                            pointerEvents: isEditing ? "auto" : "none",
-                            transition: "opacity 0.25s ease",
-                        }}
+                        style={styles.input}
                     />
                     <span style={{ opacity: isEditing ? 0 : 1 }}>{titleValue}</span>
                 </div>
@@ -197,32 +203,11 @@ export default function PlayerCard({
                         justifyContent: "center",
                     }}
                 >
-                    <PlayerAddIcon
-                        style={{
-                            width: "128px",
-                            height: "128px",
-                            display: "block",
-                            flexShrink: 0,
-                        }}
-                    />
+                    <PlayerAddIcon style={{ width: 128, height: 128 }} />
                 </div>
 
-                <div
-                    style={{
-                        ...styles.title,
-                        color: theme.icotex.white,
-                        marginTop: 16,
-                    }}
-                >
-                    Добавить
-                </div>
-
-                <div
-                    style={{
-                        ...styles.subtitle,
-                        color: theme.icotex.low,
-                    }}
-                >
+                <div style={{ ...styles.title, color: theme.icotex.white }}>Добавить</div>
+                <div style={{ ...styles.subtitle, color: theme.icotex.low }}>
                     Игрок {playerNumber}
                 </div>
             </div>
@@ -231,14 +216,7 @@ export default function PlayerCard({
 
     // 💎 PREMIUM CARD
     if (state === "premium") {
-        return (
-            <PremiumCard
-                id={id}
-                onOpenPremium={onOpenPremium}
-                theme={theme}
-                styles={styles}
-            />
-        );
+        return <PremiumCard id={id} onOpenPremium={onOpenPremium} theme={theme} styles={styles} />;
     }
 
     return null;
