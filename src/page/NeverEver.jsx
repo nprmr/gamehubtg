@@ -93,6 +93,7 @@ function NeverEver() {
                     width: "100%",
                     height: "auto",
                     zIndex: 0,
+                    opacity: 0.6,
                 }}
             />
 

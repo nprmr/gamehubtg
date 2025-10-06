@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
-import { useRive } from "@rive-app/react-canvas";
+import { useState, useEffect, useRef } from "react";
 import PlayerAddIcon from "../icons/addPlayer.svg?react";
 import { emojiMap } from "../data/emojiMap";
 import { theme } from "../theme";
+import PremiumCard from "./PremiumCard";
+import twemoji from "twemoji";
 
 export default function PlayerCard({
                                        id,
@@ -13,15 +14,28 @@ export default function PlayerCard({
                                        onOpenPremium = () => {},
                                    }) {
     const [emojiData, setEmojiData] = useState(randomEmojiData());
+    const emojiRef = useRef(null);
 
     function randomEmojiData() {
         return emojiMap[Math.floor(Math.random() * emojiMap.length)];
     }
 
-    const handleEmojiClick = () => {
-        const newEmoji = randomEmojiData();
-        setEmojiData(newEmoji);
-    };
+    useEffect(() => {
+        if (emojiRef.current) {
+            twemoji.parse(emojiRef.current, {
+                folder: "svg",
+                ext: ".svg",
+                className: "emoji",
+                attributes: () => ({
+                    width: "128",
+                    height: "128",
+                    style: "display:block;object-fit:contain;",
+                }),
+            });
+        }
+    }, [emojiData]);
+
+    const handleEmojiClick = () => setEmojiData(randomEmojiData());
 
     const handleTitleClick = () => {
         const newTitle = prompt("Введите новый заголовок", emojiData.name);
@@ -35,7 +49,7 @@ export default function PlayerCard({
     const styles = {
         cardBase: {
             width: 260,
-            height: 256,
+            height: 276,
             borderRadius: 32,
             display: "flex",
             flexDirection: "column",
@@ -45,36 +59,49 @@ export default function PlayerCard({
             transition: "all 0.2s ease",
             boxSizing: "border-box",
             overflow: "hidden",
-        },
-        emoji: {
-            fontSize: 128,
-            marginTop: 24,
-            lineHeight: 1.1,
-            cursor: "pointer",
             userSelect: "none",
         },
+        emoji: {
+            width: 128,
+            height: 128,
+            fontSize: 120,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            marginTop: 24,
+            cursor: "pointer",
+            userSelect: "none",
+            pointer: "none",
+            WebkitTapHighlightColor: "transparent",
+        },
+
         title: {
             fontSize: 24,
             fontWeight: 700,
             textAlign: "center",
+            marginTop: 16,
             marginLeft: 16,
             marginRight: 16,
             color: theme.icotex.normal,
             cursor: "pointer",
-            height: 60,
+            minHeight: 60,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
+            textOverflow: "ellipsis",
+            overflow: "hidden",
+            whiteSpace: "nowrap",
+            width: "100%",
         },
         subtitle: {
             fontSize: 16,
             color: theme.icotex.lowest,
-            height: 20,
             marginBottom: 24,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             width: "100%",
+            height: 20,
         },
     };
 
@@ -88,12 +115,18 @@ export default function PlayerCard({
                     backgroundColor: theme.surface.zero,
                 }}
             >
-                <div style={styles.emoji} onClick={handleEmojiClick}>
+                <div
+                    style={styles.emoji}
+                    ref={emojiRef}
+                    onClick={handleEmojiClick}
+                >
                     {emojiData.emoji}
                 </div>
+
                 <div style={styles.title} onClick={handleTitleClick}>
                     {emojiData.name}
                 </div>
+
                 <div style={styles.subtitle}>Нажмите, чтобы изменить</div>
             </div>
         );
@@ -135,10 +168,8 @@ export default function PlayerCard({
                 <div
                     style={{
                         ...styles.title,
-                        fontSize: 24,
-                        fontWeight: 700,
                         color: theme.icotex.white,
-                        marginTop: 12,
+                        marginTop: 16,
                     }}
                 >
                     Добавить
@@ -147,7 +178,6 @@ export default function PlayerCard({
                 <div
                     style={{
                         ...styles.subtitle,
-                        fontSize: 16,
                         color: theme.icotex.low,
                     }}
                 >
@@ -159,79 +189,13 @@ export default function PlayerCard({
 
     // 💎 PREMIUM CARD
     if (state === "premium") {
-        // инициализация rive через hook (без падений)
-        const { rive, RiveComponent } = useRive({
-            src: "/rive/crystall.riv",
-            stateMachines: "State Machine 1",
-            autoplay: true,
-        });
-
-        // корректная очистка при размонтировании
-        useEffect(() => {
-            return () => {
-                try {
-                    rive?.stop();
-                } catch {}
-            };
-        }, [rive]);
-
         return (
-            <div
+            <PremiumCard
                 id={id}
-                onClick={onOpenPremium}
-                style={{
-                    ...styles.cardBase,
-                    backgroundColor: theme.surface.normalAlfa,
-                    backdropFilter: "blur(20px)",
-                    cursor: "pointer",
-                }}
-            >
-                <div
-                    style={{
-                        width: 128,
-                        height: 128,
-                        marginTop: 24,
-                        marginBottom: 16,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                    }}
-                >
-                    <RiveComponent
-                        style={{
-                            width: "100%",
-                            height: "100%",
-                            outline: "none",
-                            userSelect: "none",
-                        }}
-                    />
-                </div>
-
-                <div
-                    style={{
-                        ...styles.title,
-                        fontSize: 24,
-                        fontWeight: 700,
-                        color: theme.icotex.white,
-                        marginTop: 8,
-                    }}
-                >
-                    Хотите больше?
-                </div>
-
-                <div
-                    style={{
-                        ...styles.subtitle,
-                        fontSize: 16,
-                        color: theme.icotex.low,
-                        textAlign: "center",
-                        lineHeight: 1.4,
-                        padding: "0 16px",
-                    }}
-                >
-                    Оформите премиум, чтобы снять все ограничения
-                </div>
-            </div>
+                onOpenPremium={onOpenPremium}
+                theme={theme}
+                styles={styles}
+            />
         );
     }
 

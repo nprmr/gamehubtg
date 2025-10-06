@@ -98,3 +98,20 @@ button:active {
     display: block !important;
     user-select: none !important;
 }
+
+/* убираем выделение и подсветку клика для emoji */
+img.emoji {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+
+    -webkit-tap-highlight-color: transparent; /* убирает голубое свечение при тапе на iOS/Android */
+    outline: none; /* убирает фокус-рамку */
+}
+
+.emoji:focus,
+.emoji:active {
+    outline: none;
+    box-shadow: none;
+}
