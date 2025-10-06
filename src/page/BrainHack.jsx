@@ -17,13 +17,14 @@ function Mozgolomka() {
     const [activeIndex, setActiveIndex] = useState(0);
     const [cardWidth, setCardWidth] = useState(260);
     const [viewportWidth, setViewportWidth] = useState(window.innerWidth);
+    const [keyboardShift, setKeyboardShift] = useState(0);
+
     const firstItemRef = useRef(null);
     const lastW = useRef(viewportWidth);
 
     const GAP = 16;
     const maxPlayers = 4;
     const isMaxPlayers = players.length >= maxPlayers;
-    const [ignoreResize, setIgnoreResize] = useState(false);
 
     const items = [
         ...players.map((p) => ({ ...p, __kind: "player" })),
@@ -56,14 +57,14 @@ function Mozgolomka() {
         });
     };
 
-    // измерения
+    // 📏 отслеживаем изменения размеров
     useEffect(() => {
         const measure = () => {
-            if (ignoreResize) return;
             if (firstItemRef.current) {
                 const w = Math.round(firstItemRef.current.getBoundingClientRect().width || 0);
                 if (w && w !== cardWidth) setCardWidth(w);
             }
+
             const w = window.innerWidth;
             if (w !== lastW.current) {
                 lastW.current = w;
@@ -73,7 +74,18 @@ function Mozgolomka() {
         measure();
         window.addEventListener("resize", measure);
         return () => window.removeEventListener("resize", measure);
-    }, [cardWidth, ignoreResize]);
+    }, [cardWidth]);
+
+    // 📱 плавное поднятие при клавиатуре
+    useEffect(() => {
+        if (!window.visualViewport) return;
+        const handleResize = () => {
+            const diff = window.innerHeight - window.visualViewport.height;
+            setKeyboardShift(diff > 0 ? diff / 2 : 0);
+        };
+        window.visualViewport.addEventListener("resize", handleResize);
+        return () => window.visualViewport.removeEventListener("resize", handleResize);
+    }, []);
 
     const maxIndex = Math.max(0, items.length - 1);
     const clamp = (n) => Math.max(0, Math.min(maxIndex, n));
@@ -92,9 +104,7 @@ function Mozgolomka() {
     const spring = { type: "spring", stiffness: 250, damping: 35 };
 
     const handleStartEditing = (index) => {
-        setIgnoreResize(true);
         setActiveIndex(index);
-        setTimeout(() => setIgnoreResize(false), 1500);
     };
 
     return (
@@ -195,6 +205,7 @@ function Mozgolomka() {
                     </motion.p>
                 </div>
 
+                {/* 🎠 Карусель игроков */}
                 <div
                     style={{
                         position: "absolute",
@@ -222,20 +233,11 @@ function Mozgolomka() {
                         }}
                         dragElastic={0.05}
                         dragMomentum={false}
-                        animate={{ x: getXForIndex(activeIndex) }}
-                        transition={spring}
-                        onDragEnd={(_, info) => {
-                            const { offset, velocity } = info;
-                            const dx = offset.x;
-                            const vx = velocity.x;
-                            const swipePower = Math.abs(dx) * 0.5 + Math.abs(vx) * 20;
-                            const passed = Math.abs(dx) > step * 0.25 || swipePower > 300;
-
-                            if (passed) {
-                                if (dx < 0) setActiveIndex(clamp(activeIndex + 1));
-                                else setActiveIndex(clamp(activeIndex - 1));
-                            }
+                        animate={{
+                            x: getXForIndex(activeIndex),
+                            y: -keyboardShift, // 🪄 плавный сдвиг вверх при клавиатуре
                         }}
+                        transition={spring}
                     >
                         {items.map((item, index) => (
                             <div
@@ -275,6 +277,7 @@ function Mozgolomka() {
                 </div>
             </div>
 
+            {/* нижние кнопки */}
             <div
                 style={{
                     position: "absolute",
