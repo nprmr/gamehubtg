@@ -1,83 +1,40 @@
-import React, { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import "../theme.css";
+import PlayerCard from "../components/PlayerCard";
+import bg from "../assets/bgBrainHack.png";
+import { theme } from "../theme";
 import IconButton from "../components/IconButton";
 import SettingsIcon from "../icons/Settings.svg?react";
 import PrimaryButton from "../components/PrimaryButton";
 import IconPrimaryButton from "../components/IconPrimaryButton";
-import PlayerCard from "../components/PlayerCard";
-import bg from "../assets/bgBrainHack.png";
-import { theme } from "../theme";
 
 function Mozgolomka() {
     const navigate = useNavigate();
-
-    // 👥 Игроки
-    const [players, setPlayers] = useState([{ id: 1, name: "Игрок 1" }]);
-    const [activeIndex, setActiveIndex] = useState(0);
-    const [cardWidth, setCardWidth] = useState(260);
-    const [viewportWidth, setViewportWidth] = useState(window.innerWidth);
+    const [players, setPlayers] = useState([{ id: 1, state: "active" }]);
     const [keyboardShift, setKeyboardShift] = useState(0);
-
-    const firstItemRef = useRef(null);
-    const GAP = 16;
     const maxPlayers = 4;
-    const isMaxPlayers = players.length >= maxPlayers;
 
-    // 🔹 Элементы карусели
-    const items = [
-        ...players.map((p) => ({ ...p, __kind: "player" })),
-        isMaxPlayers
-            ? { id: "premium-card", state: "premium", __kind: "premium" }
-            : { id: "add-player", state: "add", __kind: "add" },
-    ];
-
-    // 📏 Измеряем ширину карточки
     useEffect(() => {
-        const measure = () => {
-            if (firstItemRef.current) {
-                const w = Math.round(firstItemRef.current.getBoundingClientRect().width || 0);
-                if (w && w !== cardWidth) setCardWidth(w);
-            }
-            setViewportWidth(window.innerWidth);
-        };
-        measure();
-        window.addEventListener("resize", measure);
-        return () => window.removeEventListener("resize", measure);
-    }, [cardWidth]);
+        const tg = window.Telegram?.WebApp;
+        if (!tg) return;
 
-    // 📱 Плавный подъем верхнего блока при клавиатуре
-    useEffect(() => {
-        if (!window.visualViewport) return;
-        const handleResize = () => {
-            const diff = window.innerHeight - window.visualViewport.height;
-            // если клавиатура активна → поднимаем верхний блок на 40px
-            setKeyboardShift(diff > 80 ? 40 : 0);
+        const handleViewport = () => {
+            const diff = window.innerHeight - tg.viewportStableHeight;
+            // плавное ограничение, чтобы не прыгало резко
+            setKeyboardShift(diff > 0 ? Math.min(diff, 300) : 0);
         };
-        window.visualViewport.addEventListener("resize", handleResize);
-        return () => window.visualViewport.removeEventListener("resize", handleResize);
+
+        tg.onEvent("viewportChanged", handleViewport);
+        return () => tg.offEvent("viewportChanged", handleViewport);
     }, []);
 
-    // ➕ Добавление игрока
     const handleAddPlayer = () => {
         if (players.length < maxPlayers) {
-            setPlayers((prev) => [
-                ...prev,
-                { id: Date.now(), name: `Игрок ${prev.length + 1}` },
-            ]);
-            setTimeout(() => setActiveIndex(players.length), 50);
+            setPlayers((prev) => [...prev, { id: Date.now(), state: "active" }]);
         }
     };
 
-    // ✏️ Сохранение имени игрока
-    const handleEditTitle = (id, newTitle) => {
-        setPlayers((prev) =>
-            prev.map((p) => (p.id === id ? { ...p, name: newTitle } : p))
-        );
-    };
-
-    // 💎 Попап Премиума
     const handleOpenPremium = () => {
         window.Telegram?.WebApp?.showPopup({
             title: "Премиум",
@@ -87,22 +44,7 @@ function Mozgolomka() {
         });
     };
 
-    // 🎠 Логика карусели
-    const maxIndex = Math.max(0, items.length - 1);
-    const clamp = (n) => Math.max(0, Math.min(maxIndex, n));
-    const goTo = (i) => setActiveIndex(clamp(i));
-    const step = cardWidth + GAP;
-
-    const getXForIndex = (i) => {
-        if (i === 0) return 16;
-        const centerOfCard = i * step + cardWidth / 2;
-        const viewportCenter = viewportWidth / 2;
-        return viewportCenter - centerOfCard;
-    };
-
-    const minX = getXForIndex(maxIndex);
-    const maxX = 16;
-    const spring = { type: "spring", stiffness: 250, damping: 35 };
+    const isMaxPlayers = players.length >= maxPlayers;
 
     return (
         <div
@@ -114,61 +56,58 @@ function Mozgolomka() {
                 overflow: "hidden",
             }}
         >
-            {/* 🌄 Фон */}
-            <AnimatePresence mode="wait">
-                <motion.img
-                    key="bg"
-                    src={bg}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 0.6 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.3 }}
-                    alt="background"
-                    style={{
-                        position: "absolute",
-                        bottom: 0,
-                        left: 0,
-                        width: "100%",
-                        height: "auto",
-                        zIndex: 0,
-                    }}
-                />
-            </AnimatePresence>
+            {/* Фон */}
+            <img
+                src={bg}
+                alt="background"
+                style={{
+                    position: "absolute",
+                    bottom: 0,
+                    width: "100%",
+                    opacity: 0.6,
+                    zIndex: 0,
+                }}
+            />
 
-            {/* ---------- ВЕРХНИЙ БЛОК ---------- */}
+            {/* Кнопка настроек */}
+            <div
+                style={{
+                    position: "absolute",
+                    top:
+                        "calc(max(var(--tg-content-safe-area-inset-top, 0px), var(--tg-safe-area-inset-top, 0px)) + 48px)",
+                    right:
+                        "calc(max(var(--tg-content-safe-area-inset-right, 0px), var(--tg-safe-area-inset-right, 0px)) + 16px)",
+                    zIndex: 10,
+                }}
+            >
+                <IconButton icon={SettingsIcon} />
+            </div>
+
+            {/* Основной контент (заголовок + карусель) */}
             <motion.div
-                animate={{ y: -keyboardShift }}
-                transition={{ type: "spring", stiffness: 200, damping: 30 }}
+                animate={{ y: -keyboardShift * 0.5 }}
+                transition={{ type: "spring", stiffness: 120, damping: 18 }}
                 style={{
                     position: "absolute",
                     top: 0,
                     left: 0,
                     right: 0,
-                    zIndex: 1,
+                    bottom: 0,
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
-                    paddingTop:
-                        "calc(max(var(--tg-content-safe-area-inset-top, 0px), var(--tg-safe-area-inset-top, 0px)) + 80px)",
-                    boxSizing: "border-box",
+                    justifyContent: "center", // центрирование по вертикали
+                    zIndex: 1,
+                    pointerEvents: "none", // чтобы фон не перехватывал клики
                 }}
             >
-                {/* ⚙️ Верхняя панель */}
                 <div
                     style={{
-                        display: "flex",
-                        justifyContent: "flex-end",
-                        width: "100%",
-                        paddingRight:
-                            "calc(max(var(--tg-content-safe-area-inset-right, 0px), var(--tg-safe-area-inset-right, 0px)) + 32px)",
-                        marginBottom: 16,
+                        textAlign: "center",
+                        marginBottom: 24,
+                        pointerEvents: "auto",
                     }}
                 >
-                    <IconButton icon={SettingsIcon} />
-                </div>
-
-                {/* 🧠 Заголовки */}
-                <div style={{ textAlign: "center", marginBottom: 16 }}>
                     <motion.h1
                         layoutId="title"
                         style={{
@@ -187,7 +126,6 @@ function Mozgolomka() {
                         style={{
                             fontFamily: "Gilroy, sans-serif",
                             fontSize: 14,
-                            fontWeight: 400,
                             color: theme.icotex.low,
                             margin: 0,
                             lineHeight: 1.4,
@@ -200,7 +138,6 @@ function Mozgolomka() {
                         style={{
                             fontFamily: "Gilroy, sans-serif",
                             fontSize: 14,
-                            fontWeight: 400,
                             color: theme.icotex.info,
                             marginTop: 4,
                         }}
@@ -209,65 +146,53 @@ function Mozgolomka() {
                     </motion.p>
                 </div>
 
-                {/* 🎠 Карусель */}
-                <div
+                {/* Карусель */}
+                <motion.div
+                    layout
                     style={{
-                        position: "relative",
-                        top: "10vh",
                         display: "flex",
-                        overflow: "hidden",
+                        flexDirection: "row",
+                        overflowX: "auto",
+                        gap: 8,
+                        padding: "16px 24px",
+                        width: "100%",
+                        boxSizing: "border-box",
+                        scrollbarWidth: "none",
+                        msOverflowStyle: "none",
                         justifyContent: "center",
+                        pointerEvents: "auto",
                     }}
                 >
-                    <motion.div
-                        style={{ display: "flex", gap: `${GAP}px` }}
-                        drag="x"
-                        dragConstraints={{ left: minX, right: maxX }}
-                        dragElastic={0.05}
-                        dragMomentum={false}
-                        animate={{ x: getXForIndex(activeIndex) }}
-                        transition={spring}
-                        onDragEnd={(_, info) => {
-                            const { offset, velocity } = info;
-                            const dx = offset.x;
-                            const vx = velocity.x;
-                            const swipePower = Math.abs(dx) * 0.5 + Math.abs(vx) * 20;
-                            const passed = Math.abs(dx) > step * 0.25 || swipePower > 300;
-                            if (passed) {
-                                if (dx < 0) goTo(activeIndex + 1);
-                                else goTo(activeIndex - 1);
-                            } else {
-                                goTo(activeIndex);
-                            }
-                        }}
-                    >
-                        {items.map((item, index) => (
-                            <div
-                                key={item.id}
-                                ref={index === 0 ? firstItemRef : undefined}
-                                style={{ flex: "0 0 auto" }}
-                            >
-                                <PlayerCard
-                                    id={item.id}
-                                    state={item.state}
-                                    playerNumber={
-                                        item.__kind === "player" ? index + 1 : players.length + 1
-                                    }
-                                    name={item.name}
-                                    onAdd={item.__kind === "add" ? handleAddPlayer : undefined}
-                                    onEditTitle={handleEditTitle}
-                                    onOpenPremium={
-                                        item.__kind === "premium" ? handleOpenPremium : undefined
-                                    }
-                                />
-                            </div>
-                        ))}
-                    </motion.div>
-                </div>
+                    {players.map((player, index) => (
+                        <PlayerCard
+                            key={player.id}
+                            id={`player-${player.id}`}
+                            state={player.state}
+                            playerNumber={index + 1}
+                        />
+                    ))}
+
+                    {!isMaxPlayers ? (
+                        <PlayerCard
+                            id="add-player"
+                            state="add"
+                            playerNumber={players.length + 1}
+                            onAdd={handleAddPlayer}
+                        />
+                    ) : (
+                        <PlayerCard
+                            id="premium-card"
+                            state="premium"
+                            onOpenPremium={handleOpenPremium}
+                        />
+                    )}
+                </motion.div>
             </motion.div>
 
-            {/* ---------- НИЖНИЕ КНОПКИ ---------- */}
-            <div
+            {/* Нижние кнопки */}
+            <motion.div
+                animate={{ y: -keyboardShift }}
+                transition={{ type: "spring", stiffness: 140, damping: 18 }}
                 style={{
                     position: "absolute",
                     bottom:
@@ -287,7 +212,7 @@ function Mozgolomka() {
                 >
                     Играть
                 </PrimaryButton>
-            </div>
+            </motion.div>
         </div>
     );
 }
