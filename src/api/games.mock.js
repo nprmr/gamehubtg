@@ -35,7 +35,7 @@ export async function getGames() {
             title: "Крокодил",
             subtitle: "Покажи слово жестами или эмоциями! Не смей произносить звуки. Победит тот, кто угадает больше всех!",
             riveAnimation: "/rive/clock.riv",
-            bg: crocodile,
+            bg: "/crocodile",
             buttonText: "Игра в разработке", // можно не указывать route → кнопка будет неактивна
         },
     ];
