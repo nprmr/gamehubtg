@@ -9,6 +9,7 @@ export default function PlayerCard({
                                        id,
                                        state = "active",
                                        playerNumber = 1,
+                                       isEditing = false,
                                        onAdd = () => {},
                                        onEditTitle = () => {},
                                        onOpenPremium = () => {},
@@ -16,7 +17,6 @@ export default function PlayerCard({
                                    }) {
     const [emojiData, setEmojiData] = useState(randomEmojiData());
     const [titleValue, setTitleValue] = useState(emojiData.name);
-    const [isEditing, setIsEditing] = useState(false);
     const emojiRef = useRef(null);
     const inputRef = useRef(null);
 
@@ -57,13 +57,10 @@ export default function PlayerCard({
     const handleTitleClick = (e) => {
         e.stopPropagation();
         onStartEditing?.();
-        setIsEditing(true);
-        // 🧩 фокус сразу в том же событии — важно для Telegram MiniApp
         inputRef.current?.focus({ preventScroll: true });
     };
 
     const handleBlur = () => {
-        setIsEditing(false);
         onEditTitle(titleValue);
     };
 
@@ -169,7 +166,7 @@ export default function PlayerCard({
                             transition: "opacity 0.25s ease",
                         }}
                     />
-                    <span>{titleValue}</span>
+                    <span style={{ opacity: isEditing ? 0 : 1 }}>{titleValue}</span>
                 </div>
 
                 <div style={styles.subtitle}>Нажмите, чтобы изменить</div>

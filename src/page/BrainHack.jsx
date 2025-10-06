@@ -18,6 +18,7 @@ function Mozgolomka() {
     const [cardWidth, setCardWidth] = useState(260);
     const [viewportWidth, setViewportWidth] = useState(window.innerWidth);
     const [keyboardShift, setKeyboardShift] = useState(0);
+    const [editingId, setEditingId] = useState(null);
 
     const firstItemRef = useRef(null);
     const lastW = useRef(viewportWidth);
@@ -103,8 +104,9 @@ function Mozgolomka() {
     const minX = Math.min(16, viewportWidth - totalWidth - 16);
     const spring = { type: "spring", stiffness: 250, damping: 35 };
 
-    const handleStartEditing = (index) => {
+    const handleStartEditing = (index, id) => {
         setActiveIndex(index);
+        setEditingId(id);
     };
 
     return (
@@ -150,7 +152,10 @@ function Mozgolomka() {
                 <IconButton icon={SettingsIcon} />
             </div>
 
-            <div
+            {/* 📦 Всё содержимое плавно поднимается вместе */}
+            <motion.div
+                animate={{ y: -keyboardShift }}
+                transition={{ type: "spring", stiffness: 200, damping: 30 }}
                 style={{
                     position: "relative",
                     zIndex: 1,
@@ -218,8 +223,6 @@ function Mozgolomka() {
                     }}
                 >
                     <motion.div
-                        key={`${items.length}-${cardWidth}-${viewportWidth}`}
-                        initial={false}
                         style={{
                             display: "flex",
                             gap: `${GAP}px`,
@@ -233,9 +236,9 @@ function Mozgolomka() {
                         }}
                         dragElastic={0.05}
                         dragMomentum={false}
+                        drag={!editingId}
                         animate={{
                             x: getXForIndex(activeIndex),
-                            y: -keyboardShift, // 🪄 плавный сдвиг вверх при клавиатуре
                         }}
                         transition={spring}
                     >
@@ -248,10 +251,9 @@ function Mozgolomka() {
                                 <PlayerCard
                                     id={item.id}
                                     state={item.state}
+                                    isEditing={editingId === item.id}
                                     playerNumber={
-                                        item.__kind === "player"
-                                            ? index + 1
-                                            : players.length + 1
+                                        item.__kind === "player" ? index + 1 : players.length + 1
                                     }
                                     onAdd={
                                         item.__kind === "add"
@@ -261,21 +263,20 @@ function Mozgolomka() {
                                             }
                                             : undefined
                                     }
-                                    onEditTitle={(newTitle) =>
-                                        handleEditTitle(item.id, newTitle)
-                                    }
-                                    onStartEditing={() => handleStartEditing(index)}
+                                    onEditTitle={(newTitle) => {
+                                        handleEditTitle(item.id, newTitle);
+                                        setEditingId(null);
+                                    }}
+                                    onStartEditing={() => handleStartEditing(index, item.id)}
                                     onOpenPremium={
-                                        item.__kind === "premium"
-                                            ? handleOpenPremium
-                                            : undefined
+                                        item.__kind === "premium" ? handleOpenPremium : undefined
                                     }
                                 />
                             </div>
                         ))}
                     </motion.div>
                 </div>
-            </div>
+            </motion.div>
 
             {/* нижние кнопки */}
             <div
