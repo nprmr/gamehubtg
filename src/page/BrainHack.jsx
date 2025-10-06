@@ -21,9 +21,8 @@ function Mozgolomka() {
     const [editingId, setEditingId] = useState(null);
 
     const firstItemRef = useRef(null);
-    const lastW = useRef(viewportWidth);
-
     const GAP = 16;
+
     const maxPlayers = 4;
     const isMaxPlayers = players.length >= maxPlayers;
 
@@ -33,6 +32,31 @@ function Mozgolomka() {
             ? { id: "premium-card", state: "premium", __kind: "premium" }
             : { id: "add-player", state: "add", __kind: "add" },
     ];
+
+    // измеряем ширину карточки
+    useEffect(() => {
+        const measure = () => {
+            if (firstItemRef.current) {
+                const w = Math.round(firstItemRef.current.getBoundingClientRect().width || 0);
+                if (w && w !== cardWidth) setCardWidth(w);
+            }
+            setViewportWidth(window.innerWidth);
+        };
+        measure();
+        window.addEventListener("resize", measure);
+        return () => window.removeEventListener("resize", measure);
+    }, [cardWidth]);
+
+    // плавный подъём при клавиатуре
+    useEffect(() => {
+        if (!window.visualViewport) return;
+        const handleResize = () => {
+            const diff = window.innerHeight - window.visualViewport.height;
+            setKeyboardShift(diff > 0 ? diff / 1.8 : 0);
+        };
+        window.visualViewport.addEventListener("resize", handleResize);
+        return () => window.visualViewport.removeEventListener("resize", handleResize);
+    }, []);
 
     const handleAddPlayer = () => {
         if (players.length < maxPlayers) {
@@ -44,9 +68,8 @@ function Mozgolomka() {
     };
 
     const handleEditTitle = (id, newTitle) => {
-        setPlayers((prev) =>
-            prev.map((p) => (p.id === id ? { ...p, name: newTitle } : p))
-        );
+        setPlayers((prev) => prev.map((p) => (p.id === id ? { ...p, name: newTitle } : p)));
+        setTimeout(() => setEditingId(null), 200);
     };
 
     const handleOpenPremium = () => {
@@ -58,38 +81,15 @@ function Mozgolomka() {
         });
     };
 
-    // 📏 отслеживаем изменения размеров
-    useEffect(() => {
-        const measure = () => {
-            if (firstItemRef.current) {
-                const w = Math.round(firstItemRef.current.getBoundingClientRect().width || 0);
-                if (w && w !== cardWidth) setCardWidth(w);
-            }
+    const handleStartEditing = (index, id) => {
+        setActiveIndex(index);
+        setEditingId(id);
+    };
 
-            const w = window.innerWidth;
-            if (w !== lastW.current) {
-                lastW.current = w;
-                setViewportWidth(w);
-            }
-        };
-        measure();
-        window.addEventListener("resize", measure);
-        return () => window.removeEventListener("resize", measure);
-    }, [cardWidth]);
-
-    // 📱 плавное поднятие при клавиатуре
-    useEffect(() => {
-        if (!window.visualViewport) return;
-        const handleResize = () => {
-            const diff = window.innerHeight - window.visualViewport.height;
-            setKeyboardShift(diff > 0 ? diff / 2 : 0);
-        };
-        window.visualViewport.addEventListener("resize", handleResize);
-        return () => window.visualViewport.removeEventListener("resize", handleResize);
-    }, []);
-
+    // логика карусели (1:1 как в Home)
     const maxIndex = Math.max(0, items.length - 1);
     const clamp = (n) => Math.max(0, Math.min(maxIndex, n));
+    const goTo = (i) => setActiveIndex(clamp(i));
     const step = cardWidth + GAP;
 
     const getXForIndex = (i) => {
@@ -99,15 +99,9 @@ function Mozgolomka() {
         return viewportCenter - centerOfCard;
     };
 
-    const totalWidth = items.length * cardWidth + (items.length - 1) * GAP;
+    const minX = getXForIndex(maxIndex);
     const maxX = 16;
-    const minX = Math.min(16, viewportWidth - totalWidth - 16);
     const spring = { type: "spring", stiffness: 250, damping: 35 };
-
-    const handleStartEditing = (index, id) => {
-        setActiveIndex(index);
-        setEditingId(id);
-    };
 
     return (
         <div
@@ -119,6 +113,7 @@ function Mozgolomka() {
                 overflow: "hidden",
             }}
         >
+            {/* фон */}
             <AnimatePresence mode="wait">
                 <motion.img
                     key="bg"
@@ -139,20 +134,7 @@ function Mozgolomka() {
                 />
             </AnimatePresence>
 
-            <div
-                style={{
-                    position: "absolute",
-                    top:
-                        "calc(max(var(--tg-content-safe-area-inset-top, 0px), var(--tg-safe-area-inset-top, 0px)) + 48px)",
-                    right:
-                        "calc(max(var(--tg-content-safe-area-inset-right, 0px), var(--tg-safe-area-inset-right, 0px)) + 16px)",
-                    zIndex: 10,
-                }}
-            >
-                <IconButton icon={SettingsIcon} />
-            </div>
-
-            {/* 📦 Всё содержимое плавно поднимается вместе */}
+            {/* контент */}
             <motion.div
                 animate={{ y: -keyboardShift }}
                 transition={{ type: "spring", stiffness: 200, damping: 30 }}
@@ -165,10 +147,25 @@ function Mozgolomka() {
                     width: "100%",
                     height: "100%",
                     paddingTop:
-                        "calc(max(var(--tg-content-safe-area-inset-top, 0px), var(--tg-safe-area-inset-top, 0px)) + 110px)",
+                        "calc(max(var(--tg-content-safe-area-inset-top, 0px), var(--tg-safe-area-inset-top, 0px)) + 80px)",
                     boxSizing: "border-box",
                 }}
             >
+                {/* верхняя панель */}
+                <div
+                    style={{
+                        display: "flex",
+                        justifyContent: "flex-end",
+                        width: "100%",
+                        paddingRight:
+                            "calc(max(var(--tg-content-safe-area-inset-right, 0px), var(--tg-safe-area-inset-right, 0px)) + 32px)",
+                        marginBottom: 16,
+                    }}
+                >
+                    <IconButton icon={SettingsIcon} />
+                </div>
+
+                {/* заголовки */}
                 <div style={{ textAlign: "center", marginBottom: 16 }}>
                     <motion.h1
                         layoutId="title"
@@ -210,7 +207,7 @@ function Mozgolomka() {
                     </motion.p>
                 </div>
 
-                {/* 🎠 Карусель игроков */}
+                {/* 🎠 Карусель */}
                 <div
                     style={{
                         position: "absolute",
@@ -223,24 +220,26 @@ function Mozgolomka() {
                     }}
                 >
                     <motion.div
-                        style={{
-                            display: "flex",
-                            gap: `${GAP}px`,
-                            touchAction: "pan-x",
-                            willChange: "transform",
-                        }}
+                        style={{ display: "flex", gap: `${GAP}px` }}
                         drag="x"
-                        dragConstraints={{
-                            left: Number.isFinite(minX) ? minX : 0,
-                            right: maxX,
-                        }}
+                        dragConstraints={{ left: minX, right: maxX }}
                         dragElastic={0.05}
                         dragMomentum={false}
-                        drag={!editingId}
-                        animate={{
-                            x: getXForIndex(activeIndex),
-                        }}
+                        animate={{ x: getXForIndex(activeIndex) }}
                         transition={spring}
+                        onDragEnd={(_, info) => {
+                            const { offset, velocity } = info;
+                            const dx = offset.x;
+                            const vx = velocity.x;
+                            const swipePower = Math.abs(dx) * 0.5 + Math.abs(vx) * 20;
+                            const passed = Math.abs(dx) > step * 0.25 || swipePower > 300;
+                            if (passed) {
+                                if (dx < 0) goTo(activeIndex + 1);
+                                else goTo(activeIndex - 1);
+                            } else {
+                                goTo(activeIndex);
+                            }
+                        }}
                     >
                         {items.map((item, index) => (
                             <div
@@ -263,10 +262,7 @@ function Mozgolomka() {
                                             }
                                             : undefined
                                     }
-                                    onEditTitle={(newTitle) => {
-                                        handleEditTitle(item.id, newTitle);
-                                        setEditingId(null);
-                                    }}
+                                    onEditTitle={(newTitle) => handleEditTitle(item.id, newTitle)}
                                     onStartEditing={() => handleStartEditing(index, item.id)}
                                     onOpenPremium={
                                         item.__kind === "premium" ? handleOpenPremium : undefined
