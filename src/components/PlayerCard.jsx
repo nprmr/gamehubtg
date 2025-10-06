@@ -14,7 +14,10 @@ export default function PlayerCard({
                                        onOpenPremium = () => {},
                                    }) {
     const [emojiData, setEmojiData] = useState(randomEmojiData());
+    const [isEditing, setIsEditing] = useState(false);
+    const [titleValue, setTitleValue] = useState(emojiData.name);
     const emojiRef = useRef(null);
+    const inputRef = useRef(null);
 
     function randomEmojiData() {
         return emojiMap[Math.floor(Math.random() * emojiMap.length)];
@@ -49,10 +52,26 @@ export default function PlayerCard({
     };
 
     const handleTitleClick = () => {
-        const newTitle = prompt("Введите новый заголовок", emojiData.name);
-        if (newTitle) {
-            setEmojiData({ ...emojiData, name: newTitle });
-            onEditTitle(newTitle);
+        setIsEditing(true);
+        setTimeout(() => {
+            inputRef.current?.focus();
+            inputRef.current?.scrollIntoView({
+                behavior: "smooth",
+                block: "center",
+            });
+        }, 50);
+    };
+
+    const handleBlur = () => {
+        setIsEditing(false);
+        setEmojiData({ ...emojiData, name: titleValue });
+        onEditTitle(titleValue);
+    };
+
+    const handleKeyDown = (e) => {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            inputRef.current?.blur();
         }
     };
 
@@ -85,7 +104,6 @@ export default function PlayerCard({
             pointer: "none",
             WebkitTapHighlightColor: "transparent",
         },
-
         title: {
             fontSize: 24,
             fontWeight: 700,
@@ -134,8 +152,36 @@ export default function PlayerCard({
                     {emojiData.emoji}
                 </div>
 
-                <div style={styles.title} onClick={handleTitleClick}>
-                    {emojiData.name}
+                <div
+                    style={styles.title}
+                    onClick={!isEditing ? handleTitleClick : undefined}
+                >
+                    {isEditing ? (
+                        <input
+                            ref={inputRef}
+                            type="text"
+                            value={titleValue}
+                            onChange={(e) => setTitleValue(e.target.value)}
+                            onBlur={handleBlur}
+                            onKeyDown={handleKeyDown}
+                            style={{
+                                fontSize: 24,
+                                fontWeight: 700,
+                                textAlign: "center",
+                                color: theme.icotex.normal,
+                                background: "transparent",
+                                border: "none",
+                                outline: "none",
+                                width: "100%",
+                                height: "100%",
+                                textAlign: "center",
+                                caretColor: theme.icotex.white,
+                                padding: 0,
+                            }}
+                        />
+                    ) : (
+                        <span>{titleValue}</span>
+                    )}
                 </div>
 
                 <div style={styles.subtitle}>Нажмите, чтобы изменить</div>

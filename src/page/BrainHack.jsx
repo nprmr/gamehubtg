@@ -1,4 +1,3 @@
-// src/screens/Mozgolomka.jsx
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -15,12 +14,9 @@ function Mozgolomka() {
     const navigate = useNavigate();
 
     // базовые игроки
-    const [players, setPlayers] = useState([{ id: 1, state: "active" }]);
+    const [players, setPlayers] = useState([{ id: 1, state: "active", name: "Игрок 1" }]);
 
-    // индекс активной карточки (по общему списку items)
     const [activeIndex, setActiveIndex] = useState(0);
-
-    // измерения
     const [cardWidth, setCardWidth] = useState(260);
     const [viewportWidth, setViewportWidth] = useState(window.innerWidth);
     const [viewportHeight, setViewportHeight] = useState(window.innerHeight);
@@ -31,10 +27,8 @@ function Mozgolomka() {
 
     const GAP = 16;
     const maxPlayers = 4;
-
     const isMaxPlayers = players.length >= maxPlayers;
 
-    // 👇 единый список карточек для карусели
     const items = [
         ...players.map((p) => ({ ...p, __kind: "player" })),
         isMaxPlayers
@@ -44,8 +38,17 @@ function Mozgolomka() {
 
     const handleAddPlayer = () => {
         if (players.length < maxPlayers) {
-            setPlayers((prev) => [...prev, { id: Date.now(), state: "active" }]);
+            setPlayers((prev) => [
+                ...prev,
+                { id: Date.now(), state: "active", name: `Игрок ${prev.length + 1}` },
+            ]);
         }
+    };
+
+    const handleEditTitle = (id, newTitle) => {
+        setPlayers((prev) =>
+            prev.map((p) => (p.id === id ? { ...p, name: newTitle } : p))
+        );
     };
 
     const handleOpenPremium = () => {
@@ -57,7 +60,6 @@ function Mozgolomka() {
         });
     };
 
-    // измерения (обновляем ширину только при реальном изменении)
     useEffect(() => {
         const measure = () => {
             if (firstItemRef.current) {
@@ -70,11 +72,11 @@ function Mozgolomka() {
 
             if (w !== lastW.current) {
                 lastW.current = w;
-                setViewportWidth(w); // влияет на расчёт X
+                setViewportWidth(w);
             }
             if (h !== lastH.current) {
                 lastH.current = h;
-                setViewportHeight(h); // влияет на лэйаут, но не на X
+                setViewportHeight(h);
             }
         };
 
@@ -83,13 +85,11 @@ function Mozgolomka() {
         return () => window.removeEventListener("resize", measure);
     }, [cardWidth]);
 
-    // расчёт позиций/ограничений
     const maxIndex = Math.max(0, items.length - 1);
     const clamp = (n) => Math.max(0, Math.min(maxIndex, n));
     const goTo = (i) => setActiveIndex(clamp(i));
     const step = cardWidth + GAP;
 
-    // первая карточка — слева 16px, иначе — центрируем
     const getXForIndex = (i) => {
         if (i === 0) return 16;
         const centerOfCard = i * step + cardWidth / 2;
@@ -97,16 +97,9 @@ function Mozgolomka() {
         return viewportCenter - centerOfCard;
     };
 
-    // ширина всей ленты
     const totalWidth = items.length * cardWidth + (items.length - 1) * GAP;
-
-    // правая граница (двигаем вправо) — 16px
     const maxX = 16;
-
-    // левая граница (двигаем влево) — когда правый край ленты = viewportWidth - 16
-    // => x = viewportWidth - totalWidth - 16
     const minX = Math.min(16, viewportWidth - totalWidth - 16);
-
     const spring = { type: "spring", stiffness: 250, damping: 35 };
 
     return (
@@ -119,7 +112,6 @@ function Mozgolomka() {
                 overflow: "hidden",
             }}
         >
-            {/* фон */}
             <AnimatePresence mode="wait">
                 <motion.img
                     key="bg"
@@ -140,7 +132,6 @@ function Mozgolomka() {
                 />
             </AnimatePresence>
 
-            {/* кнопка настроек */}
             <div
                 style={{
                     position: "absolute",
@@ -154,7 +145,6 @@ function Mozgolomka() {
                 <IconButton icon={SettingsIcon} />
             </div>
 
-            {/* контент */}
             <div
                 style={{
                     position: "relative",
@@ -169,7 +159,6 @@ function Mozgolomka() {
                     boxSizing: "border-box",
                 }}
             >
-                {/* заголовок */}
                 <div style={{ textAlign: "center", marginBottom: 16 }}>
                     <motion.h1
                         layoutId="title"
@@ -211,7 +200,6 @@ function Mozgolomka() {
                     </motion.p>
                 </div>
 
-                {/* карусель игроков */}
                 <div
                     style={{
                         position: "absolute",
@@ -224,7 +212,7 @@ function Mozgolomka() {
                     }}
                 >
                     <motion.div
-                        key={`${items.length}-${cardWidth}-${viewportWidth}`} // 🔑 пересчитать drag после изменений
+                        key={`${items.length}-${cardWidth}-${viewportWidth}`}
                         initial={false}
                         style={{
                             display: "flex",
@@ -239,7 +227,7 @@ function Mozgolomka() {
                         }}
                         dragElastic={0.05}
                         dragMomentum={false}
-                        animate={{ x: getXForIndex(activeIndex) }} // i=0 => 16px, иначе центр
+                        animate={{ x: getXForIndex(activeIndex) }}
                         transition={spring}
                         onDragEnd={(_, info) => {
                             const { offset, velocity } = info;
@@ -263,17 +251,25 @@ function Mozgolomka() {
                                 style={{ flex: "0 0 auto" }}
                             >
                                 <PlayerCard
-                                    id={`item-${item.id}`}
+                                    id={item.id}
                                     state={item.state}
                                     playerNumber={
                                         item.__kind === "player" ? index + 1 : players.length + 1
                                     }
-                                    onAdd={item.__kind === "add" ? () => {
-                                        handleAddPlayer();
-                                        // при добавлении игрока переедем к новому элементу
-                                        setTimeout(() => setActiveIndex(items.length), 0);
-                                    } : undefined}
-                                    onOpenPremium={item.__kind === "premium" ? handleOpenPremium : undefined}
+                                    onAdd={
+                                        item.__kind === "add"
+                                            ? () => {
+                                                handleAddPlayer();
+                                                setTimeout(() => setActiveIndex(items.length), 0);
+                                            }
+                                            : undefined
+                                    }
+                                    onEditTitle={(newTitle) =>
+                                        handleEditTitle(item.id, newTitle)
+                                    }
+                                    onOpenPremium={
+                                        item.__kind === "premium" ? handleOpenPremium : undefined
+                                    }
                                 />
                             </div>
                         ))}
@@ -281,7 +277,6 @@ function Mozgolomka() {
                 </div>
             </div>
 
-            {/* нижние кнопки */}
             <div
                 style={{
                     position: "absolute",
