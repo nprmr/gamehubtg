@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-
 import PlayerCard from "../components/PlayerCard";
 import IconButton from "../components/IconButton";
 import SettingsIcon from "../icons/Settings.svg?react";
@@ -10,60 +8,31 @@ import PrimaryButton from "../components/PrimaryButton";
 import bg from "../assets/bgBrainHack.png";
 import { theme } from "../theme";
 
-/**
- * КЛЮЧЕВАЯ ИДЕЯ:
- * - root имеет фикс. высоту равную window.innerHeight (только при mount) → кнопки не двигаются
- * - contentWindow ограничен снизу до keyboardTop (viewportStableHeight) → карусель всегда над клавиатурой
- * - карусель прижимаем к низу contentWindow с отступом 16px → нужная дистанция
- */
-
-function Mozgolomka() {
+export default function Mozgolomka() {
     const navigate = useNavigate();
 
-    // --- модель
     const [players, setPlayers] = useState([{ id: 1, state: "active" }]);
+    const [keyboardHeight, setKeyboardHeight] = useState(0);
     const maxPlayers = 4;
 
-    // --- метрики вьюпорта / клавиатуры
-    const [initialHeight] = useState(() => window.innerHeight); // фиксируется один раз
-    const [stableHeight, setStableHeight] = useState(() => window.innerHeight); // меняется при клавиатуре
-    const keyboardHeight = Math.max(0, initialHeight - stableHeight);
-
-    // подписка на Telegram viewport + fallback на VisualViewport
     useEffect(() => {
         const tg = window.Telegram?.WebApp;
+        if (!tg) return;
 
-        const updateFromTG = () => {
-            const stable = tg?.viewportStableHeight || window.innerHeight;
-            setStableHeight(stable);
+        const handleViewport = () => {
+            const diff = window.innerHeight - tg.viewportStableHeight;
+            setKeyboardHeight(diff > 0 ? diff : 0);
         };
 
-        const updateFromVV = () => {
-            // Fallback для случаев без Telegram API
-            const vv = window.visualViewport;
-            if (!vv) return;
-            // visualViewport.height — видимая высота; keyboardHeight ≈ initial - vv.height
-            const approxStable = initialHeight - Math.max(0, initialHeight - Math.round(vv.height));
-            setStableHeight(approxStable);
-        };
+        tg.onEvent("viewportChanged", handleViewport);
+        handleViewport(); // инициализация
+        return () => tg.offEvent("viewportChanged", handleViewport);
+    }, []);
 
-        // первичная инициализация
-        updateFromTG();
-        // telegram
-        tg?.onEvent("viewportChanged", updateFromTG);
-        // fallback
-        window.visualViewport?.addEventListener("resize", updateFromVV);
-
-        return () => {
-            tg?.offEvent("viewportChanged", updateFromTG);
-            window.visualViewport?.removeEventListener("resize", updateFromVV);
-        };
-    }, [initialHeight]);
-
-    // коллбеки
     const handleAddPlayer = () => {
-        if (players.length >= maxPlayers) return;
-        setPlayers((prev) => [...prev, { id: Date.now(), state: "active" }]);
+        if (players.length < maxPlayers) {
+            setPlayers((prev) => [...prev, { id: Date.now(), state: "active" }]);
+        }
     };
 
     const handleOpenPremium = () => {
@@ -77,27 +46,15 @@ function Mozgolomka() {
 
     const isMaxPlayers = players.length >= maxPlayers;
 
-    // CSS-переменные для безопасных отступов Telegram
-    const SAFE_TOP =
-        "max(var(--tg-content-safe-area-inset-top, 0px), var(--tg-safe-area-inset-top, 0px))";
-    const SAFE_RIGHT =
-        "max(var(--tg-content-safe-area-inset-right, 0px), var(--tg-safe-area-inset-right, 0px))";
-    const SAFE_BOTTOM =
-        "max(var(--tg-content-safe-area-inset-bottom, 0px), var(--tg-safe-area-inset-bottom, 0px))";
-    const SAFE_LEFT =
-        "max(var(--tg-content-safe-area-inset-left, 0px), var(--tg-safe-area-inset-left, 0px))";
-
-    // Высота окна контента (не двигаем root!), его нижняя грань — над клавиатурой:
-    // contentBottomOffset = safe-bottom + keyboardHeight
-    const contentBottomCss = `calc(${SAFE_BOTTOM} + ${keyboardHeight}px)`;
+    // Сдвигаем контент вверх при поднятии клавиатуры, но не ограничиваем высоту
+    const contentShift = keyboardHeight > 0 ? -(keyboardHeight - 16) : 0;
 
     return (
         <div
-            // ROOT: фиксированная высота = высота экрана при монтировании (не меняется)
             style={{
-                position: "relative",
                 width: "100vw",
-                height: `${initialHeight}px`,
+                height: "100vh",
+                position: "relative",
                 backgroundColor: theme.surface.main,
                 overflow: "hidden",
             }}
@@ -108,147 +65,145 @@ function Mozgolomka() {
                 alt="background"
                 style={{
                     position: "absolute",
-                    inset: 0,
+                    bottom: 0,
+                    left: 0,
                     width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
+                    height: "auto",
                     opacity: 0.6,
                     zIndex: 0,
-                    pointerEvents: "none",
                 }}
             />
 
-            {/* Кнопка настроек (фиксировано относительно root, НЕ двигается) */}
+            {/* Кнопка настроек */}
             <div
                 style={{
                     position: "absolute",
-                    top: `calc(${SAFE_TOP} + 48px)`,
-                    right: `calc(${SAFE_RIGHT} + 16px)`,
-                    zIndex: 3,
+                    top:
+                        "calc(max(var(--tg-content-safe-area-inset-top,0px), var(--tg-safe-area-inset-top,0px)) + 48px)",
+                    right:
+                        "calc(max(var(--tg-content-safe-area-inset-right,0px), var(--tg-safe-area-inset-right,0px)) + 16px)",
+                    zIndex: 10,
                 }}
             >
                 <IconButton icon={SettingsIcon} />
             </div>
 
-            {/* CONTENT WINDOW: окно видимого контента.
-          Верх — ниже safe-top, низ — над клавиатурой (safe-bottom + keyboardHeight).
-          Здесь НЕТ трансформов — только геометрия → нет «скачков».
-      */}
+            {/* Контент (двигается через transform, не обрезается!) */}
             <div
                 style={{
                     position: "absolute",
-                    top: `calc(${SAFE_TOP} + 110px)`,
-                    left: `calc(${SAFE_LEFT})`,
-                    right: `calc(${SAFE_RIGHT})`,
-                    bottom: contentBottomCss,
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
-                    // не даём содержимому вылезать: нижняя грань — ровно поверхность над клавиатурой
-                    overflow: "hidden",
+                    justifyContent: "flex-start",
+                    transform: `translateY(${contentShift}px)`,
+                    transition: "transform 0.3s ease",
                     zIndex: 1,
+                    pointerEvents: "none",
                 }}
             >
-                {/* Заголовки — прижаты к верху content-window */}
-                <div style={{ textAlign: "center", padding: "0 16px" }}>
+                {/* Заголовки */}
+                <div
+                    style={{
+                        textAlign: "center",
+                        marginTop:
+                            "calc(max(var(--tg-content-safe-area-inset-top,0px), var(--tg-safe-area-inset-top,0px)) + 100px)",
+                        marginBottom: 24,
+                        pointerEvents: "auto",
+                    }}
+                >
                     <h1
                         style={{
                             fontFamily: "Gilroy, sans-serif",
                             fontSize: 32,
                             fontWeight: 700,
                             color: theme.icotex.white,
-                            margin: "0 0 8px 0",
+                            marginBottom: 8,
                         }}
                     >
                         Мозголомка
                     </h1>
+
                     <p
                         style={{
                             fontFamily: "Gilroy, sans-serif",
                             fontSize: 14,
-                            fontWeight: 400,
                             color: theme.icotex.low,
                             margin: 0,
-                            lineHeight: 1.4,
                         }}
                     >
                         Можно добавить до 4 игроков
                     </p>
+
                     <p
                         style={{
                             fontFamily: "Gilroy, sans-serif",
                             fontSize: 14,
-                            fontWeight: 400,
                             color: theme.icotex.info,
-                            margin: "4px 0 0 0",
+                            marginTop: 4,
                         }}
                     >
                         Больше игроков и игровых карточек доступно с Премиум
                     </p>
                 </div>
 
-                {/* КАРУСЕЛЬ-БЛОК — прижат к НИЗУ окна контента (над клавиатурой) */}
+                {/* Карусель */}
                 <div
                     style={{
-                        marginTop: "auto", // ключ: толкаем карусель к низу видимого окна
                         width: "100%",
-                        boxSizing: "border-box",
-                        padding: "16px 24px",
-                        // отступ 16px от нижней грани окна контента ⇒ будет 16px над клавиатурой
-                        marginBottom: 16,
+                        display: "flex",
+                        flexDirection: "row",
+                        overflowX: "auto",
+                        gap: 8,
+                        padding: "16px 24px 120px 24px", // 120px отступ, чтобы не пересекалось с кнопками
+                        justifyContent: "center",
+                        scrollbarWidth: "none",
+                        msOverflowStyle: "none",
+                        pointerEvents: "auto",
                     }}
                 >
-                    <div
-                        style={{
-                            display: "flex",
-                            flexDirection: "row",
-                            gap: 8,
-                            overflowX: "auto",
-                            scrollbarWidth: "none",
-                            msOverflowStyle: "none",
-                            justifyContent: "center",
-                        }}
-                    >
-                        {players.map((player, index) => (
-                            <PlayerCard
-                                key={player.id}
-                                id={`player-${player.id}`}
-                                state={player.state}
-                                playerNumber={index + 1}
-                            />
-                        ))}
+                    {players.map((player, index) => (
+                        <PlayerCard
+                            key={player.id}
+                            id={`player-${player.id}`}
+                            state={player.state}
+                            playerNumber={index + 1}
+                        />
+                    ))}
 
-                        {!isMaxPlayers ? (
-                            <PlayerCard
-                                id="add-player"
-                                state="add"
-                                playerNumber={players.length + 1}
-                                onAdd={handleAddPlayer}
-                            />
-                        ) : (
-                            <PlayerCard
-                                id="premium-card"
-                                state="premium"
-                                onOpenPremium={handleOpenPremium}
-                            />
-                        )}
-                    </div>
+                    {!isMaxPlayers ? (
+                        <PlayerCard
+                            id="add-player"
+                            state="add"
+                            playerNumber={players.length + 1}
+                            onAdd={handleAddPlayer}
+                        />
+                    ) : (
+                        <PlayerCard
+                            id="premium-card"
+                            state="premium"
+                            onOpenPremium={handleOpenPremium}
+                        />
+                    )}
                 </div>
             </div>
 
-            {/* НИЖНИЕ КНОПКИ — ВНЕ контентного окна, НЕ ДВИГАЮТСЯ.
-          Привязаны к root (initialHeight), клавиатура их ПЕРЕКРЫВАЕТ.
-      */}
+            {/* Кнопки — фиксированы, не двигаются, клавиатура над ними */}
             <div
                 style={{
-                    position: "absolute",
-                    left: `calc(${SAFE_LEFT} + 16px)`,
-                    right: `calc(${SAFE_RIGHT} + 16px)`,
-                    bottom: `calc(${SAFE_BOTTOM} + 16px)`,
+                    position: "fixed",
+                    bottom:
+                        "calc(max(var(--tg-content-safe-area-inset-bottom,0px), var(--tg-safe-area-inset-bottom,0px)) + 16px)",
+                    left: 16,
+                    right: 16,
                     display: "flex",
                     justifyContent: "center",
                     gap: 8,
-                    zIndex: 2, // выше контента, но клавиатура всё равно поверх
+                    zIndex: 100,
                 }}
             >
                 <IconPrimaryButton onClick={() => navigate("/", { replace: true })} />
@@ -262,5 +217,3 @@ function Mozgolomka() {
         </div>
     );
 }
-
-export default Mozgolomka;
