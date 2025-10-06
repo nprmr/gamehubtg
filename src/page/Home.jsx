@@ -20,6 +20,7 @@ function Home() {
     const navigate = useNavigate();
     const firstItemRef = useRef(null);
 
+    // измеряем ширину карточки
     useEffect(() => {
         const measure = () => {
             if (firstItemRef.current) {
@@ -33,6 +34,7 @@ function Home() {
         return () => window.removeEventListener("resize", measure);
     }, []);
 
+    // загружаем список игр
     useEffect(() => {
         let alive = true;
         (async () => {
@@ -58,11 +60,6 @@ function Home() {
 
     const getXForIndex = (i) => {
         if (i === 0) return 16;
-        if (i === maxIndex) {
-            const centerOfCard = i * step + cardWidth / 2;
-            const viewportCenter = viewportWidth / 2;
-            return viewportCenter - centerOfCard;
-        }
         const centerOfCard = i * step + cardWidth / 2;
         const viewportCenter = viewportWidth / 2;
         return viewportCenter - centerOfCard;
@@ -136,16 +133,18 @@ function Home() {
                     width: "100%",
                     height: "100%",
                     boxSizing: "border-box",
-                    paddingTop: "calc(max(var(--tg-content-safe-area-inset-top, 0px), var(--tg-safe-area-inset-top, 0px)) + 48px)",
+                    paddingTop:
+                        "calc(max(var(--tg-content-safe-area-inset-top, 0px), var(--tg-safe-area-inset-top, 0px)) + 48px)",
                 }}
             >
-                {/* верхняя панель с иконкой */}
+                {/* верхняя панель */}
                 <div
                     style={{
                         display: "flex",
                         justifyContent: "flex-end",
                         width: "100%",
-                        paddingRight: "calc(max(var(--tg-content-safe-area-inset-right, 0px), var(--tg-safe-area-inset-right, 0px) + 32px)",
+                        paddingRight:
+                            "calc(max(var(--tg-content-safe-area-inset-right, 0px), var(--tg-safe-area-inset-right, 0px)) + 32px)",
                         marginBottom: 16,
                     }}
                 >
@@ -216,7 +215,11 @@ function Home() {
                         }}
                     >
                         {games.map((g, i) => (
-                            <div key={g.id} ref={i === 0 ? firstItemRef : undefined} style={{ flex: "0 0 auto" }}>
+                            <div
+                                key={g.id}
+                                ref={i === 0 ? firstItemRef : undefined}
+                                style={{ flex: "0 0 auto" }}
+                            >
                                 <GameCard
                                     label={g.label}
                                     title={g.title}
@@ -242,13 +245,21 @@ function Home() {
                     zIndex: 10,
                 }}
             >
-                {active?.id !== "neverever" ? (
-                    <PrimaryButton textColor="var(--icotex-white-alfa)" disabled withMargin>
-                        Игра в разработке
+                {active?.route ? (
+                    <PrimaryButton
+                        textColor="var(--icotex-white)"
+                        onClick={() => navigate(active.route)}
+                        withMargin
+                    >
+                        {active.buttonText || "Играть"}
                     </PrimaryButton>
                 ) : (
-                    <PrimaryButton textColor="var(--icotex-white)" onClick={() => navigate("/neverever")} withMargin>
-                        Начать игру
+                    <PrimaryButton
+                        textColor="var(--icotex-white-alfa)"
+                        disabled
+                        withMargin
+                    >
+                        {active.buttonText || "Игра в разработке"}
                     </PrimaryButton>
                 )}
             </div>

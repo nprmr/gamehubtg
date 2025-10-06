@@ -62,7 +62,7 @@ export default function PlayerCard({
             userSelect: "none",
         },
         emoji: {
-            width: 128,
+            width: "-webkit-fill-available",
             height: 128,
             fontSize: 120,
             display: "flex",
@@ -91,7 +91,7 @@ export default function PlayerCard({
             textOverflow: "ellipsis",
             overflow: "hidden",
             whiteSpace: "nowrap",
-            width: "100%",
+            width: "-webkit-fill-available",
         },
         subtitle: {
             fontSize: 16,
@@ -100,7 +100,7 @@ export default function PlayerCard({
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            width: "100%",
+            width: "-webkit-fill-available",
             height: 20,
         },
     };
