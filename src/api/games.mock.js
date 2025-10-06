@@ -23,8 +23,8 @@ export async function getGames() {
             label: "2/3",
             title: "Мозголомка",
             players: "2+",
-            categories: "40 мин",
-            subtitle: "Читай карточку и заставь друзей гадать – правда это, выдумка или твоя фантазия!",
+            categories: "40",
+            subtitle: "Читай карточку и заставь друзей гадать – правда это или выдумка!",
             bg: brainhack,
             route: "/brainhack", // <— теперь активна
             buttonText: "Начать игру",
