@@ -4,12 +4,12 @@ import { motion, useMotionValue, useTransform, useAnimation } from "framer-motio
 import IconButton from "../components/IconButton";
 import PrimaryButton from "../components/PrimaryButton";
 import BottomSheet from "../components/BottomSheet";
-import CategoryRive from "../components/CategoryRive"; // canvas-версия
+import CategoryRive from "../components/CategoryRive";
 import FaqIcon from "../icons/faq.svg?react";
 import ArrowBackIcon from "../icons/arrowback.svg?react";
 import { getQuestionsByCategories } from "../api";
 
-function GameScreen() {
+function GameScreen({ onShowOnboarding }) {
     const location = useLocation();
     const navigate = useNavigate();
     const { categories } = location.state || { categories: [] };
@@ -18,25 +18,17 @@ function GameScreen() {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [loading, setLoading] = useState(true);
     const [showSheet, setShowSheet] = useState(false);
-
-    // Призраки (улетающие карты)
     const [leavingCards, setLeavingCards] = useState([]);
-
-    // Анти-гонка при спаме
     const [isCooldown, setIsCooldown] = useState(false);
-    const COOLDOWN_MS = 120;
 
-    // Параметры свайпа
+    const COOLDOWN_MS = 120;
     const SWIPE_GOAL = 220;
     const THRESHOLD_OFFSET = 140;
     const THRESHOLD_VELOCITY = 500;
 
-    // Motion только для ACTIVE
     const x = useMotionValue(0);
     const activeRotate = useTransform(x, [-SWIPE_GOAL, 0], [-18, 0], { clamp: true });
     const controls = useAnimation();
-
-    // Масштаб нижней карточки (NEXT)
     const scaleNext = useTransform(x, [-SWIPE_GOAL, 0], [1, 0.94], { clamp: false });
 
     useEffect(() => {
@@ -74,10 +66,8 @@ function GameScreen() {
 
     const spawnGhostAndAdvance = (startX = 0) => {
         if (isCooldown || !currentQuestion) return;
-
         setIsCooldown(true);
 
-        // Добавляем верхнюю карту как призрак (улетит влево)
         setLeavingCards((prev) => [
             ...prev,
             {
@@ -92,15 +82,11 @@ function GameScreen() {
             },
         ]);
 
-        // СБРОС перед переключением
         controls.stop();
         x.set(0);
         controls.set({ x: 0, rotate: 0, scale: 1, opacity: 1 });
 
-        // Переключаем индекс
         setCurrentIndex((prev) => (prev + 1) % total);
-
-        // Короткий кулдаун
         setTimeout(() => setIsCooldown(false), COOLDOWN_MS);
     };
 
@@ -134,14 +120,10 @@ function GameScreen() {
                 <IconButton icon={ArrowBackIcon} onClick={() => setShowSheet(true)} />
             </div>
 
-            {/* FAQ */}
+            {/* FAQ → открывает онбординг как модалку */}
             <div style={faqIconStyle}>
-                <IconButton
-                    icon={FaqIcon}
-                    onClick={() => navigate("/onboarding")}
-                />
+                <IconButton icon={FaqIcon} onClick={onShowOnboarding} />
             </div>
-
 
             {/* Заголовок */}
             <div style={titleBlockStyle}>
@@ -149,16 +131,10 @@ function GameScreen() {
                 <div style={subtitleStyle}>{currentQuestion.category}</div>
             </div>
 
-            {/* Общий контейнер слоёв */}
+            {/* Карточки */}
             <div style={layersRootStyle}>
-                {/* NEXT */}
                 {nextQuestion && (
-                    <motion.div
-                        style={{
-                            ...nextLayerStyle,
-                            scale: scaleNext,
-                        }}
-                    >
+                    <motion.div style={{ ...nextLayerStyle, scale: scaleNext }}>
                         <div style={cardBaseStyle}>
                             <p style={nextTextStyle}>{nextQuestion.text}</p>
                             <div style={riveContainerStyle}>
@@ -171,17 +147,12 @@ function GameScreen() {
                     </motion.div>
                 )}
 
-                {/* ACTIVE */}
                 <motion.div
                     drag="x"
                     dragElastic={1}
                     dragMomentum={false}
                     animate={controls}
-                    style={{
-                        ...activeLayerStyle,
-                        x,
-                        rotate: activeRotate,
-                    }}
+                    style={{ ...activeLayerStyle, x, rotate: activeRotate }}
                     initial={false}
                     whileDrag={{ scale: 0.985, cursor: "grabbing" }}
                     onDragEnd={onActiveDragEnd}
@@ -197,7 +168,6 @@ function GameScreen() {
                     </div>
                 </motion.div>
 
-                {/* GHOSTS */}
                 {leavingCards.map((g) => (
                     <motion.div
                         key={g.id}
@@ -247,8 +217,7 @@ function GameScreen() {
     );
 }
 
-/* ===== Styles ===== */
-
+/* ===== Стили ===== */
 const wrapperStyle = {
     width: "100vw",
     height: "100vh",
@@ -365,7 +334,7 @@ const riveContainerStyle = {
 
 const buttonWrapperStyle = {
     position: "absolute",
-    bottom: "calc(max(var(--tg-content-safe-area-inset-bottom, 0px), var(--tg-safe-area-inset-bottom, 0px))",
+    bottom: "calc(max(var(--tg-content-safe-area-inset-bottom, 0px), var(--tg-safe-area-inset-bottom, 0px)))",
     left: 16,
     right: 16,
 };
