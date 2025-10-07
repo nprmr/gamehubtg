@@ -244,7 +244,7 @@ const safeAreaContainer = {
     alignItems: "center",
     height:
         "calc(100vh - (env(--tg-content-safe-area-inset-top, 0px) + env(--tg-content-safe-area-inset-bottom, 0px)))",
-    paddingTop: "env(--tg-content-safe-area-inset-top, 0px)",
+    paddingTop: "env(--tg-content-safe-area-inset-top, 116px)",
     paddingBottom: "env(--tg-content-safe-area-inset-bottom, 0px)",
     paddingLeft: "env(--tg-content-safe-area-inset-left, 16px)",
     paddingRight: "env(--tg-content-safe-area-inset-right, 16px)",
