@@ -19,10 +19,11 @@ function Mozgolomka() {
 
     const GAP = 16;
     const SIDE_PADDING = 24;
+    const RIGHT_MARGIN = 16; // для последней карточки
     const maxPlayers = 4;
     const x = useMotionValue(0);
 
-    // измеряем ширину карточки
+    // === измерение размеров ===
     useEffect(() => {
         const measure = () => {
             if (firstItemRef.current) {
@@ -55,25 +56,46 @@ function Mozgolomka() {
     const isMaxPlayers = players.length >= maxPlayers;
     const visibleCardsCount = players.length + 1;
     const step = cardWidth + GAP;
+
+    // полная ширина с учётом паддингов
     const totalWidth =
-        visibleCardsCount * cardWidth + (visibleCardsCount - 1) * GAP + 2 * SIDE_PADDING;
+        visibleCardsCount * cardWidth +
+        (visibleCardsCount - 1) * GAP +
+        SIDE_PADDING +
+        RIGHT_MARGIN;
+
+    // ограничиваем drag, чтобы последняя карточка имела 16px справа
     const minX = Math.min(0, viewportWidth - totalWidth);
     const maxX = 0;
 
-    // плавно центрируем ближайшую карточку после свайпа
     const snapToNearest = () => {
         const currentX = x.get();
-        // позиция центра экрана
         const center = viewportWidth / 2;
-        // вычисляем индекс ближайшей карточки
-        const index = Math.round((SIDE_PADDING + center - currentX - cardWidth / 2) / step);
+
+        // определяем ближайший индекс
+        const index = Math.round(
+            (SIDE_PADDING + center - currentX - cardWidth / 2) / step
+        );
         const clamped = Math.max(0, Math.min(index, visibleCardsCount - 1));
         setActiveIndex(clamped);
-        const targetX = -(clamped * step) + SIDE_PADDING;
+
+        // позиция карточки
+        let targetX = -(clamped * step) + SIDE_PADDING;
+
+        const lastIndex = visibleCardsCount - 1;
+        const maxScroll = -(totalWidth - viewportWidth + RIGHT_MARGIN);
+        const firstOffset = 16; // отступ первой карточки слева
+
+        // первая карточка — ровно 16 px от левого края
+        if (clamped === 0) targetX = firstOffset;
+
+        // последняя карточка — ровно 16 px от правого края
+        if (clamped === lastIndex && targetX < maxScroll) targetX = maxScroll;
+
         animate(x, targetX, {
             type: "spring",
-            stiffness: 250,
-            damping: 35,
+            stiffness: 200,
+            damping: 32,
         });
     };
 
@@ -144,6 +166,7 @@ function Mozgolomka() {
                     >
                         Мозголомка
                     </h1>
+
                     <p
                         style={{
                             fontFamily: "Gilroy, sans-serif",
@@ -155,6 +178,7 @@ function Mozgolomka() {
                     >
                         Можно добавить до 4 игроков
                     </p>
+
                     <p
                         style={{
                             fontFamily: "Gilroy, sans-serif",
@@ -185,15 +209,14 @@ function Mozgolomka() {
                             display: "flex",
                             gap: `${GAP}px`,
                             paddingLeft: SIDE_PADDING,
-                            paddingRight: SIDE_PADDING,
-                            x,
                             cursor: "grab",
+                            x,
                             willChange: "transform",
                         }}
                         drag="x"
                         dragConstraints={{ left: minX, right: maxX }}
-                        dragElastic={0.1}
-                        dragMomentum={true}
+                        dragElastic={0.2} // чуть мягче
+                        dragMomentum={false} // убрали “инерцию” → легкий обратный свайп
                         onDragEnd={snapToNearest}
                     >
                         {players.map((player, i) => (
@@ -237,7 +260,7 @@ function Mozgolomka() {
                 style={{
                     position: "fixed",
                     bottom:
-                        "calc(max(var(--tg-content-safe-area-inset-bottom, 0px), var(--tg-safe-area-inset-bottom, 0px))",
+                        "calc(max(var(--tg-content-safe-area-inset-bottom, 0px), var(--tg-safe-area-inset-bottom, 0px)) + 16px)",
                     left: 16,
                     right: 16,
                     zIndex: 100,
