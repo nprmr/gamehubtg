@@ -13,6 +13,7 @@
     "@rive-app/react-canvas": "^4.23.4",
     "@telegram-apps/sdk": "^3.11.5",
     "@twa-dev/sdk": "^8.0.2",
+    "canvas-confetti": "^1.9.3",
     "framer-motion": "^12.23.22",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",

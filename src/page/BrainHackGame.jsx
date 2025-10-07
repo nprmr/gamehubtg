@@ -9,13 +9,14 @@ import brainplayerBG from "../assets/brainplayerBG.png";
 import { theme } from "../theme.js";
 import WhoGuessed from "../components/WhoGuessed";
 import BottomSheet from "../components/BottomSheet";
+import AwardCeremony from "../components/AwardCeremony";
 
 export default function BrainHackGame({ onShowOnboarding }) {
     const location = useLocation();
     const navigate = useNavigate();
     const players = location.state?.players || [];
 
-    const [phase, setPhase] = useState("player"); // "player" | "game"
+    const [phase, setPhase] = useState("player"); // "player" | "game" | "award"
     const [isLoaded, setIsLoaded] = useState(false);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [layoutOffsets, setLayoutOffsets] = useState({ top: 100, bottom: 24 });
@@ -117,12 +118,21 @@ export default function BrainHackGame({ onShowOnboarding }) {
                 setRound((r) => r + 1);
                 setPhase("player");
             } else {
-                const maxScore = Math.max(...scores);
-                const winners = players.filter((_, i) => scores[i] === maxScore);
-                alert(`🏆 Победитель: ${winners.map((w) => w.emojiData?.name).join(", ")}`);
+                // конец игры → переход к награждению
+                setTimeout(() => setPhase("award"), 800);
             }
         }
     };
+
+    // вычисляем топ-3 победителей
+    const top3Winners = [...players]
+        .map((p, i) => ({
+            name: p.emojiData?.name || "Игрок",
+            emoji: p.emojiData?.emoji || "🙂",
+            score: scores[i],
+        }))
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 3);
 
     if (!isLoaded) {
         return (
@@ -271,6 +281,13 @@ export default function BrainHackGame({ onShowOnboarding }) {
                         </div>
                     </motion.div>
                 )}
+
+                {phase === "award" && (
+                    <AwardCeremony
+                        winners={top3Winners}
+                        onFinish={() => navigate("/brainhack", { replace: true })}
+                    />
+                )}
             </AnimatePresence>
 
             {/* ======= ВНЕ фазы ======= */}
@@ -282,7 +299,6 @@ export default function BrainHackGame({ onShowOnboarding }) {
                 onSubmit={handleScoresUpdate}
             />
 
-            {/* ======= Вынесенный BottomSheet ======= */}
             <div style={{ position: "fixed", zIndex: 10000 }}>
                 <BottomSheet
                     open={showSheet}
