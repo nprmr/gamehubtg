@@ -30,21 +30,19 @@ export default function AwardCeremony({ winners = [], onFinish }) {
     const currentWinner = ordered[step];
     const showCurrent = !placed.includes(step);
 
-    const lightAnimation = {
-        rotate: 360,
-        transition: { repeat: Infinity, duration: 25, ease: "linear" },
-    };
-
+    // shake animation
     const shakeAnimation = {
         rotate: [-3, 3, -3],
         transition: { repeat: Infinity, duration: 0.4, ease: "easeInOut" },
     };
 
+    // parse emoji
     const emojiHTML = twemoji.parse(currentWinner?.emoji || "🙂", {
         folder: "svg",
         ext: ".svg",
     });
 
+    // confetti + haptic
     useEffect(() => {
         if (!emojiRevealed) return;
         const levels = ["medium", "heavy", "rigid"];
@@ -54,6 +52,7 @@ export default function AwardCeremony({ winners = [], onFinish }) {
         confetti({ particleCount: power, spread, origin: { y: 0.6 } });
     }, [emojiRevealed, step]);
 
+    // delay reveal
     useEffect(() => {
         setEmojiRevealed(false);
         const t = setTimeout(() => setEmojiRevealed(true), 1200);
@@ -63,7 +62,6 @@ export default function AwardCeremony({ winners = [], onFinish }) {
     const handleContinue = () => {
         if (animating) return;
         setAnimating(true);
-
         setTimeout(() => {
             setPlaced((p) => [...p, step]);
             setAnimating(false);
@@ -73,6 +71,9 @@ export default function AwardCeremony({ winners = [], onFinish }) {
         }, 1000);
     };
 
+    // light intensity per step
+    const lightOpacity = [0.4, 0.6, 0.8][step];
+
     return (
         <motion.div
             initial={{ opacity: 0 }}
@@ -81,15 +82,13 @@ export default function AwardCeremony({ winners = [], onFinish }) {
             transition={{ duration: 0.3 }}
             style={overlayStyle}
         >
-            <motion.img src={lightImg} alt="light" style={lightStyle} animate={lightAnimation} />
-
             {/* === Центральная карточка === */}
             <div style={centerFixedContainer}>
                 <AnimatePresence mode="wait">
                     {showCurrent && (
                         <motion.div
                             key={`card-${step}`}
-                            initial={{ opacity: 0, scale: 0.9 }}
+                            initial={{ opacity: 0 }}
                             animate={
                                 animating
                                     ? { opacity: 0, scale: 0, transition: { duration: 1 } }
@@ -99,7 +98,41 @@ export default function AwardCeremony({ winners = [], onFinish }) {
                             transition={{ duration: 0.4 }}
                             style={centerWrapper}
                         >
-                            <motion.img src={medals[step]} alt="medal" style={medalStyle} animate={shakeAnimation} />
+                            {/* === Light под медалью === */}
+                            <motion.div
+                                key={`light-${step}`}
+                                style={{
+                                    position: "absolute",
+                                    top: "50%",
+                                    left: "50%",
+                                    transform: "translate(-50%, -50%) scale(0.9)", // уменьшение на 10%
+                                    zIndex: 0,
+                                }}
+                            >
+                                <motion.img
+                                    src={lightImg}
+                                    alt="light"
+                                    style={lightBehindStyle}
+                                    initial={{ opacity: 0 }}
+                                    animate={{
+                                        opacity: lightOpacity,
+                                        rotate: 360,
+                                    }}
+                                    exit={{ opacity: 0 }}
+                                    transition={{
+                                        opacity: { duration: 0.6 },
+                                        rotate: { repeat: Infinity, duration: 40, ease: "linear" },
+                                    }}
+                                />
+                            </motion.div>
+
+                            {/* === Медаль и эмоджи === */}
+                            <motion.img
+                                src={medals[step]}
+                                alt="medal"
+                                style={medalStyle}
+                                animate={shakeAnimation}
+                            />
                             <motion.div style={winnerContainer} animate={shakeAnimation}>
                                 {!emojiRevealed ? (
                                     <WinnerAskIcon style={{ width: 46, height: 46 }} />
@@ -118,7 +151,7 @@ export default function AwardCeremony({ winners = [], onFinish }) {
                 </AnimatePresence>
             </div>
 
-            {/* === Подписи: остаются на месте === */}
+            {/* === Текст под карточкой === */}
             <div style={textContainer}>
                 <AnimatePresence mode="wait">
                     {showCurrent && (
@@ -206,17 +239,6 @@ const overlayStyle = {
     overflow: "hidden",
 };
 
-const lightStyle = {
-    width: 326,
-    height: 326,
-    position: "absolute",
-    top: "50%",
-    left: "50%",
-    transform: "translate(-50%, -50%)",
-    opacity: 0.9,
-    zIndex: 0,
-};
-
 /* === Центр === */
 const centerFixedContainer = {
     position: "relative",
@@ -236,6 +258,13 @@ const centerWrapper = {
     width: 200,
     height: 200,
     zIndex: 2,
+};
+
+const lightBehindStyle = {
+    width: 300,
+    height: 300,
+    opacity: 0.9,
+    pointerEvents: "none",
 };
 
 const medalStyle = { width: 135, height: 182, position: "absolute", zIndex: 1 };
