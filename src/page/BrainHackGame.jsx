@@ -12,12 +12,14 @@ export default function BrainHackGame({ onShowOnboarding }) {
     const location = useLocation();
     const players = location.state?.players || [];
 
-    const [phase, setPhase] = useState("player"); // "player" | "game"
+    const [phase, setPhase] = useState("player");
     const [isLoaded, setIsLoaded] = useState(false);
     const [currentIndex, setCurrentIndex] = useState(0);
+    const [safeOffsets, setSafeOffsets] = useState({ top: 0, bottom: 0 });
+
     const currentPlayer = players[currentIndex];
 
-    // 💥 Вибрация
+    // 💥 вибрация
     function hapticTugTugPauseTug() {
         const H = window.Telegram?.WebApp?.HapticFeedback;
         if (!H) return;
@@ -26,12 +28,35 @@ export default function BrainHackGame({ onShowOnboarding }) {
             { type: "medium", delay: 150 },
             { type: "heavy", delay: 600 },
         ];
-        pattern.forEach(({ type, delay }) => {
-            setTimeout(() => H.impactOccurred(type), delay);
-        });
+        pattern.forEach(({ type, delay }) =>
+            setTimeout(() => H.impactOccurred(type), delay)
+        );
     }
 
-    // 👇 Предзагрузка фона
+    // 📱 безопасные отступы через Telegram API
+    useEffect(() => {
+        const tg = window.Telegram?.WebApp;
+        if (tg?.viewportHeight) {
+            const diff = tg.viewportHeight - tg.viewportStableHeight;
+            const top = tg.safeAreaInsetTop || 0;
+            const bottom = tg.safeAreaInsetBottom || diff || 0;
+            setSafeOffsets({ top, bottom });
+        }
+        // обновлять при resize
+        const handleResize = () => {
+            const tg = window.Telegram?.WebApp;
+            if (tg?.viewportHeight) {
+                const diff = tg.viewportHeight - tg.viewportStableHeight;
+                const top = tg.safeAreaInsetTop || 0;
+                const bottom = tg.safeAreaInsetBottom || diff || 0;
+                setSafeOffsets({ top, bottom });
+            }
+        };
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, []);
+
+    // 👇 предзагрузка фона
     useEffect(() => {
         const img = new Image();
         img.src = brainplayerBG;
@@ -41,7 +66,7 @@ export default function BrainHackGame({ onShowOnboarding }) {
         };
     }, []);
 
-    // ===== ИГРОВОЙ ЭКРАН =====
+    // ====== данные для раундов ======
     const TOTAL_ROUNDS = 15;
     const [round, setRound] = useState(1);
     const localQuestions = [
@@ -69,31 +94,27 @@ export default function BrainHackGame({ onShowOnboarding }) {
         }
     };
 
-    if (!isLoaded) {
+    if (!isLoaded)
         return (
             <div
                 style={{
                     backgroundColor: theme.surface.main,
                     width: "100vw",
                     height: "100vh",
-                    position: "fixed",
-                    top: 0,
-                    left: 0,
                 }}
             />
         );
-    }
 
     const backIconStyle = {
         position: "absolute",
-        top: "calc(max(var(--tg-content-safe-area-inset-top, 0px), var(--tg-safe-area-inset-top, 0px)) + 48px)",
+        top: `${safeOffsets.top + 48}px`,
         left: "16px",
         zIndex: 100,
     };
 
     const faqIconStyle = {
         position: "absolute",
-        top: "calc(max(var(--tg-content-safe-area-inset-top, 0px), var(--tg-safe-area-inset-top, 0px)) + 48px)",
+        top: `${safeOffsets.top + 48}px`,
         right: "16px",
         zIndex: 100,
     };
@@ -109,12 +130,14 @@ export default function BrainHackGame({ onShowOnboarding }) {
                     transition={{ duration: 0.3 }}
                     style={overlayStyle}
                 >
-                    {/* фон */}
                     <div style={backgroundContainer}>
-                        <img src={brainplayerBG} alt="background" style={playerBackgroundStyle} />
+                        <img
+                            src={brainplayerBG}
+                            alt="background"
+                            style={playerBackgroundStyle}
+                        />
                     </div>
 
-                    {/* верхние кнопки */}
                     <div style={backIconStyle}>
                         <IconButton icon={ArrowBackIcon} onClick={() => {}} />
                     </div>
@@ -122,8 +145,13 @@ export default function BrainHackGame({ onShowOnboarding }) {
                         <IconButton icon={FaqIcon} onClick={onShowOnboarding} />
                     </div>
 
-                    {/* контент */}
-                    <div style={safeAreaContainer}>
+                    <div
+                        style={{
+                            ...safeAreaContainer,
+                            paddingTop: safeOffsets.top + 116,
+                            paddingBottom: safeOffsets.bottom + 24,
+                        }}
+                    >
                         <div style={centerContent}>
                             <div style={{ fontSize: 128 }}>
                                 {currentPlayer?.emojiData?.emoji || "🙂"}
@@ -158,19 +186,30 @@ export default function BrainHackGame({ onShowOnboarding }) {
                     transition={{ duration: 0.35 }}
                     style={gameWrapperStyle}
                 >
-                    {/* верхние иконки */}
                     <div style={backIconStyle}>
-                        <IconButton icon={ArrowBackIcon} onClick={() => setPhase("player")} />
+                        <IconButton
+                            icon={ArrowBackIcon}
+                            onClick={() => setPhase("player")}
+                        />
                     </div>
                     <div style={faqIconStyle}>
                         <IconButton icon={FaqIcon} onClick={onShowOnboarding} />
                     </div>
 
-                    {/* контент */}
-                    <div style={safeAreaContainerGame}>
+                    <div
+                        style={{
+                            ...safeAreaContainer,
+                            paddingTop: safeOffsets.top + 116,
+                            paddingBottom: safeOffsets.bottom + 40,
+                        }}
+                    >
                         <div style={titleBlockStyle}>
-                            <h1 style={titleStyle}>Раунд {round} из {TOTAL_ROUNDS}</h1>
-                            <div style={subtitleStyle}>Прочитай или придумай один из фактов</div>
+                            <h1 style={titleStyle}>
+                                Раунд {round} из {TOTAL_ROUNDS}
+                            </h1>
+                            <div style={subtitleStyle}>
+                                Прочитай или придумай один из фактов
+                            </div>
                         </div>
 
                         <motion.div
@@ -192,8 +231,13 @@ export default function BrainHackGame({ onShowOnboarding }) {
                         </motion.div>
 
                         <div style={buttonWrapperStyle}>
-                            <PrimaryButton textColor={theme.icotex.white} onClick={handleNextRound}>
-                                {round < TOTAL_ROUNDS ? "Подсчитать очки" : "Завершить игру"}
+                            <PrimaryButton
+                                textColor={theme.icotex.white}
+                                onClick={handleNextRound}
+                            >
+                                {round < TOTAL_ROUNDS
+                                    ? "Подсчитать очки"
+                                    : "Завершить игру"}
                             </PrimaryButton>
                         </div>
                     </div>
@@ -203,7 +247,7 @@ export default function BrainHackGame({ onShowOnboarding }) {
     );
 }
 
-/* ===== СТИЛИ ===== */
+/* ===== стили ===== */
 
 const overlayStyle = {
     position: "fixed",
@@ -212,7 +256,6 @@ const overlayStyle = {
     width: "100vw",
     height: "100vh",
     backgroundColor: "var(--surface-main)",
-    backdropFilter: "blur(8px)",
     zIndex: 9999,
     overflow: "hidden",
 };
@@ -233,6 +276,7 @@ const playerBackgroundStyle = {
     width: "120%",
     height: "auto",
     objectFit: "contain",
+    opacity: 0.9,
 };
 
 const safeAreaContainer = {
@@ -242,19 +286,11 @@ const safeAreaContainer = {
     flexDirection: "column",
     justifyContent: "space-between",
     alignItems: "center",
-    height:
-        "calc(100vh - (env(--tg-content-safe-area-inset-top, 0px) + env(--tg-content-safe-area-inset-bottom, 0px)))",
-    paddingTop: "env(--tg-content-safe-area-inset-top, 116px)",
-    paddingBottom: "env(--tg-content-safe-area-inset-bottom, 0px)",
-    paddingLeft: "env(--tg-content-safe-area-inset-left, 16px)",
-    paddingRight: "env(--tg-content-safe-area-inset-right, 16px)",
+    width: "100%",
+    height: "100%",
+    paddingLeft: 16,
+    paddingRight: 16,
     boxSizing: "border-box",
-};
-
-const safeAreaContainerGame = {
-    ...safeAreaContainer,
-    paddingTop:
-        "calc(env(--tg-content-safe-area-inset-top, 116px)", // отодвигаем заголовок вниз
 };
 
 const centerContent = {
