@@ -30,19 +30,24 @@ export default function AwardCeremony({ winners = [], onFinish }) {
     const currentWinner = ordered[step];
     const showCurrent = !placed.includes(step);
 
-    // shake animation
+    // shake анимация медали
     const shakeAnimation = {
         rotate: [-3, 3, -3],
         transition: { repeat: Infinity, duration: 0.4, ease: "easeInOut" },
     };
 
-    // parse emoji
+    // вращение света
+    const lightAnimation = {
+        rotate: 360,
+        transition: { repeat: Infinity, duration: 40, ease: "linear" },
+    };
+
     const emojiHTML = twemoji.parse(currentWinner?.emoji || "🙂", {
         folder: "svg",
         ext: ".svg",
     });
 
-    // confetti + haptic
+    // конфетти и хаптик
     useEffect(() => {
         if (!emojiRevealed) return;
         const levels = ["medium", "heavy", "rigid"];
@@ -52,10 +57,10 @@ export default function AwardCeremony({ winners = [], onFinish }) {
         confetti({ particleCount: power, spread, origin: { y: 0.6 } });
     }, [emojiRevealed, step]);
 
-    // delay reveal
+    // 🕒 держим текст "3-е место" дольше перед reveal emoji
     useEffect(() => {
         setEmojiRevealed(false);
-        const t = setTimeout(() => setEmojiRevealed(true), 1200);
+        const t = setTimeout(() => setEmojiRevealed(true), 2500); // ← увеличено с 1200
         return () => clearTimeout(t);
     }, [step]);
 
@@ -71,7 +76,7 @@ export default function AwardCeremony({ winners = [], onFinish }) {
         }, 1000);
     };
 
-    // light intensity per step
+    // яркость света
     const lightOpacity = [0.4, 0.6, 0.8][step];
 
     return (
@@ -88,14 +93,15 @@ export default function AwardCeremony({ winners = [], onFinish }) {
                     {showCurrent && (
                         <motion.div
                             key={`card-${step}`}
-                            initial={{ opacity: 0 }}
-                            animate={
-                                animating
-                                    ? { opacity: 0, scale: 0, transition: { duration: 1 } }
-                                    : { opacity: 1, scale: 1 }
-                            }
+                            initial={{ opacity: 0, scale: 0.6 }}
+                            animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0 }}
-                            transition={{ duration: 0.4 }}
+                            transition={{
+                                type: "spring",
+                                stiffness: 400,
+                                damping: 12,
+                                duration: 0.8,
+                            }}
                             style={centerWrapper}
                         >
                             {/* === Light под медалью === */}
@@ -105,7 +111,7 @@ export default function AwardCeremony({ winners = [], onFinish }) {
                                     position: "absolute",
                                     top: "50%",
                                     left: "50%",
-                                    transform: "translate(-50%, -50%) scale(0.9)", // уменьшение на 10%
+                                    transform: "translate(-50%, -50%) scale(0.9)", // уменьшено на 10%
                                     zIndex: 0,
                                 }}
                             >
@@ -114,10 +120,7 @@ export default function AwardCeremony({ winners = [], onFinish }) {
                                     alt="light"
                                     style={lightBehindStyle}
                                     initial={{ opacity: 0 }}
-                                    animate={{
-                                        opacity: lightOpacity,
-                                        rotate: 360,
-                                    }}
+                                    animate={{ opacity: lightOpacity, rotate: 360 }}
                                     exit={{ opacity: 0 }}
                                     transition={{
                                         opacity: { duration: 0.6 },
@@ -157,10 +160,10 @@ export default function AwardCeremony({ winners = [], onFinish }) {
                     {showCurrent && (
                         <motion.div
                             key={`text-${step}-${emojiRevealed ? "name" : "place"}`}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.4 }}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.5, delay: 0.15 }} // чуть дольше
                             style={absoluteTextWrapper}
                         >
                             {!emojiRevealed ? (
@@ -293,7 +296,6 @@ const textContainer = {
 const absoluteTextWrapper = {
     position: "absolute",
     top: 0,
-    left: "50%",
     transform: "translateX(-50%)",
     textAlign: "center",
 };
