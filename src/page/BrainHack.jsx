@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, useMotionValue, animate } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import IconButton from "../components/IconButton";
 import SettingsIcon from "../icons/Settings.svg?react";
@@ -14,13 +14,15 @@ function Mozgolomka() {
     const [players, setPlayers] = useState([{ id: 1, state: "active" }]);
     const [cardWidth, setCardWidth] = useState(260);
     const [viewportWidth, setViewportWidth] = useState(window.innerWidth);
+    const [activeIndex, setActiveIndex] = useState(0);
     const firstItemRef = useRef(null);
 
     const GAP = 16;
-    const SIDE_PADDING = 24; // поля по бокам
+    const SIDE_PADDING = 24;
     const maxPlayers = 4;
+    const x = useMotionValue(0);
 
-    // измеряем ширину карточки и viewport
+    // измеряем ширину карточки
     useEffect(() => {
         const measure = () => {
             if (firstItemRef.current) {
@@ -51,18 +53,29 @@ function Mozgolomka() {
     };
 
     const isMaxPlayers = players.length >= maxPlayers;
-
-    // === расчёты для карусели ===
-    const visibleCardsCount = players.length + 1; // +1: add или premium присутствует всегда
+    const visibleCardsCount = players.length + 1;
+    const step = cardWidth + GAP;
     const totalWidth =
         visibleCardsCount * cardWidth + (visibleCardsCount - 1) * GAP + 2 * SIDE_PADDING;
+    const minX = Math.min(0, viewportWidth - totalWidth);
+    const maxX = 0;
 
-    // ограничиваем прокрутку так, чтобы:
-    // - слева был отступ SIDE_PADDING
-    // - справа последняя карточка тоже полностью помещалась
-    const canScroll = totalWidth > viewportWidth;
-    const minX = canScroll ? viewportWidth - totalWidth : 0; // отрицательное
-    const maxX = 0; // старт слева
+    // плавно центрируем ближайшую карточку после свайпа
+    const snapToNearest = () => {
+        const currentX = x.get();
+        // позиция центра экрана
+        const center = viewportWidth / 2;
+        // вычисляем индекс ближайшей карточки
+        const index = Math.round((SIDE_PADDING + center - currentX - cardWidth / 2) / step);
+        const clamped = Math.max(0, Math.min(index, visibleCardsCount - 1));
+        setActiveIndex(clamped);
+        const targetX = -(clamped * step) + SIDE_PADDING;
+        animate(x, targetX, {
+            type: "spring",
+            stiffness: 250,
+            damping: 35,
+        });
+    };
 
     return (
         <div
@@ -131,7 +144,6 @@ function Mozgolomka() {
                     >
                         Мозголомка
                     </h1>
-
                     <p
                         style={{
                             fontFamily: "Gilroy, sans-serif",
@@ -143,7 +155,6 @@ function Mozgolomka() {
                     >
                         Можно добавить до 4 игроков
                     </p>
-
                     <p
                         style={{
                             fontFamily: "Gilroy, sans-serif",
@@ -166,7 +177,7 @@ function Mozgolomka() {
                         transform: "translateY(-50%)",
                         display: "flex",
                         overflow: "hidden",
-                        touchAction: "pan-y", // чтобы вертикальные жесты страницы не конфликтовали
+                        touchAction: "pan-y",
                     }}
                 >
                     <motion.div
@@ -175,14 +186,15 @@ function Mozgolomka() {
                             gap: `${GAP}px`,
                             paddingLeft: SIDE_PADDING,
                             paddingRight: SIDE_PADDING,
-                            cursor: canScroll ? "grab" : "default",
+                            x,
+                            cursor: "grab",
                             willChange: "transform",
                         }}
-                        drag={canScroll ? "x" : false}
+                        drag="x"
                         dragConstraints={{ left: minX, right: maxX }}
                         dragElastic={0.1}
                         dragMomentum={true}
-                        transition={{ type: "spring", stiffness: 200, damping: 30 }}
+                        onDragEnd={snapToNearest}
                     >
                         {players.map((player, i) => (
                             <div
