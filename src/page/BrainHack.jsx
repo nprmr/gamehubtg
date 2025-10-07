@@ -10,7 +10,7 @@ import bg from "../assets/bgBrainHack.png";
 import { emojiMap } from "../data/emojiMap";
 import { theme } from "../theme";
 
-function Mozgolomka() {
+function BrainHack() {
     const navigate = useNavigate();
     const [players, setPlayers] = useState([
         {
@@ -28,7 +28,6 @@ function Mozgolomka() {
     const SIDE_PADDING = 16;
     const maxPlayers = 4;
 
-    // измеряем ширину карточки
     useEffect(() => {
         const measure = () => {
             if (firstItemRef.current) {
@@ -42,7 +41,6 @@ function Mozgolomka() {
         return () => window.removeEventListener("resize", measure);
     }, []);
 
-    // Добавить игрока
     const handleAddPlayer = () => {
         if (players.length < maxPlayers) {
             const newPlayer = {
@@ -54,14 +52,12 @@ function Mozgolomka() {
         }
     };
 
-    // Обновить данные игрока (при смене эмоджи)
     const handleUpdatePlayer = (id, updatedData) => {
         setPlayers((prev) =>
             prev.map((p) => (p.id === id ? { ...p, ...updatedData } : p))
         );
     };
 
-    // Открытие премиум попапа
     const handleOpenPremium = () => {
         window.Telegram?.WebApp?.showPopup({
             title: "Премиум",
@@ -71,7 +67,6 @@ function Mozgolomka() {
         });
     };
 
-    // === рандомизация и переход ===
     const handlePlay = () => {
         const shuffled = [...players].sort(() => Math.random() - 0.5);
         navigate("/brainhackgame", { state: { players: shuffled } });
@@ -79,9 +74,8 @@ function Mozgolomka() {
 
     const isMaxPlayers = players.length >= maxPlayers;
 
-    // === расчёты для карусели ===
     const step = cardWidth + GAP;
-    const totalCards = players.length + 1; // +1 для кнопки "добавить" или премиума
+    const totalCards = players.length + 1;
     const totalWidth =
         totalCards * cardWidth + (totalCards - 1) * GAP + SIDE_PADDING * 2;
 
@@ -157,8 +151,8 @@ function Mozgolomka() {
             >
                 {/* заголовки */}
                 <div style={{ textAlign: "center", marginBottom: 16 }}>
-                    <motion.h1
-                        layoutId="title"
+                    {/* ❌ без motion — никаких анимаций */}
+                    <h1
                         style={{
                             fontFamily: "Gilroy, sans-serif",
                             fontSize: 32,
@@ -168,10 +162,9 @@ function Mozgolomka() {
                         }}
                     >
                         Мозголомка
-                    </motion.h1>
+                    </h1>
 
-                    <motion.p
-                        layoutId="subtitle"
+                    <p
                         style={{
                             fontFamily: "Gilroy, sans-serif",
                             fontSize: 14,
@@ -181,9 +174,9 @@ function Mozgolomka() {
                         }}
                     >
                         Можно добавить до 4 игроков
-                    </motion.p>
+                    </p>
 
-                    <motion.p
+                    <p
                         style={{
                             fontFamily: "Gilroy, sans-serif",
                             fontSize: 14,
@@ -192,7 +185,7 @@ function Mozgolomka() {
                         }}
                     >
                         Больше игроков и игровых карточек доступно с Премиум
-                    </motion.p>
+                    </p>
                 </div>
 
                 {/* === Карусель === */}
@@ -225,7 +218,6 @@ function Mozgolomka() {
                             const { offset, velocity } = info;
                             const dx = offset.x;
                             const vx = velocity.x;
-
                             const swipePower = Math.abs(dx) * 0.4 + Math.abs(vx) * 20;
                             const threshold = step * 0.25;
 
@@ -299,4 +291,4 @@ function Mozgolomka() {
     );
 }
 
-export default Mozgolomka;
+export default BrainHack;

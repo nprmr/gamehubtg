@@ -1,28 +1,64 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import PrimaryButton from "../components/PrimaryButton.jsx";
-import IconPrimaryButton from "../components/IconPrimaryButton.jsx";
+import IconButton from "../components/IconButton";
+import FaqIcon from "../icons/faq.svg?react";
+import ArrowBackIcon from "../icons/arrowback.svg?react";
 import brainplayerBG from "../assets/brainplayerBG.png";
 import { theme } from "../theme.js";
 
-export default function BrainHackGame() {
+export default function BrainHackGame({ onShowOnboarding }) {
     const navigate = useNavigate();
     const location = useLocation();
 
-    // 👇 Берём игроков, уже перемешанных на предыдущем экране
     const players = location.state?.players || [];
-
-    // 👇 Индекс текущего игрока
     const [currentIndex, setCurrentIndex] = useState(0);
+    const [isLoaded, setIsLoaded] = useState(false); // 👈 добавлено
+
     const currentPlayer = players[currentIndex];
 
-    // === переходы ===
+    useEffect(() => {
+        // 👇 Предзагрузка фона
+        const img = new Image();
+        img.src = brainplayerBG;
+        img.onload = () => setIsLoaded(true);
+    }, []);
+
+    if (!isLoaded) {
+        // 👇 Показываем прозрачный фон (или спиннер)
+        return (
+            <div
+                style={{
+                    backgroundColor: theme.surface.main,
+                    width: "100vw",
+                    height: "100vh",
+                    position: "fixed",
+                    top: 0,
+                    left: 0,
+                }}
+            />
+        );
+    }
+
+    const backIconStyle = {
+        position: "absolute",
+        top: "calc(max(var(--tg-content-safe-area-inset-top, 0px), var(--tg-safe-area-inset-top, 0px)) + 48px)",
+        left: "16px",
+        zIndex: 100,
+    };
+
+    const faqIconStyle = {
+        position: "absolute",
+        top: "calc(max(var(--tg-content-safe-area-inset-top, 0px), var(--tg-safe-area-inset-top, 0px)) + 48px)",
+        right: "16px",
+        zIndex: 100,
+    };
+
     const handleNext = () => {
         if (currentIndex < players.length - 1) {
             setCurrentIndex((prev) => prev + 1);
         } else {
-            // все сходили — переход к игре / следующему экрану
             navigate("/game", { replace: true, state: { players } });
         }
     };
@@ -33,7 +69,7 @@ export default function BrainHackGame() {
     };
 
     return (
-        <AnimatePresence>
+        <AnimatePresence mode="sync">
             <motion.div
                 key="player-turn-screen"
                 initial={{ opacity: 0 }}
@@ -56,9 +92,9 @@ export default function BrainHackGame() {
             >
                 <motion.div
                     key="player-turn-container"
-                    initial={{ scale: 0.95, opacity: 0 }}
+                    initial={{ scale: 0.98, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.9, opacity: 0 }}
+                    exit={{ scale: 0.98, opacity: 0 }}
                     transition={{ duration: 0.25 }}
                     style={{
                         width: "100%",
@@ -86,10 +122,19 @@ export default function BrainHackGame() {
                             objectFit: "cover",
                             zIndex: 0,
                             opacity: 0.8,
+                            transition: "opacity 0.3s ease",
                         }}
                     />
 
-                    {/* Контент игрока */}
+                    {/* верхние кнопки */}
+                    <div style={backIconStyle}>
+                        <IconButton icon={ArrowBackIcon} onClick={handleBack} />
+                    </div>
+                    <div style={faqIconStyle}>
+                        <IconButton icon={FaqIcon} onClick={onShowOnboarding} />
+                    </div>
+
+                    {/* контент игрока */}
                     <div
                         style={{
                             position: "relative",
@@ -108,7 +153,6 @@ export default function BrainHackGame() {
                             transition={{ type: "spring", stiffness: 120, damping: 15 }}
                             style={{ textAlign: "center" }}
                         >
-                            {/* Эмоджи игрока */}
                             <div
                                 style={{
                                     fontSize: 128,
@@ -120,7 +164,6 @@ export default function BrainHackGame() {
                                 {currentPlayer?.emojiData?.emoji || "🙂"}
                             </div>
 
-                            {/* Имя игрока */}
                             <div
                                 style={{
                                     fontFamily: "Gilroy, sans-serif",
@@ -133,7 +176,6 @@ export default function BrainHackGame() {
                                 {currentPlayer?.emojiData?.name || "Игрок"}
                             </div>
 
-                            {/* подпись */}
                             <div
                                 style={{
                                     fontFamily: "Gilroy, sans-serif",
@@ -148,7 +190,7 @@ export default function BrainHackGame() {
                         </motion.div>
                     </div>
 
-                    {/* Кнопки */}
+                    {/* нижняя кнопка */}
                     <div
                         style={{
                             position: "absolute",
@@ -159,12 +201,10 @@ export default function BrainHackGame() {
                             zIndex: 10,
                             display: "flex",
                             justifyContent: "center",
-                            gap: 8,
                         }}
                     >
-                        <IconPrimaryButton onClick={handleBack} />
                         <PrimaryButton textColor={theme.icotex.white} onClick={handleNext}>
-                            {currentIndex < players.length - 1 ? "Дальше" : "Начать"}
+                            Начать
                         </PrimaryButton>
                     </div>
                 </motion.div>

@@ -20,7 +20,6 @@ function Home() {
     const navigate = useNavigate();
     const firstItemRef = useRef(null);
 
-    // измеряем ширину карточки
     useEffect(() => {
         const measure = () => {
             if (firstItemRef.current) {
@@ -34,7 +33,6 @@ function Home() {
         return () => window.removeEventListener("resize", measure);
     }, []);
 
-    // загружаем список игр
     useEffect(() => {
         let alive = true;
         (async () => {
@@ -86,6 +84,7 @@ function Home() {
             </div>
         );
     }
+
     if (error) return <div style={{ color: "tomato", padding: 24 }}>Ошибка: {error}</div>;
 
     const active = games[activeIndex];
@@ -154,7 +153,7 @@ function Home() {
                 {/* заголовок */}
                 <div style={{ textAlign: "center", marginBottom: 16 }}>
                     <motion.h1
-                        layoutId="title"
+                        layoutId="home-title"
                         style={{
                             fontFamily: "Gilroy, sans-serif",
                             fontSize: 32,
@@ -166,7 +165,7 @@ function Home() {
                         Выбор игры
                     </motion.h1>
                     <motion.p
-                        layoutId="subtitle"
+                        layoutId="home-subtitle"
                         style={{
                             fontFamily: "Gilroy, sans-serif",
                             fontSize: 14,
