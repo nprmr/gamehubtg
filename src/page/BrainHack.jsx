@@ -7,11 +7,18 @@ import PrimaryButton from "../components/PrimaryButton";
 import IconPrimaryButton from "../components/IconPrimaryButton";
 import PlayerCard from "../components/PlayerCard";
 import bg from "../assets/bgBrainHack.png";
+import { emojiMap } from "../data/emojiMap";
 import { theme } from "../theme";
 
 function Mozgolomka() {
     const navigate = useNavigate();
-    const [players, setPlayers] = useState([{ id: 1, state: "active" }]);
+    const [players, setPlayers] = useState([
+        {
+            id: 1,
+            state: "active",
+            emojiData: emojiMap[Math.floor(Math.random() * emojiMap.length)],
+        },
+    ]);
     const [cardWidth, setCardWidth] = useState(260);
     const [viewportWidth, setViewportWidth] = useState(window.innerWidth);
     const [activeIndex, setActiveIndex] = useState(0);
@@ -35,13 +42,26 @@ function Mozgolomka() {
         return () => window.removeEventListener("resize", measure);
     }, []);
 
+    // Добавить игрока
     const handleAddPlayer = () => {
         if (players.length < maxPlayers) {
-            const newPlayer = { id: Date.now(), state: "active" };
+            const newPlayer = {
+                id: Date.now(),
+                state: "active",
+                emojiData: emojiMap[Math.floor(Math.random() * emojiMap.length)],
+            };
             setPlayers((prev) => [...prev, newPlayer]);
         }
     };
 
+    // Обновить данные игрока (при смене эмоджи)
+    const handleUpdatePlayer = (id, updatedData) => {
+        setPlayers((prev) =>
+            prev.map((p) => (p.id === id ? { ...p, ...updatedData } : p))
+        );
+    };
+
+    // Открытие премиум попапа
     const handleOpenPremium = () => {
         window.Telegram?.WebApp?.showPopup({
             title: "Премиум",
@@ -51,14 +71,20 @@ function Mozgolomka() {
         });
     };
 
+    // === рандомизация и переход ===
+    const handlePlay = () => {
+        const shuffled = [...players].sort(() => Math.random() - 0.5);
+        navigate("/brainhackgame", { state: { players: shuffled } });
+    };
+
     const isMaxPlayers = players.length >= maxPlayers;
 
     // === расчёты для карусели ===
     const step = cardWidth + GAP;
-    const totalCards = isMaxPlayers ? players.length + 1 : players.length + 1; // add/premium тоже карточка
-    const totalWidth = totalCards * cardWidth + (totalCards - 1) * GAP + SIDE_PADDING * 2;
+    const totalCards = players.length + 1; // +1 для кнопки "добавить" или премиума
+    const totalWidth =
+        totalCards * cardWidth + (totalCards - 1) * GAP + SIDE_PADDING * 2;
 
-    // левая и правая границы drag
     const minX = Math.min(0, viewportWidth - totalWidth + SIDE_PADDING);
     const maxX = SIDE_PADDING;
 
@@ -66,7 +92,6 @@ function Mozgolomka() {
         const base = -(i * step) + SIDE_PADDING;
         const lastIndex = totalCards - 1;
         const maxScroll = viewportWidth - totalWidth + SIDE_PADDING;
-        // последняя карточка — с отступом 16px справа
         if (i === lastIndex && base < maxScroll) return maxScroll;
         return base;
     };
@@ -219,9 +244,11 @@ function Mozgolomka() {
                                 style={{ flex: "0 0 auto" }}
                             >
                                 <PlayerCard
-                                    id={`player-${player.id}`}
+                                    id={player.id}
                                     state={player.state}
                                     playerNumber={i + 1}
+                                    emojiData={player.emojiData}
+                                    onUpdate={(data) => handleUpdatePlayer(player.id, data)}
                                 />
                             </div>
                         ))}
@@ -264,10 +291,7 @@ function Mozgolomka() {
                 }}
             >
                 <IconPrimaryButton onClick={() => navigate("/", { replace: true })} />
-                <PrimaryButton
-                    textColor={theme.icotex.white}
-                    onClick={() => navigate("/game", { state: { players } })}
-                >
+                <PrimaryButton textColor={theme.icotex.white} onClick={handlePlay}>
                     Играть
                 </PrimaryButton>
             </div>

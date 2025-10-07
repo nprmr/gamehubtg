@@ -6,6 +6,7 @@ import NeverEver from "./page/NeverEver.jsx";
 import GameWrapper from "./page/GameWrapper.jsx"; // ✅ обертка
 import OnboardingScreen from "./page/OnboardingScreen.jsx"; // ✅ экран онбординга
 import BrainHack from "./page/BrainHack.jsx";
+import BrainHackGame from "./page/BrainHackGame.jsx"
 
 function AnimatedRoutes() {
     const location = useLocation();
@@ -19,6 +20,7 @@ function AnimatedRoutes() {
                     <Route path="/game" element={<GameWrapper />} /> {/* теперь через обертку */}
                     <Route path="/onboarding" element={<OnboardingScreen />} /> {/* экран онбординга */}
                     <Route path="/brainhack" element={<BrainHack />} />
+                    <Route path="/brainhackgame" element={<BrainHackGame />} />
                 </Routes>
             </AnimatePresence>
         </LayoutGroup>

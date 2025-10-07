@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import PlayerAddIcon from "../icons/addPlayer.svg?react";
 import { emojiMap } from "../data/emojiMap";
 import { theme } from "../theme";
@@ -9,16 +9,18 @@ export default function PlayerCard({
                                        id,
                                        state = "active",
                                        playerNumber = 1,
+                                       emojiData,                // 👉 данные игрока приходят из родителя
                                        onAdd = () => {},
                                        onOpenPremium = () => {},
+                                       onUpdate = () => {},      // 👉 сообщаем родителю о смене
                                    }) {
-    const [emojiData, setEmojiData] = useState(randomEmojiData());
     const emojiRef = useRef(null);
 
     function randomEmojiData() {
         return emojiMap[Math.floor(Math.random() * emojiMap.length)];
     }
 
+    // Парсим emoji через twemoji, когда меняется emojiData
     useEffect(() => {
         if (emojiRef.current) {
             twemoji.parse(emojiRef.current, {
@@ -34,8 +36,11 @@ export default function PlayerCard({
         }
     }, [emojiData]);
 
+    // Тап по карточке — выбираем новый emoji и передаем его наверх,
+    // сама карточка НИЧЕГО локально не запоминает
     const handleCardClick = () => {
-        setEmojiData(randomEmojiData());
+        const newEmoji = randomEmojiData();
+        onUpdate({ emojiData: newEmoji });
     };
 
     const styles = {
@@ -88,22 +93,19 @@ export default function PlayerCard({
         },
     };
 
-    // --- Основное состояние ---
+    // --- Активная карточка игрока ---
     if (state === "active") {
         return (
             <div
                 id={id}
-                style={{
-                    ...styles.cardBase,
-                    backgroundColor: theme.surface.zero,
-                }}
+                style={{ ...styles.cardBase, backgroundColor: theme.surface.zero }}
                 onClick={handleCardClick}
             >
                 <div style={styles.emoji} ref={emojiRef}>
-                    {emojiData.emoji}
+                    {emojiData?.emoji || "🙂"}
                 </div>
 
-                <div style={styles.title}>{emojiData.name}</div>
+                <div style={styles.title}>{emojiData?.name || "Игрок"}</div>
 
                 <div style={styles.subtitle}>Тапните, чтобы сменить</div>
             </div>
@@ -142,22 +144,11 @@ export default function PlayerCard({
                     />
                 </div>
 
-                <div
-                    style={{
-                        ...styles.title,
-                        color: theme.icotex.white,
-                        marginTop: 16,
-                    }}
-                >
+                <div style={{ ...styles.title, color: theme.icotex.white, marginTop: 16 }}>
                     Добавить
                 </div>
 
-                <div
-                    style={{
-                        ...styles.subtitle,
-                        color: theme.icotex.low,
-                    }}
-                >
+                <div style={{ ...styles.subtitle, color: theme.icotex.low }}>
                     Игрок {playerNumber}
                 </div>
             </div>
