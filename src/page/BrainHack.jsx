@@ -159,6 +159,8 @@ function BrainHack() {
                             fontWeight: 700,
                             color: theme.icotex.white,
                             marginBottom: 8,
+                            marginLeft: 16,
+                            marginRight: 16,
                         }}
                     >
                         Мозголомка
@@ -171,6 +173,8 @@ function BrainHack() {
                             color: theme.icotex.low,
                             margin: 0,
                             lineHeight: 1.4,
+                            marginLeft: 16,
+                            marginRight: 16,
                         }}
                     >
                         Можно добавить до 4 игроков
@@ -182,6 +186,9 @@ function BrainHack() {
                             fontSize: 14,
                             color: theme.icotex.info,
                             marginTop: 4,
+                            marginLeft: 16,
+                            marginRight: 16,
+                            width: "-webkit-fit-content",
                         }}
                     >
                         Больше игроков и игровых карточек доступно с Премиум
