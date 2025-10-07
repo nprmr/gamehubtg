@@ -10,13 +10,9 @@ export default function PlayerCard({
                                        state = "active",
                                        playerNumber = 1,
                                        onAdd = () => {},
-                                       onEditTitle = () => {},
                                        onOpenPremium = () => {},
                                    }) {
     const [emojiData, setEmojiData] = useState(randomEmojiData());
-    const [isEditing, setIsEditing] = useState(false);
-    const [title, setTitle] = useState(emojiData.name);
-    const inputRef = useRef(null);
     const emojiRef = useRef(null);
 
     function randomEmojiData() {
@@ -38,28 +34,8 @@ export default function PlayerCard({
         }
     }, [emojiData]);
 
-    useEffect(() => {
-        if (isEditing && inputRef.current) {
-            inputRef.current.focus();
-        }
-    }, [isEditing]);
-
-    const handleEmojiClick = () => setEmojiData(randomEmojiData());
-    const handleTitleClick = () => setIsEditing(true);
-
-    const handleTitleChange = (e) => setTitle(e.target.value);
-
-    const handleBlur = () => {
-        setIsEditing(false);
-        setEmojiData({ ...emojiData, name: title });
-        onEditTitle(title);
-    };
-
-    const handleKeyDown = (e) => {
-        if (e.key === "Enter") {
-            e.preventDefault();
-            handleBlur();
-        }
+    const handleCardClick = () => {
+        setEmojiData(randomEmojiData());
     };
 
     const styles = {
@@ -76,6 +52,7 @@ export default function PlayerCard({
             boxSizing: "border-box",
             overflow: "hidden",
             userSelect: "none",
+            cursor: "pointer",
         },
         emoji: {
             width: 128,
@@ -85,7 +62,6 @@ export default function PlayerCard({
             alignItems: "center",
             justifyContent: "center",
             marginTop: 24,
-            cursor: "pointer",
             WebkitTapHighlightColor: "transparent",
         },
         title: {
@@ -99,19 +75,6 @@ export default function PlayerCard({
             alignItems: "center",
             justifyContent: "center",
             width: "100%",
-            cursor: "pointer",
-        },
-        input: {
-            fontSize: 24,
-            fontWeight: 700,
-            textAlign: "center",
-            marginTop: 16,
-            color: theme.icotex.normal,
-            backgroundColor: "transparent",
-            border: "none",
-            outline: "none",
-            width: "100%",
-            textAlign: "center",
         },
         subtitle: {
             fontSize: 16,
@@ -125,6 +88,7 @@ export default function PlayerCard({
         },
     };
 
+    // --- Основное состояние ---
     if (state === "active") {
         return (
             <div
@@ -133,31 +97,20 @@ export default function PlayerCard({
                     ...styles.cardBase,
                     backgroundColor: theme.surface.zero,
                 }}
+                onClick={handleCardClick}
             >
-                <div style={styles.emoji} ref={emojiRef} onClick={handleEmojiClick}>
+                <div style={styles.emoji} ref={emojiRef}>
                     {emojiData.emoji}
                 </div>
 
-                {isEditing ? (
-                    <input
-                        ref={inputRef}
-                        style={styles.input}
-                        value={title}
-                        onChange={handleTitleChange}
-                        onBlur={handleBlur}
-                        onKeyDown={handleKeyDown}
-                    />
-                ) : (
-                    <div style={styles.title} onClick={handleTitleClick}>
-                        {title}
-                    </div>
-                )}
+                <div style={styles.title}>{emojiData.name}</div>
 
-                <div style={styles.subtitle}>Нажмите, чтобы изменить</div>
+                <div style={styles.subtitle}>Тапните, чтобы сменить</div>
             </div>
         );
     }
 
+    // --- Карточка "Добавить игрока" ---
     if (state === "add") {
         return (
             <div
@@ -167,7 +120,6 @@ export default function PlayerCard({
                     ...styles.cardBase,
                     backgroundColor: theme.surface.normalAlfa,
                     backdropFilter: "blur(20px)",
-                    cursor: "pointer",
                 }}
             >
                 <div
@@ -212,6 +164,7 @@ export default function PlayerCard({
         );
     }
 
+    // --- Премиум-карточка ---
     if (state === "premium") {
         return (
             <PremiumCard

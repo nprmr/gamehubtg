@@ -1,177 +1,270 @@
-import { useState, useEffect, useRef } from "react";
-import PlayerAddIcon from "../icons/addPlayer.svg?react";
-import { emojiMap } from "../data/emojiMap";
-import { theme } from "../theme";
-import PremiumCard from "./PremiumCard";
-import twemoji from "twemoji";
+import React, { useState, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
+import "../theme.css";
+import IconButton from "../components/IconButton";
+import SettingsIcon from "../icons/Settings.svg?react";
+import GameCard from "../components/GameCard";
+import PrimaryButton from "../components/PrimaryButton";
+import { getGames } from "../api";
 
-export default function PlayerCard({
-                                       id,
-                                       state = "active",
-                                       playerNumber = 1,
-                                       onAdd = () => {},
-                                       onOpenPremium = () => {},
-                                   }) {
-    const [emojiData, setEmojiData] = useState(randomEmojiData());
-    const emojiRef = useRef(null);
+function Home() {
+    const [activeIndex, setActiveIndex] = useState(0);
+    const [cardWidth, setCardWidth] = useState(300);
+    const [viewportWidth, setViewportWidth] = useState(window.innerWidth);
+    const [games, setGames] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-    function randomEmojiData() {
-        return emojiMap[Math.floor(Math.random() * emojiMap.length)];
-    }
+    const GAP = 16;
+    const navigate = useNavigate();
+    const firstItemRef = useRef(null);
 
+    // измеряем ширину карточки
     useEffect(() => {
-        if (emojiRef.current) {
-            twemoji.parse(emojiRef.current, {
-                folder: "svg",
-                ext: ".svg",
-                className: "emoji",
-                attributes: () => ({
-                    width: "128",
-                    height: "128",
-                    style: "display:block;object-fit:contain;",
-                }),
-            });
-        }
-    }, [emojiData]);
+        const measure = () => {
+            if (firstItemRef.current) {
+                const w = firstItemRef.current.getBoundingClientRect().width;
+                if (w) setCardWidth(Math.round(w));
+            }
+            setViewportWidth(window.innerWidth);
+        };
+        measure();
+        window.addEventListener("resize", measure);
+        return () => window.removeEventListener("resize", measure);
+    }, []);
 
-    const handleCardClick = () => {
-        setEmojiData(randomEmojiData());
+    // загружаем список игр
+    useEffect(() => {
+        let alive = true;
+        (async () => {
+            try {
+                setLoading(true);
+                const data = await getGames();
+                if (alive) setGames(data);
+            } catch (e) {
+                if (alive) setError(e?.message || "Failed to load");
+            } finally {
+                if (alive) setLoading(false);
+            }
+        })();
+        return () => {
+            alive = false;
+        };
+    }, []);
+
+    const maxIndex = Math.max(0, games.length - 1);
+    const clamp = (n) => Math.max(0, Math.min(maxIndex, n));
+    const goTo = (i) => setActiveIndex(clamp(i));
+    const step = cardWidth + GAP;
+
+    const getXForIndex = (i) => {
+        if (i === 0) return 16;
+        const centerOfCard = i * step + cardWidth / 2;
+        const viewportCenter = viewportWidth / 2;
+        return viewportCenter - centerOfCard;
     };
 
-    const styles = {
-        cardBase: {
-            width: 260,
-            height: 276,
-            borderRadius: 32,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "flex-start",
-            flex: "0 0 auto",
-            transition: "all 0.2s ease",
-            boxSizing: "border-box",
-            overflow: "hidden",
-            userSelect: "none",
-            cursor: "pointer",
-        },
-        emoji: {
-            width: 128,
-            height: 128,
-            fontSize: 120,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            marginTop: 24,
-            WebkitTapHighlightColor: "transparent",
-        },
-        title: {
-            fontSize: 24,
-            fontWeight: 700,
-            textAlign: "center",
-            marginTop: 16,
-            color: theme.icotex.normal,
-            minHeight: 60,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: "100%",
-        },
-        subtitle: {
-            fontSize: 16,
-            color: theme.icotex.lowest,
-            marginBottom: 24,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: "100%",
-            height: 20,
-        },
-    };
+    const minX = getXForIndex(maxIndex);
+    const maxX = 16;
 
-    if (state === "active") {
+    if (loading) {
         return (
             <div
-                id={id}
                 style={{
-                    ...styles.cardBase,
-                    backgroundColor: theme.surface.zero,
+                    width: "100vw",
+                    height: "100vh",
+                    backgroundColor: "var(--surface-main)",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    color: "var(--icotex-white)",
+                    fontFamily: "Gilroy, sans-serif",
                 }}
-                onClick={handleCardClick}
             >
-                <div style={styles.emoji} ref={emojiRef}>
-                    {emojiData.emoji}
-                </div>
-
-                <div style={styles.title}>{emojiData.name}</div>
-
-                <div style={styles.subtitle}>Тапните, чтобы сменить</div>
+                Загружаем игры...
             </div>
         );
     }
+    if (error) return <div style={{ color: "tomato", padding: 24 }}>Ошибка: {error}</div>;
 
-    if (state === "add") {
-        return (
-            <div
-                id={id}
-                onClick={onAdd}
-                style={{
-                    ...styles.cardBase,
-                    backgroundColor: theme.surface.normalAlfa,
-                    backdropFilter: "blur(20px)",
-                }}
-            >
-                <div
-                    style={{
-                        width: 128,
-                        height: 128,
-                        marginTop: 24,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                    }}
-                >
-                    <PlayerAddIcon
+    const active = games[activeIndex];
+
+    return (
+        <div
+            style={{
+                width: "100vw",
+                height: "100vh",
+                backgroundColor: "var(--surface-main)",
+                position: "relative",
+                overflow: "hidden",
+            }}
+        >
+            {/* фон */}
+            <AnimatePresence mode="wait">
+                {active?.bg && (
+                    <motion.img
+                        key={activeIndex}
+                        src={active.bg}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.3 }}
                         style={{
-                            width: "128px",
-                            height: "128px",
-                            display: "block",
-                            flexShrink: 0,
+                            position: "absolute",
+                            bottom: 0,
+                            left: 0,
+                            width: "100%",
+                            height: "auto",
+                            zIndex: 0,
                         }}
                     />
-                </div>
+                )}
+            </AnimatePresence>
 
+            {/* основной контейнер */}
+            <div
+                style={{
+                    position: "relative",
+                    zIndex: 1,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    width: "100%",
+                    height: "100%",
+                    boxSizing: "border-box",
+                    paddingTop:
+                        "calc(max(var(--tg-content-safe-area-inset-top, 0px), var(--tg-safe-area-inset-top, 0px)) + 48px)",
+                }}
+            >
+                {/* верхняя панель */}
                 <div
                     style={{
-                        ...styles.title,
-                        color: theme.icotex.white,
-                        marginTop: 16,
+                        display: "flex",
+                        justifyContent: "flex-end",
+                        width: "100%",
+                        paddingRight:
+                            "calc(max(var(--tg-content-safe-area-inset-right, 0px), var(--tg-safe-area-inset-right, 0px)) + 32px)",
+                        marginBottom: 16,
                     }}
                 >
-                    Добавить
+                    <IconButton icon={SettingsIcon} />
                 </div>
 
+                {/* заголовок */}
+                <div style={{ textAlign: "center", marginBottom: 16 }}>
+                    <motion.h1
+                        layoutId="title"
+                        style={{
+                            fontFamily: "Gilroy, sans-serif",
+                            fontSize: 32,
+                            fontWeight: 700,
+                            color: "var(--icotex-white)",
+                            marginBottom: 8,
+                        }}
+                    >
+                        Выбор игры
+                    </motion.h1>
+                    <motion.p
+                        layoutId="subtitle"
+                        style={{
+                            fontFamily: "Gilroy, sans-serif",
+                            fontSize: 14,
+                            fontWeight: 400,
+                            color: "var(--icotex-low)",
+                            margin: 0,
+                            lineHeight: 1.4,
+                        }}
+                    >
+                        наши игры рассчитаны <br /> на компании от 2 до 24 человек
+                    </motion.p>
+                </div>
+
+                {/* карусель */}
                 <div
                     style={{
-                        ...styles.subtitle,
-                        color: theme.icotex.low,
+                        position: "absolute",
+                        top: "55%",
+                        left: 0,
+                        right: 0,
+                        transform: "translateY(-50%)",
+                        display: "flex",
+                        overflow: "hidden",
                     }}
                 >
-                    Игрок {playerNumber}
+                    <motion.div
+                        style={{ display: "flex", gap: `${GAP}px` }}
+                        drag="x"
+                        dragConstraints={{ left: minX, right: maxX }}
+                        dragElastic={0.05}
+                        dragMomentum={false}
+                        animate={{ x: getXForIndex(activeIndex) }}
+                        transition={{ type: "spring", stiffness: 250, damping: 35 }}
+                        onDragEnd={(_, info) => {
+                            const { offset, velocity } = info;
+                            const dx = offset.x;
+                            const vx = velocity.x;
+                            const swipePower = Math.abs(dx) * 0.5 + Math.abs(vx) * 20;
+                            const passed = Math.abs(dx) > step * 0.25 || swipePower > 300;
+                            if (passed) {
+                                if (dx < 0) goTo(activeIndex + 1);
+                                else goTo(activeIndex - 1);
+                            } else {
+                                goTo(activeIndex);
+                            }
+                        }}
+                    >
+                        {games.map((g, i) => (
+                            <div
+                                key={g.id}
+                                ref={i === 0 ? firstItemRef : undefined}
+                                style={{ flex: "0 0 auto" }}
+                            >
+                                <GameCard
+                                    label={g.label}
+                                    title={g.title}
+                                    subtitle={g.subtitle}
+                                    players={g.players}
+                                    categories={g.categories}
+                                    riveAnimation={g.riveAnimation}
+                                />
+                            </div>
+                        ))}
+                    </motion.div>
                 </div>
             </div>
-        );
-    }
 
-    if (state === "premium") {
-        return (
-            <PremiumCard
-                id={id}
-                onOpenPremium={onOpenPremium}
-                theme={theme}
-                styles={styles}
-            />
-        );
-    }
-
-    return null;
+            {/* фиксированная нижняя кнопка */}
+            <div
+                style={{
+                    position: "absolute",
+                    bottom:
+                        "calc(max(var(--tg-content-safe-area-inset-bottom, 0px), var(--tg-safe-area-inset-bottom, 0px))",
+                    left: 16,
+                    right: 16,
+                    zIndex: 10,
+                }}
+            >
+                {active?.route ? (
+                    <PrimaryButton
+                        textColor="var(--icotex-white)"
+                        onClick={() => navigate(active.route)}
+                        withMargin
+                    >
+                        {active.buttonText || "Играть"}
+                    </PrimaryButton>
+                ) : (
+                    <PrimaryButton
+                        textColor="var(--icotex-white-alfa)"
+                        disabled
+                        withMargin
+                    >
+                        {active.buttonText || "Игра в разработке"}
+                    </PrimaryButton>
+                )}
+            </div>
+        </div>
+    );
 }
+
+export default Home;

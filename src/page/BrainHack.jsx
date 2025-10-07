@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, useMotionValue, animate } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import IconButton from "../components/IconButton";
 import SettingsIcon from "../icons/Settings.svg?react";
@@ -19,6 +19,9 @@ function Mozgolomka() {
 
     const GAP = 16;
     const maxPlayers = 4;
+
+    // === motion value для плавного скролла ===
+    const x = useMotionValue(16);
 
     // измеряем ширину карточки
     useEffect(() => {
@@ -52,20 +55,24 @@ function Mozgolomka() {
 
     const isMaxPlayers = players.length >= maxPlayers;
 
-    const maxIndex = Math.max(0, players.length - 1);
-    const clamp = (n) => Math.max(0, Math.min(maxIndex, n));
-    const goTo = (i) => setActiveIndex(clamp(i));
     const step = cardWidth + GAP;
 
-    const getXForIndex = (i) => {
-        if (i === 0) return 16;
-        const centerOfCard = i * step + cardWidth / 2;
-        const viewportCenter = viewportWidth / 2;
-        return viewportCenter - centerOfCard;
-    };
+    // расчёт позиции (первая карточка слева)
+    const getXForIndex = (i) => -(i * step) + 16;
 
-    const minX = getXForIndex(maxIndex);
-    const maxX = 16;
+    const totalWidth = players.length * step;
+    const minX = Math.min(0, viewportWidth - totalWidth - 32);
+    const maxX = 32;
+
+    // плавное смещение при смене activeIndex
+    useEffect(() => {
+        const controls = animate(x, getXForIndex(activeIndex), {
+            type: "spring",
+            stiffness: 250,
+            damping: 35,
+        });
+        return controls.stop;
+    }, [activeIndex, cardWidth, viewportWidth]);
 
     return (
         <div
@@ -161,7 +168,7 @@ function Mozgolomka() {
                     </motion.p>
                 </div>
 
-                {/* Карусель */}
+                {/* === Карусель === */}
                 <div
                     style={{
                         position: "absolute",
@@ -171,27 +178,35 @@ function Mozgolomka() {
                         transform: "translateY(-50%)",
                         display: "flex",
                         overflow: "hidden",
+                        touchAction: "pan-y",
                     }}
                 >
                     <motion.div
-                        style={{ display: "flex", gap: `${GAP}px` }}
+                        style={{
+                            display: "flex",
+                            gap: `${GAP}px`,
+                            x,
+                            cursor: "grab",
+                        }}
                         drag="x"
                         dragConstraints={{ left: minX, right: maxX }}
-                        dragElastic={0.05}
+                        dragElastic={0.15}
                         dragMomentum={false}
-                        animate={{ x: getXForIndex(activeIndex) }}
-                        transition={{ type: "spring", stiffness: 250, damping: 35 }}
                         onDragEnd={(_, info) => {
-                            const { offset, velocity } = info;
-                            const dx = offset.x;
-                            const vx = velocity.x;
+                            const dx = info.offset.x;
+                            const vx = info.velocity.x;
                             const swipePower = Math.abs(dx) * 0.5 + Math.abs(vx) * 20;
                             const passed = Math.abs(dx) > step * 0.25 || swipePower > 300;
+
                             if (passed) {
-                                if (dx < 0) goTo(activeIndex + 1);
-                                else goTo(activeIndex - 1);
-                            } else {
-                                goTo(activeIndex);
+                                if (dx < 0)
+                                    setActiveIndex((prev) =>
+                                        Math.min(prev + 1, players.length - 1)
+                                    );
+                                else
+                                    setActiveIndex((prev) =>
+                                        Math.max(prev - 1, 0)
+                                    );
                             }
                         }}
                     >
