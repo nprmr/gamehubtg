@@ -7,6 +7,7 @@ import FaqIcon from "../icons/faq.svg?react";
 import ArrowBackIcon from "../icons/arrowback.svg?react";
 import brainplayerBG from "../assets/brainplayerBG.png";
 import { theme } from "../theme.js";
+import WhoGuessed from "../components/WhoGuessed"; // 👈 добавлен импорт
 
 export default function BrainHackGame({ onShowOnboarding }) {
     const location = useLocation();
@@ -16,6 +17,7 @@ export default function BrainHackGame({ onShowOnboarding }) {
     const [isLoaded, setIsLoaded] = useState(false);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [layoutOffsets, setLayoutOffsets] = useState({ top: 100, bottom: 24 });
+    const [showWhoGuessed, setShowWhoGuessed] = useState(false); // 👈 состояние для шита
 
     const currentPlayer = players[currentIndex];
 
@@ -128,7 +130,7 @@ export default function BrainHackGame({ onShowOnboarding }) {
 
                     {/* верхние кнопки */}
                     <div style={backIconStyle}>
-                        <IconButton icon={ArrowBackIcon} onClick={() => {}} />
+                        <IconButton icon={ArrowBackIcon} onClick={() => {brainhack}} />
                     </div>
                     <div style={faqIconStyle}>
                         <IconButton icon={FaqIcon} onClick={onShowOnboarding} />
@@ -177,7 +179,7 @@ export default function BrainHackGame({ onShowOnboarding }) {
                 >
                     {/* верхние иконки */}
                     <div style={backIconStyle}>
-                        <IconButton icon={ArrowBackIcon} onClick={() => setPhase("player")} />
+                        <IconButton icon={ArrowBackIcon} onClick={() => setPhase("/brainhack")} />
                     </div>
                     <div style={faqIconStyle}>
                         <IconButton icon={FaqIcon} onClick={onShowOnboarding} />
@@ -215,13 +217,26 @@ export default function BrainHackGame({ onShowOnboarding }) {
                         </motion.div>
 
                         <div style={buttonWrapperStyle}>
-                            <PrimaryButton textColor={theme.icotex.white} onClick={handleNextRound}>
+                            <PrimaryButton
+                                textColor={theme.icotex.white}
+                                onClick={() => {
+                                    hapticSoft();
+                                    setShowWhoGuessed(true); // 👈 открываем шит
+                                }}
+                            >
                                 {round < TOTAL_ROUNDS ? "Подсчитать очки" : "Завершить игру"}
                             </PrimaryButton>
                         </div>
                     </div>
                 </motion.div>
             )}
+
+            {/* 👇 Вызов шита "Кто угадал" */}
+            <WhoGuessed
+                open={showWhoGuessed}
+                onClose={() => setShowWhoGuessed(false)}
+                players={players}
+            />
         </AnimatePresence>
     );
 }
