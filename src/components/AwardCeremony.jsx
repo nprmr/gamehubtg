@@ -26,11 +26,11 @@ export default function AwardCeremony({ winners = [], onFinish }) {
     const [emojiRevealed, setEmojiRevealed] = useState(false);
     const [placed, setPlaced] = useState([]);
     const [animating, setAnimating] = useState(false);
+    const [buttonDisabled, setButtonDisabled] = useState(true);
 
     const currentWinner = ordered[step];
     const showCurrent = !placed.includes(step);
 
-    // shake анимация медали
     const shakeAnimation = {
         rotate: [-3, 3, -3],
         transition: { repeat: Infinity, duration: 0.4, ease: "easeInOut" },
@@ -41,7 +41,7 @@ export default function AwardCeremony({ winners = [], onFinish }) {
         ext: ".svg",
     });
 
-    // конфетти и хаптик
+    // Конфетти и хаптик при открытии эмодзи
     useEffect(() => {
         if (!emojiRevealed) return;
         const levels = ["medium", "heavy", "rigid"];
@@ -51,16 +51,23 @@ export default function AwardCeremony({ winners = [], onFinish }) {
         confetti({ particleCount: power, spread, origin: { y: 0.6 } });
     }, [emojiRevealed, step]);
 
-    // 🕒 держим текст "3-е место" дольше перед reveal emoji
+    // 🕒 Ускоряем reveal: теперь 1500 мс (было 2500)
     useEffect(() => {
         setEmojiRevealed(false);
-        const t = setTimeout(() => setEmojiRevealed(true), 2500); // ← увеличено с 1200
-        return () => clearTimeout(t);
+        setButtonDisabled(true); // блокируем кнопку пока карточка "открывается"
+
+        const revealTimer = setTimeout(() => {
+            setEmojiRevealed(true);
+            setButtonDisabled(false); // разблокируем кнопку после reveal
+        }, 1500);
+
+        return () => clearTimeout(revealTimer);
     }, [step]);
 
     const handleContinue = () => {
-        if (animating) return;
+        if (animating || buttonDisabled) return;
         setAnimating(true);
+
         setTimeout(() => {
             setPlaced((p) => [...p, step]);
             setAnimating(false);
@@ -70,7 +77,6 @@ export default function AwardCeremony({ winners = [], onFinish }) {
         }, 1000);
     };
 
-    // яркость света
     const lightOpacity = [0.4, 0.6, 0.8][step];
 
     return (
@@ -109,7 +115,7 @@ export default function AwardCeremony({ winners = [], onFinish }) {
                                     position: "absolute",
                                     top: "50%",
                                     left: "50%",
-                                    transform: "translate(-50%, -50%) scale(0.9)", // уменьшено на 10%
+                                    transform: "translate(-50%, -50%) scale(0.9)",
                                     zIndex: 0,
                                 }}
                             >
@@ -216,7 +222,11 @@ export default function AwardCeremony({ winners = [], onFinish }) {
                 </div>
 
                 <div style={buttonWrapper}>
-                    <PrimaryButton textColor={theme.icotex.white} onClick={handleContinue}>
+                    <PrimaryButton
+                        textColor={theme.icotex.white}
+                        onClick={handleContinue}
+                        disabled={buttonDisabled || animating}
+                    >
                         Продолжить
                     </PrimaryButton>
                 </div>
@@ -240,7 +250,6 @@ const overlayStyle = {
     overflow: "hidden",
 };
 
-/* === Центр === */
 const centerFixedContainer = {
     position: "relative",
     width: "100%",
@@ -279,7 +288,6 @@ const winnerContainer = {
     height: 182,
 };
 
-/* === Текст под карточкой === */
 const textContainer = {
     position: "relative",
     height: 72,
@@ -321,7 +329,6 @@ const scoreText = {
     color: "var(--icotex-white)",
 };
 
-/* === Низ === */
 const bottomContainer = {
     position: "absolute",
     bottom: 0,
@@ -357,4 +364,6 @@ const buttonWrapper = {
     width: "100%",
     display: "flex",
     justifyContent: "center",
+    padding: "0 16px", // ← добавлено
+    boxSizing: "border-box", // чтобы padding не ломал layout
 };
