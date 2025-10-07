@@ -15,6 +15,8 @@ export default function BrainHackGame({ onShowOnboarding }) {
     const [phase, setPhase] = useState("player"); // "player" | "game"
     const [isLoaded, setIsLoaded] = useState(false);
     const [currentIndex, setCurrentIndex] = useState(0);
+    const [layoutOffsets, setLayoutOffsets] = useState({ top: 100, bottom: 32 });
+
     const currentPlayer = players[currentIndex];
 
     // 💥 Вибрация
@@ -30,6 +32,22 @@ export default function BrainHackGame({ onShowOnboarding }) {
             setTimeout(() => H.impactOccurred(type), delay);
         });
     }
+
+    // ⚙️ Настраиваем layout под fullscreen / modal
+    useEffect(() => {
+        const tg = window.Telegram?.WebApp;
+        if (!tg) return;
+
+        const updateLayout = () => {
+            const fullscreen = tg.isExpanded;
+            setLayoutOffsets(fullscreen ? { top: 160, bottom: 48 } : { top: 80, bottom: 24 });
+        };
+
+        tg.onEvent?.("viewportChanged", updateLayout);
+        updateLayout();
+
+        return () => tg.offEvent?.("viewportChanged", updateLayout);
+    }, []);
 
     // 👇 Предзагрузка фона
     useEffect(() => {
@@ -84,7 +102,6 @@ export default function BrainHackGame({ onShowOnboarding }) {
         );
     }
 
-    // ===== СТИЛИ КНОПОК (оставляем как было) =====
     const backIconStyle = {
         position: "absolute",
         top: "calc(max(var(--tg-content-safe-area-inset-top, 0px), var(--tg-safe-area-inset-top, 0px)) + 48px)",
@@ -171,8 +188,8 @@ export default function BrainHackGame({ onShowOnboarding }) {
                     <div
                         style={{
                             ...safeAreaContainer,
-                            paddingTop: "calc(env(--tg-content-safe-area-inset-top, 0px) + 160px)", // опущен заголовок
-                            paddingBottom: "calc(env(--tg-content-safe-area-inset-bottom, 0px) + 32px)", // кнопка выше края
+                            paddingTop: `calc(env(--tg-content-safe-area-inset-top, 0px) + ${layoutOffsets.top}px)`,
+                            paddingBottom: `calc(env(--tg-content-safe-area-inset-bottom, 0px) + ${layoutOffsets.bottom}px)`,
                         }}
                     >
                         <div style={titleBlockStyle}>
