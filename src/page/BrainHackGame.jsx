@@ -23,7 +23,7 @@ export default function BrainHackGame({ onShowOnboarding }) {
     const [showWhoGuessed, setShowWhoGuessed] = useState(false);
     const [showSheet, setShowSheet] = useState(false);
 
-    const TOTAL_ROUNDS = 3;
+    const TOTAL_ROUNDS = 2;
     const [round, setRound] = useState(1);
 
     // Счёт игроков

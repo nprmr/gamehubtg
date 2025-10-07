@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
 import twemoji from "twemoji";
@@ -8,10 +8,10 @@ import bronzeImg from "../assets/bronze.svg";
 import silverImg from "../assets/silver.svg";
 import goldImg from "../assets/gold.svg";
 import emptyImg from "../assets/empty.svg";
-import WinnerAskIcon from "../icons/winnerask.svg?react";
+
 import { theme } from "../theme";
 import PrimaryButton from "./PrimaryButton";
-import FlatButton from "./FlatButton"; // ✅ твой компонент
+import FlatButton from "./FlatButton";
 
 export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
     const ordered = useMemo(() => {
@@ -20,77 +20,100 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
         return copy.slice(0, 3);
     }, [winners]);
 
-    const texts = ["3-е место", "2-е место", "Победитель"];
     const medals = [bronzeImg, silverImg, goldImg];
+    const texts = ["3-е место", "2-е место", "Победитель"];
 
     const [step, setStep] = useState(0);
-    const [emojiRevealed, setEmojiRevealed] = useState(false);
+    const [revealed, setRevealed] = useState(false);
     const [placed, setPlaced] = useState([]);
     const [animating, setAnimating] = useState(false);
-    const [buttonDisabled, setButtonDisabled] = useState(true);
-    const [finalStage, setFinalStage] = useState(false);
+    const [final, setFinal] = useState(false);
+    const [buttonsVisible, setButtonsVisible] = useState(true);
+    const [viewportHeight, setViewportHeight] = useState(window.innerHeight);
 
-    const currentWinner = ordered[step];
-    const showCurrent = !placed.includes(step);
-
-    const shakeAnimation = {
-        rotate: [-3, 3, -3],
-        transition: { repeat: Infinity, duration: 0.4, ease: "easeInOut" },
-    };
-
-    const emojiHTML = twemoji.parse(currentWinner?.emoji || "🙂", {
-        folder: "svg",
-        ext: ".svg",
-    });
+    const currentWinner = ordered[step] ?? { name: "Игрок", emoji: "🙂", score: 0 };
 
     useEffect(() => {
-        if (!emojiRevealed) return;
-        const levels = ["medium", "heavy", "rigid"];
-        window.Telegram?.WebApp?.HapticFeedback?.impactOccurred(levels[step]);
+        if (window.Telegram?.WebApp?.viewportHeight) {
+            setViewportHeight(window.Telegram.WebApp.viewportHeight);
+        } else {
+            setViewportHeight(window.innerHeight);
+        }
+    }, []);
+
+    useEffect(() => {
+        setRevealed(false);
+        const t = setTimeout(() => setRevealed(true), 1200);
+        return () => clearTimeout(t);
+    }, [step]);
+
+    useEffect(() => {
+        if (!revealed) return;
         const power = [80, 150, 300][step];
         const spread = [60, 90, 120][step];
         confetti({ particleCount: power, spread, origin: { y: 0.6 } });
-    }, [emojiRevealed, step]);
-
-    useEffect(() => {
-        setEmojiRevealed(false);
-        setButtonDisabled(true);
-        const revealTimer = setTimeout(() => {
-            setEmojiRevealed(true);
-            setButtonDisabled(false);
-        }, 1500);
-        return () => clearTimeout(revealTimer);
-    }, [step]);
+    }, [revealed, step]);
 
     const handleContinue = () => {
-        if (animating || buttonDisabled) return;
+        if (animating) return;
         setAnimating(true);
-
         setTimeout(() => {
             setPlaced((p) => [...p, step]);
             setAnimating(false);
-            setEmojiRevealed(false);
-
             if (step < 2) {
                 setStep((s) => s + 1);
             } else {
-                // запуск финального этапа
-                setTimeout(() => setFinalStage(true), 800);
+                setButtonsVisible(false);
+                setRevealed(false);
+                setTimeout(() => setFinal(true), 1400);
             }
         }, 1000);
     };
 
-    const lightOpacity = [0.4, 0.6, 0.8][step];
-
     const handleRestart = () => {
-        setPlaced([]);
         setStep(0);
-        setEmojiRevealed(false);
+        setRevealed(false);
+        setPlaced([]);
         setAnimating(false);
-        setButtonDisabled(true);
-        setFinalStage(false);
+        setFinal(false);
+        setButtonsVisible(true);
         onRestart?.();
     };
+
+    useEffect(() => {
+        if (final) {
+            ["light", "medium", "heavy"].forEach((_, i) => {
+                setTimeout(() => {
+                    confetti({
+                        particleCount: 120 + i * 80,
+                        spread: 100,
+                        startVelocity: 40 + i * 10,
+                        origin: { y: 0.6 - i * 0.1 },
+                    });
+                }, i * 300);
+            });
+        }
+    }, [final]);
+
+    const renderEmoji = (emoji) => (
+        <div
+            dangerouslySetInnerHTML={{
+                __html: twemoji.parse(emoji || "🙂", {
+                    folder: "svg",
+                    ext: ".svg",
+                }),
+            }}
+            style={{
+                width: 46,
+                height: 46,
+                position: "absolute",
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
+                zIndex: 2,
+            }}
+        />
+    );
 
     return (
         <motion.div
@@ -98,198 +121,206 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            style={overlayStyle}
+            style={overlay}
         >
-            {!finalStage && (
-                <>
-                    {/* === Центральная карточка === */}
-                    <div style={centerFixedContainer}>
-                        <AnimatePresence mode="wait">
-                            {showCurrent && (
-                                <motion.div
-                                    key={`card-${step}`}
-                                    initial={{ opacity: 0, scale: 0.6 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    exit={{
-                                        opacity: 0,
-                                        scale: 0.6,
-                                        transition: { duration: 0.4, ease: "easeInOut" },
-                                    }}
-                                    transition={{
-                                        type: "spring",
-                                        stiffness: 400,
-                                        damping: 12,
-                                        duration: 0.8,
-                                    }}
-                                    style={centerWrapper}
-                                >
-                                    <motion.div
-                                        key={`light-${step}`}
-                                        style={{
-                                            position: "absolute",
-                                            top: "50%",
-                                            left: "50%",
-                                            transform: "translate(-50%, -50%) scale(0.9)",
-                                            zIndex: 0,
-                                        }}
-                                    >
-                                        <motion.img
-                                            src={lightImg}
-                                            alt="light"
-                                            style={lightBehindStyle}
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: lightOpacity, rotate: 360 }}
-                                            exit={{ opacity: 0 }}
-                                            transition={{
-                                                opacity: { duration: 0.5, ease: "easeOut" },
-                                                rotate: { repeat: Infinity, duration: 40, ease: "linear" },
-                                            }}
-                                        />
-                                    </motion.div>
+            {/* === Центральная карточка === */}
+            <div style={{ ...centerContainer, position: "relative" }}>
+                {/* Свет (light) — вращается под медалью */}
+                <motion.img
+                    src={lightImg}
+                    alt="light"
+                    style={{
+                        position: "absolute",
+                        top: "50%",
+                        left: "50%",
+                        transform: "translate(-50%, -50%)",
+                        transformOrigin: "center center",
+                        width: 260,
+                        height: 260,
+                        opacity: 0.85,
+                        zIndex: 0,
+                        pointerEvents: "none",
+                    }}
+                    animate={{ rotate: 360 }}
+                    transition={{
+                        repeat: Infinity,
+                        duration: 60,
+                        ease: "linear",
+                    }}
+                />
 
-                                    <motion.img
-                                        src={medals[step]}
-                                        alt="medal"
-                                        style={medalStyle}
-                                        animate={shakeAnimation}
-                                    />
-
-                                    {/* ✅ emoji теперь всегда следует за карточкой и не пропадает */}
-                                    <motion.div style={winnerContainer} animate={shakeAnimation}>
-                                        <motion.div
-                                            dangerouslySetInnerHTML={{ __html: emojiHTML }}
-                                            style={{ width: 46, height: 46 }}
-                                            animate={{ opacity: emojiRevealed ? 1 : 0 }}
-                                            transition={{ duration: 0.4 }}
-                                        />
-                                    </motion.div>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-                    </div>
-
-                    {/* === Текст под карточкой === */}
-                    <div style={textContainer}>
-                        <AnimatePresence mode="wait">
-                            {showCurrent && (
-                                <motion.div
-                                    key={`text-${step}-${emojiRevealed ? "name" : "place"}`}
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -10 }}
-                                    transition={{ duration: 0.5, delay: 0.15 }}
-                                    style={absoluteTextWrapper}
-                                >
-                                    {!emojiRevealed ? (
-                                        <div style={placeText}>{texts[step]}</div>
-                                    ) : (
-                                        <>
-                                            <div style={nameText}>{currentWinner?.name || "Игрок"}</div>
-                                            <div style={scoreText}>{(currentWinner?.score ?? 0)} очков</div>
-                                        </>
-                                    )}
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-                    </div>
-
-                    {/* === Нижняя зона === */}
-                    <div style={bottomContainer}>
-                        <div style={slotsContainer}>
-                            {[0, 1, 2].map((i) => (
-                                <div key={i} style={slotWrapper}>
-                                    {placed.includes(i) ? (
-                                        <motion.div
-                                            key={`placed-${i}`}
-                                            initial={{ scale: 0 }}
-                                            animate={{ scale: [0, 1.3, 1], opacity: [0, 1, 1] }}
-                                            transition={{ duration: 0.6, ease: "easeOut" }}
-                                            style={{ position: "relative" }}
-                                        >
-                                            <img src={medals[i]} alt="medal-mini" style={slotMedalStyle} />
-                                            <div
-                                                dangerouslySetInnerHTML={{
-                                                    __html: twemoji.parse(ordered[i]?.emoji || "🙂", {
-                                                        folder: "svg",
-                                                        ext: ".svg",
-                                                    }),
-                                                }}
-                                                style={{
-                                                    width: 24,
-                                                    height: 24,
-                                                    position: "absolute",
-                                                    top: "50%",
-                                                    left: "50%",
-                                                    transform: "translate(-50%, -50%)",
-                                                }}
-                                            />
-                                        </motion.div>
-                                    ) : (
-                                        <img src={emptyImg} alt="empty" style={slotEmptyStyle} />
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-
-                        <div style={buttonWrapper}>
-                            <PrimaryButton
-                                textColor={theme.icotex.white}
-                                onClick={handleContinue}
-                                disabled={buttonDisabled || animating}
+                {/* Центральная медаль */}
+                <AnimatePresence mode="wait">
+                    {!final && (
+                        <motion.div
+                            key={`center-${step}`}
+                            initial={{ scale: 0.85, opacity: 0 }}
+                            animate={{ scale: 1, opacity: final ? 0 : 1 }}
+                            exit={{ opacity: 0, scale: 0.85 }}
+                            transition={{
+                                type: "spring",
+                                stiffness: 350,
+                                damping: 20,
+                                duration: 0.6,
+                            }}
+                            style={{
+                                position: "relative",
+                                width: 200,
+                                height: 200,
+                                display: "flex",
+                                justifyContent: "center",
+                                alignItems: "center",
+                                zIndex: 1,
+                            }}
+                        >
+                            <motion.div
+                                animate={{ rotate: [-3, 3, -3] }}
+                                transition={{
+                                    duration: 0.4,
+                                    repeat: Infinity,
+                                    ease: "easeInOut",
+                                }}
+                                style={{
+                                    width: 200,
+                                    height: 200,
+                                    display: "flex",
+                                    justifyContent: "center",
+                                    alignItems: "center",
+                                }}
                             >
-                                Продолжить
-                            </PrimaryButton>
-                        </div>
-                    </div>
-                </>
+                                <img src={medals[step]} alt="medal" style={medal} />
+                                {revealed && renderEmoji(currentWinner?.emoji)}
+                            </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
+
+            {/* === Текст под карточкой === */}
+            {!final && (
+                <div style={textZone}>
+                    <AnimatePresence mode="wait">
+                        {!revealed ? (
+                            <motion.div
+                                key="place"
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                transition={{ duration: 0.5 }}
+                            >
+                                <div style={placeText}>{texts[step]}</div>
+                            </motion.div>
+                        ) : (
+                            <motion.div
+                                key="name"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.5 }}
+                            >
+                                <div style={nameText}>{currentWinner?.name}</div>
+                                <div style={scoreText}>{currentWinner?.score} очков</div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
             )}
 
-            {/* === Финальный экран === */}
-            {finalStage && (
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.6 }}
-                    style={finalContainer}
-                >
-                    <div style={finalCardsRow}>
-                        {ordered.map((winner, i) => (
-                            <motion.div
-                                key={i}
-                                style={finalCard}
-                                initial={{ y: 0, opacity: 0 }}
-                                animate={{ y: "-16vh", opacity: 1 }}
-                                transition={{ duration: 1.2, ease: "easeOut" }}
-                            >
-                                <img src={medals[i]} alt="medal" style={{ width: 88, height: 119 }} />
-                                {/* имя и очки fade-in синхронно */}
+            {/* === Нижние слоты === */}
+            <div style={bottomZone}>
+                <motion.div layout style={slotContainer}>
+                    {ordered.map((w, i) => (
+                        <motion.div
+                            key={i}
+                            style={slot}
+                            animate={
+                                final && placed.includes(i)
+                                    ? {
+                                        y: -viewportHeight / 2 + 60,
+                                        scale: [1, 1.08, 1],
+                                        opacity: 1,
+                                        transition: {
+                                            duration: 1.2,
+                                            ease: [0.22, 1, 0.36, 1],
+                                        },
+                                    }
+                                    : { y: 0, scale: 1, opacity: 1 }
+                            }
+                        >
+                            {placed.includes(i) ? (
+                                <motion.div
+                                    key={`placed-${i}`}
+                                    initial={{ scale: 0 }}
+                                    animate={{
+                                        scale: [0, 1.4, 1],
+                                        transition: { duration: 0.6, ease: "easeOut" },
+                                    }}
+                                    style={{ position: "relative" }}
+                                >
+                                    <img src={medals[i]} alt="m" style={slotMedal} />
+                                    {renderEmoji(w.emoji)}
+                                </motion.div>
+                            ) : (
+                                <img src={emptyImg} alt="empty" style={slotEmpty} />
+                            )}
+
+                            {final && (
                                 <motion.div
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
-                                    transition={{ delay: 1.0, duration: 0.6 }}
+                                    transition={{ delay: 0.8, duration: 0.6 }}
+                                    style={{ marginTop: 8 }}
                                 >
-                                    <div style={finalName}>{winner.name}</div>
-                                    <div style={finalScore}>{winner.score} очков</div>
+                                    <div style={finalName}>{w.name}</div>
+                                    <div style={finalScore}>{w.score} очков</div>
                                 </motion.div>
-                            </motion.div>
-                        ))}
-                    </div>
-
-                    {/* ✅ блок кнопок фиксирован у низа */}
-                    <div style={finalButtons}>
-                        <PrimaryButton textColor={theme.icotex.white} onClick={onFinish}>
-                            Все игры
-                        </PrimaryButton>
-                        <FlatButton onClick={handleRestart}>Сыграть ещё раз</FlatButton>
-                    </div>
+                            )}
+                        </motion.div>
+                    ))}
                 </motion.div>
-            )}
+
+                {/* === Кнопки === */}
+                <AnimatePresence mode="wait">
+                    {buttonsVisible ? (
+                        <motion.div
+                            key="main-buttons"
+                            initial={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.3 }}
+                            style={buttonZone}
+                        >
+                            <PrimaryButton
+                                onClick={handleContinue}
+                                disabled={animating}
+                                textColor={theme.icotex.white}
+                            >
+                                Продолжить
+                            </PrimaryButton>
+                        </motion.div>
+                    ) : (
+                        final && (
+                            <motion.div
+                                key="final-buttons"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ duration: 0.6, delay: 1.0 }}
+                                style={buttonZone}
+                            >
+                                <PrimaryButton textColor={theme.icotex.white} onClick={onFinish}>
+                                    Все игры
+                                </PrimaryButton>
+                                <FlatButton onClick={handleRestart}>Сыграть ещё раз</FlatButton>
+                            </motion.div>
+                        )
+                    )}
+                </AnimatePresence>
+            </div>
         </motion.div>
     );
 }
 
-/* ======= Стили ======= */
-const overlayStyle = {
+/* === Стили === */
+const overlay = {
     position: "fixed",
     top: 0,
     left: 0,
@@ -299,178 +330,100 @@ const overlayStyle = {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "flex-start",
     overflow: "hidden",
 };
 
-const centerFixedContainer = {
+const centerContainer = {
     position: "relative",
     width: "100%",
-    height: 240,
-    marginTop: "calc(-60px - 24vh)",
+    height: 260,
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 60,
+};
+
+const medal = { width: 140, height: 180, zIndex: 1 };
+
+const textZone = {
+    height: 80,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-};
-
-const centerWrapper = {
-    position: "absolute",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    width: 200,
-    height: 200,
-    zIndex: 2,
-};
-
-const lightBehindStyle = {
-    width: 300,
-    height: 300,
-    opacity: 0.9,
-    pointerEvents: "none",
-};
-
-const medalStyle = { width: 135, height: 182, position: "absolute", zIndex: 1 };
-const winnerContainer = {
-    position: "absolute",
-    zIndex: 2,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    width: 135,
-    height: 182,
-};
-
-const textContainer = {
-    position: "relative",
-    height: 72,
-    width: "100%",
-    marginTop: 16,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: "column",
     overflow: "hidden",
-};
-
-const absoluteTextWrapper = {
-    position: "absolute",
-    top: 0,
-    transform: "translateX(-50%)",
-    textAlign: "center",
 };
 
 const placeText = {
-    fontFamily: "Gilroy, sans-serif",
-    fontWeight: 700,
     fontSize: 36,
-    color: "var(--icotex-white)",
+    fontWeight: 700,
+    color: "white",
 };
 
 const nameText = {
-    fontFamily: "Gilroy, sans-serif",
+    fontSize: 32,
     fontWeight: 700,
-    fontSize: 36,
-    color: "var(--icotex-white)",
-    lineHeight: 1.1,
+    color: "white",
 };
 
 const scoreText = {
-    marginTop: 4,
-    fontFamily: "Gilroy, sans-serif",
-    fontWeight: 700,
-    fontSize: 24,
-    color: "var(--icotex-white)",
+    fontSize: 22,
+    fontWeight: 600,
+    color: "var(--icotex-lowest)",
 };
 
-const bottomContainer = {
+const bottomZone = {
     position: "absolute",
-    bottom: 0,
-    left: 0,
+    bottom: "calc(env(--tg-content-safe-area-inset-bottom, 0px) + 24px)",
     width: "100%",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    paddingBottom: "calc(env(--tg-content-safe-area-inset-bottom, 0px) + 24px)",
-    boxSizing: "border-box",
+    justifyContent: "center",
+    gap: 16,
 };
 
-const slotsContainer = {
+const slotContainer = {
     display: "flex",
     justifyContent: "center",
-    alignItems: "flex-end",
     gap: 24,
-    marginBottom: 24,
+    alignItems: "flex-end",
 };
 
-const slotWrapper = {
+const slot = {
     position: "relative",
     width: 88,
-    height: 119,
+    height: 120,
     display: "flex",
+    flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
 };
 
-const slotEmptyStyle = { width: 88, height: 119, opacity: 0.9 };
-const slotMedalStyle = { width: 88, height: 119 };
-const buttonWrapper = {
-    width: "100%",
+const slotEmpty = { width: 88, height: 119, opacity: 0.9 };
+const slotMedal = { width: 88, height: 119 };
+
+const buttonZone = {
     display: "flex",
-    justifyContent: "center",
+    flexDirection: "column",
+    gap: 8,
+    width: "100%",
     padding: "0 16px",
     boxSizing: "border-box",
-};
-
-/* === Финальный экран === */
-const finalContainer = {
-    position: "relative",
-    width: "100%",
-    height: "100%",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingTop: "calc(10vh)",
-    boxSizing: "border-box",
-};
-
-const finalCardsRow = {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "flex-start",
-    gap: 24,
-};
-
-const finalCard = {
-    display: "flex",
-    flexDirection: "column",
     alignItems: "center",
 };
 
 const finalName = {
-    marginTop: 8,
-    fontFamily: "Gilroy, sans-serif",
-    fontWeight: 700,
     fontSize: 14,
-    color: "var(--icotex-white)",
+    fontWeight: 700,
+    color: "white",
+    textAlign: "center",
 };
 
 const finalScore = {
-    marginTop: 0,
-    fontFamily: "Gilroy, sans-serif",
-    fontWeight: 400,
     fontSize: 12,
+    fontWeight: 500,
     color: "var(--icotex-lowest)",
-};
-
-const finalButtons = {
-    position: "absolute",
-    bottom: "calc(env(--tg-content-safe-area-inset-bottom, 0px) + 24px)",
-    left: 0,
-    width: "100%",
-    display: "flex",
-    flexDirection: "column",
-    gap: 8,
-    padding: "0 16px",
-    boxSizing: "border-box",
+    textAlign: "center",
 };
