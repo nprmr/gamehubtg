@@ -13,7 +13,6 @@ import { theme } from "../theme";
 import PrimaryButton from "./PrimaryButton";
 
 export default function AwardCeremony({ winners = [], onFinish }) {
-    // сортировка: бронза → серебро → золото
     const ordered = useMemo(() => {
         const copy = [...winners];
         copy.sort((a, b) => (a?.score ?? 0) - (b?.score ?? 0));
@@ -29,26 +28,23 @@ export default function AwardCeremony({ winners = [], onFinish }) {
     const [animating, setAnimating] = useState(false);
 
     const currentWinner = ordered[step];
+    const showCurrent = !placed.includes(step);
 
-    // вращение светлого слоя
     const lightAnimation = {
         rotate: 360,
         transition: { repeat: Infinity, duration: 25, ease: "linear" },
     };
 
-    // shake анимация медали
     const shakeAnimation = {
         rotate: [-3, 3, -3],
         transition: { repeat: Infinity, duration: 0.4, ease: "easeInOut" },
     };
 
-    // Twemoji html
     const emojiHTML = twemoji.parse(currentWinner?.emoji || "🙂", {
         folder: "svg",
         ext: ".svg",
     });
 
-    // при reveal — хаптик и конфетти
     useEffect(() => {
         if (!emojiRevealed) return;
         const levels = ["medium", "heavy", "rigid"];
@@ -68,9 +64,7 @@ export default function AwardCeremony({ winners = [], onFinish }) {
         if (animating) return;
         setAnimating(true);
 
-        // 1️⃣ — анимация исчезновения основной карточки
         setTimeout(() => {
-            // 2️⃣ — добавляем карточку в слот
             setPlaced((p) => [...p, step]);
             setAnimating(false);
             setEmojiRevealed(false);
@@ -87,68 +81,69 @@ export default function AwardCeremony({ winners = [], onFinish }) {
             transition={{ duration: 0.3 }}
             style={overlayStyle}
         >
-            <motion.img
-                src={lightImg}
-                alt="light"
-                style={lightStyle}
-                animate={lightAnimation}
-            />
+            <motion.img src={lightImg} alt="light" style={lightStyle} animate={lightAnimation} />
 
-            {/* === Центральная сцена === */}
-            <AnimatePresence>
-                {!placed.includes(step) && (
-                    <motion.div
-                        key={step}
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={
-                            animating
-                                ? { opacity: 0, scale: 0, transition: { duration: 1 } }
-                                : { opacity: 1, scale: 1 }
-                        }
-                        exit={{ opacity: 0, scale: 0 }}
-                        transition={{ duration: 0.4 }}
-                        style={centerWrapper}
-                    >
-                        <motion.img
-                            src={medals[step]}
-                            alt="medal"
-                            style={medalStyle}
-                            animate={shakeAnimation}
-                        />
-
-                        <motion.div style={winnerContainer} animate={shakeAnimation}>
-                            {!emojiRevealed ? (
-                                <WinnerAskIcon style={{ width: 46, height: 46 }} />
-                            ) : (
-                                <motion.div
-                                    dangerouslySetInnerHTML={{ __html: emojiHTML }}
-                                    style={{
-                                        width: 46,
-                                        height: 46,
-                                    }}
-                                    initial={{ scale: 0 }}
-                                    animate={{ scale: 1 }}
-                                    transition={{ type: "spring", stiffness: 200 }}
-                                />
-                            )}
+            {/* === Центральная карточка === */}
+            <div style={centerFixedContainer}>
+                <AnimatePresence mode="wait">
+                    {showCurrent && (
+                        <motion.div
+                            key={`card-${step}`}
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={
+                                animating
+                                    ? { opacity: 0, scale: 0, transition: { duration: 1 } }
+                                    : { opacity: 1, scale: 1 }
+                            }
+                            exit={{ opacity: 0, scale: 0 }}
+                            transition={{ duration: 0.4 }}
+                            style={centerWrapper}
+                        >
+                            <motion.img src={medals[step]} alt="medal" style={medalStyle} animate={shakeAnimation} />
+                            <motion.div style={winnerContainer} animate={shakeAnimation}>
+                                {!emojiRevealed ? (
+                                    <WinnerAskIcon style={{ width: 46, height: 46 }} />
+                                ) : (
+                                    <motion.div
+                                        dangerouslySetInnerHTML={{ __html: emojiHTML }}
+                                        style={{ width: 46, height: 46 }}
+                                        initial={{ scale: 0 }}
+                                        animate={{ scale: 1 }}
+                                        transition={{ type: "spring", stiffness: 200 }}
+                                    />
+                                )}
+                            </motion.div>
                         </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* === Подписи === */}
-            <div style={{ marginTop: 32, textAlign: "center", zIndex: 3 }}>
-                {!emojiRevealed ? (
-                    <div style={placeText}>{texts[step]}</div>
-                ) : (
-                    <>
-                        <div style={nameText}>{currentWinner?.name || "Игрок"}</div>
-                        <div style={scoreText}>{(currentWinner?.score ?? 0)} очков</div>
-                    </>
-                )}
+                    )}
+                </AnimatePresence>
             </div>
 
-            {/* === Нижняя зона: слоты + кнопка === */}
+            {/* === Подписи: остаются на месте === */}
+            <div style={textContainer}>
+                <AnimatePresence mode="wait">
+                    {showCurrent && (
+                        <motion.div
+                            key={`text-${step}-${emojiRevealed ? "name" : "place"}`}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.4 }}
+                            style={absoluteTextWrapper}
+                        >
+                            {!emojiRevealed ? (
+                                <div style={placeText}>{texts[step]}</div>
+                            ) : (
+                                <>
+                                    <div style={nameText}>{currentWinner?.name || "Игрок"}</div>
+                                    <div style={scoreText}>{(currentWinner?.score ?? 0)} очков</div>
+                                </>
+                            )}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
+
+            {/* === Нижняя зона === */}
             <div style={bottomContainer}>
                 <div style={slotsContainer}>
                     {[0, 1, 2].map((i) => (
@@ -222,14 +217,25 @@ const lightStyle = {
     zIndex: 0,
 };
 
-const centerWrapper = {
+/* === Центр === */
+const centerFixedContainer = {
     position: "relative",
-    zIndex: 2,
+    width: "100%",
+    height: 240,
+    marginTop: "calc(-60px - 24vh)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+};
+
+const centerWrapper = {
+    position: "absolute",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     width: 200,
     height: 200,
+    zIndex: 2,
 };
 
 const medalStyle = { width: 135, height: 182, position: "absolute", zIndex: 1 };
@@ -243,10 +249,30 @@ const winnerContainer = {
     height: 182,
 };
 
+/* === Текст под карточкой === */
+const textContainer = {
+    position: "relative",
+    height: 72,
+    width: "100%",
+    marginTop: 16,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+};
+
+const absoluteTextWrapper = {
+    position: "absolute",
+    top: 0,
+    left: "50%",
+    transform: "translateX(-50%)",
+    textAlign: "center",
+};
+
 const placeText = {
     fontFamily: "Gilroy, sans-serif",
     fontWeight: 700,
-    fontSize: 24,
+    fontSize: 36,
     color: "var(--icotex-white)",
 };
 
@@ -266,6 +292,7 @@ const scoreText = {
     color: "var(--icotex-white)",
 };
 
+/* === Низ === */
 const bottomContainer = {
     position: "absolute",
     bottom: 0,
