@@ -18,50 +18,34 @@ export default function BrainHackGame({ onShowOnboarding }) {
 
     const currentPlayer = players[currentIndex];
 
-    // 🚀 Вибро-саунд-дизайн “уууууууиииииуиуи бзынь”
-    function startEntranceVibration() {
+    // 🎵 Вибро-паттерн “Туг–Туг … Туг”
+    function hapticTugTugPauseTug() {
         const H = window.Telegram?.WebApp?.HapticFeedback;
         if (!H) return;
 
         const pattern = [
-            // “уууууу” — плавное нарастание
-            { type: "soft", delay: 0 },
+            { type: "medium", delay: 0 },
             { type: "medium", delay: 150 },
-            { type: "heavy", delay: 300 },
-
-            // “ииуиуиуи” — быстрые тики
-            { type: "rigid", delay: 500 },
-            { type: "light", delay: 600 },
-            { type: "rigid", delay: 700 },
-            { type: "light", delay: 800 },
-            { type: "rigid", delay: 900 },
-
-            // “бзынь” — финальный мощный удар
-            { type: "heavy", delay: 1100 },
+            { type: "heavy", delay: 600 },
         ];
 
         pattern.forEach(({ type, delay }) => {
             setTimeout(() => H.impactOccurred(type), delay);
         });
-
-        // 👇 финальный щелчок подтверждения
-        setTimeout(() => {
-            H.notificationOccurred("success");
-        }, 1300);
     }
 
-    // 👇 Предзагрузка фона + вибрация при готовности
+    // 👇 Предзагрузка фона и запуск вибрации
     useEffect(() => {
         const img = new Image();
         img.src = brainplayerBG;
         img.onload = () => {
             setIsLoaded(true);
-            startEntranceVibration(); // 🚀 вибрация при загрузке
+            hapticTugTugPauseTug(); // 🚀 вибрация при открытии экрана
         };
     }, []);
 
     if (!isLoaded) {
-        // 👇 Пока фон не загружен — просто фон
+        // Пока фон не загружен — просто фон-заглушка
         return (
             <div
                 style={{
