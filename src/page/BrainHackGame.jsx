@@ -171,7 +171,7 @@ export default function BrainHackGame({ onShowOnboarding }) {
                     <div
                         style={{
                             ...safeAreaContainer,
-                            paddingTop: "calc(env(--tg-content-safe-area-inset-top, 0px) + 110px)", // опущен заголовок
+                            paddingTop: "calc(env(--tg-content-safe-area-inset-top, 0px) + 160px)", // опущен заголовок
                             paddingBottom: "calc(env(--tg-content-safe-area-inset-bottom, 0px) + 32px)", // кнопка выше края
                         }}
                     >
