@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { motion, useMotionValue, animate } from "framer-motion";
+import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import IconButton from "../components/IconButton";
 import SettingsIcon from "../icons/Settings.svg?react";
@@ -14,16 +14,13 @@ function Mozgolomka() {
     const [players, setPlayers] = useState([{ id: 1, state: "active" }]);
     const [cardWidth, setCardWidth] = useState(260);
     const [viewportWidth, setViewportWidth] = useState(window.innerWidth);
-    const [activeIndex, setActiveIndex] = useState(0);
     const firstItemRef = useRef(null);
 
     const GAP = 16;
+    const SIDE_PADDING = 24; // поля по бокам
     const maxPlayers = 4;
 
-    // === motion value для плавного скролла ===
-    const x = useMotionValue(16);
-
-    // измеряем ширину карточки
+    // измеряем ширину карточки и viewport
     useEffect(() => {
         const measure = () => {
             if (firstItemRef.current) {
@@ -55,24 +52,17 @@ function Mozgolomka() {
 
     const isMaxPlayers = players.length >= maxPlayers;
 
-    const step = cardWidth + GAP;
+    // === расчёты для карусели ===
+    const visibleCardsCount = players.length + 1; // +1: add или premium присутствует всегда
+    const totalWidth =
+        visibleCardsCount * cardWidth + (visibleCardsCount - 1) * GAP + 2 * SIDE_PADDING;
 
-    // расчёт позиции (первая карточка слева)
-    const getXForIndex = (i) => -(i * step) + 16;
-
-    const totalWidth = players.length * step;
-    const minX = Math.min(0, viewportWidth - totalWidth - 32);
-    const maxX = 32;
-
-    // плавное смещение при смене activeIndex
-    useEffect(() => {
-        const controls = animate(x, getXForIndex(activeIndex), {
-            type: "spring",
-            stiffness: 250,
-            damping: 35,
-        });
-        return controls.stop;
-    }, [activeIndex, cardWidth, viewportWidth]);
+    // ограничиваем прокрутку так, чтобы:
+    // - слева был отступ SIDE_PADDING
+    // - справа последняя карточка тоже полностью помещалась
+    const canScroll = totalWidth > viewportWidth;
+    const minX = canScroll ? viewportWidth - totalWidth : 0; // отрицательное
+    const maxX = 0; // старт слева
 
     return (
         <div
@@ -130,8 +120,7 @@ function Mozgolomka() {
             >
                 {/* заголовки */}
                 <div style={{ textAlign: "center", marginBottom: 16 }}>
-                    <motion.h1
-                        layoutId="title"
+                    <h1
                         style={{
                             fontFamily: "Gilroy, sans-serif",
                             fontSize: 32,
@@ -141,10 +130,9 @@ function Mozgolomka() {
                         }}
                     >
                         Мозголомка
-                    </motion.h1>
+                    </h1>
 
-                    <motion.p
-                        layoutId="subtitle"
+                    <p
                         style={{
                             fontFamily: "Gilroy, sans-serif",
                             fontSize: 14,
@@ -154,9 +142,9 @@ function Mozgolomka() {
                         }}
                     >
                         Можно добавить до 4 игроков
-                    </motion.p>
+                    </p>
 
-                    <motion.p
+                    <p
                         style={{
                             fontFamily: "Gilroy, sans-serif",
                             fontSize: 14,
@@ -165,7 +153,7 @@ function Mozgolomka() {
                         }}
                     >
                         Больше игроков и игровых карточек доступно с Премиум
-                    </motion.p>
+                    </p>
                 </div>
 
                 {/* === Карусель === */}
@@ -178,37 +166,23 @@ function Mozgolomka() {
                         transform: "translateY(-50%)",
                         display: "flex",
                         overflow: "hidden",
-                        touchAction: "pan-y",
+                        touchAction: "pan-y", // чтобы вертикальные жесты страницы не конфликтовали
                     }}
                 >
                     <motion.div
                         style={{
                             display: "flex",
                             gap: `${GAP}px`,
-                            x,
-                            cursor: "grab",
+                            paddingLeft: SIDE_PADDING,
+                            paddingRight: SIDE_PADDING,
+                            cursor: canScroll ? "grab" : "default",
+                            willChange: "transform",
                         }}
-                        drag="x"
+                        drag={canScroll ? "x" : false}
                         dragConstraints={{ left: minX, right: maxX }}
-                        dragElastic={0.15}
-                        dragMomentum={false}
-                        onDragEnd={(_, info) => {
-                            const dx = info.offset.x;
-                            const vx = info.velocity.x;
-                            const swipePower = Math.abs(dx) * 0.5 + Math.abs(vx) * 20;
-                            const passed = Math.abs(dx) > step * 0.25 || swipePower > 300;
-
-                            if (passed) {
-                                if (dx < 0)
-                                    setActiveIndex((prev) =>
-                                        Math.min(prev + 1, players.length - 1)
-                                    );
-                                else
-                                    setActiveIndex((prev) =>
-                                        Math.max(prev - 1, 0)
-                                    );
-                            }
-                        }}
+                        dragElastic={0.1}
+                        dragMomentum={true}
+                        transition={{ type: "spring", stiffness: 200, damping: 30 }}
                     >
                         {players.map((player, i) => (
                             <div
@@ -251,7 +225,7 @@ function Mozgolomka() {
                 style={{
                     position: "fixed",
                     bottom:
-                        "calc(max(var(--tg-content-safe-area-inset-bottom, 0px), var(--tg-safe-area-inset-bottom, 0px)) + 16px)",
+                        "calc(max(var(--tg-content-safe-area-inset-bottom, 0px), var(--tg-safe-area-inset-bottom, 0px))",
                     left: 16,
                     right: 16,
                     zIndex: 100,

@@ -57,7 +57,7 @@ export default function PlayerCard({
         emoji: {
             width: 128,
             height: 128,
-            fontSize: 120,
+            fontSize: 110,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
