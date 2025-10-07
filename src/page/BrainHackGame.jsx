@@ -15,7 +15,7 @@ export default function BrainHackGame({ onShowOnboarding }) {
     const [phase, setPhase] = useState("player"); // "player" | "game"
     const [isLoaded, setIsLoaded] = useState(false);
     const [currentIndex, setCurrentIndex] = useState(0);
-    const [layoutOffsets, setLayoutOffsets] = useState({ top: 100, bottom: 32 });
+    const [layoutOffsets, setLayoutOffsets] = useState({ top: 100, bottom: 24 });
 
     const currentPlayer = players[currentIndex];
 
@@ -40,7 +40,7 @@ export default function BrainHackGame({ onShowOnboarding }) {
 
         const updateLayout = () => {
             const fullscreen = tg.isExpanded;
-            setLayoutOffsets(fullscreen ? { top: 168, bottom: 24 } : { top: 88, bottom: 24 });
+            setLayoutOffsets(fullscreen ? { top: 168, bottom: 32 } : { top: 88, bottom: 24 });
         };
 
         tg.onEvent?.("viewportChanged", updateLayout);
