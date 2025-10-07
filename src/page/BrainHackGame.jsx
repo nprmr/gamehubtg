@@ -254,7 +254,7 @@ const safeAreaContainer = {
 const safeAreaContainerGame = {
     ...safeAreaContainer,
     paddingTop:
-        "calc(env(--tg-content-safe-area-inset-top, 0px) + 116px)", // отодвигаем заголовок вниз
+        "calc(env(--tg-content-safe-area-inset-top, 116px)", // отодвигаем заголовок вниз
 };
 
 const centerContent = {
