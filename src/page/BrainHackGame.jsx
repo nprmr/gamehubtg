@@ -314,7 +314,7 @@ const gameWrapperStyle = {
 
 const titleBlockStyle = {
     textAlign: "center",
-    marginBottom: 24,
+    marginBottom: 48,
 };
 
 const titleStyle = {
