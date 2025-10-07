@@ -1,219 +1,250 @@
-import React, { useEffect, useRef } from "react";
-import {
-    motion,
-    AnimatePresence,
-    useDragControls,
-    useMotionValue,
-    useTransform,
-    animate,
-} from "framer-motion";
-import twemoji from "twemoji";
-import SecondaryButton from "./SecondaryButton";
+import React, { useEffect, useState, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { theme } from "../theme";
+import PrimaryButton from "./PrimaryButton";
 
-export default function WhoGuessed({ open, onClose, players = [] }) {
-    const controls = useDragControls();
-    const y = useMotionValue(0);
-    const overlayOpacity = useTransform(y, [0, 300], [0.5, 0]);
-    const containerRef = useRef(null);
+/**
+ * Props:
+ * - open: boolean
+ * - onClose: () => void
+ * - players: Array<{ emojiData?: { emoji?: string; name?: string } }>
+ * - currentPlayerIndex: number // индекс текущего игрока
+ * - onSubmit: (payload: { guessedBy: number[], nobodyGuessed: boolean, awardedTo: number | null }) => void
+ */
+export default function WhoGuessed({
+                                       open,
+                                       onClose,
+                                       players = [],
+                                       currentPlayerIndex,
+                                       onSubmit,
+                                   }) {
+    const [selectedPlayers, setSelectedPlayers] = useState([]);
+    const [nobodyGuessed, setNobodyGuessed] = useState(false);
 
-    const handleDragEnd = (_e, info) => {
-        const draggedDownEnough = info.offset.y > 120 || info.velocity.y > 600;
-        if (draggedDownEnough) {
-            animate(y, window.innerHeight, {
-                type: "spring",
-                stiffness: 200,
-                damping: 30,
-                onComplete: onClose,
-            });
-        } else {
-            animate(y, 0, { type: "spring", stiffness: 300, damping: 30 });
+    // Отображаем всех, кроме текущего игрока
+    const displayedPlayers = useMemo(
+        () =>
+            players
+                .map((p, index) => ({ player: p, index }))
+                .filter(({ index }) => index !== currentPlayerIndex),
+        [players, currentPlayerIndex]
+    );
+
+    // Сброс при закрытии
+    useEffect(() => {
+        if (!open) {
+            setSelectedPlayers([]);
+            setNobodyGuessed(false);
         }
+    }, [open]);
+
+    const togglePlayer = (index) => {
+        setNobodyGuessed(false);
+        setSelectedPlayers((prev) =>
+            prev.includes(index)
+                ? prev.filter((i) => i !== index)
+                : [...prev, index]
+        );
     };
 
-    // 👇 Конвертируем emoji → Twemoji (SVG)
-    useEffect(() => {
-        if (open && containerRef.current) {
-            twemoji.parse(containerRef.current, {
-                folder: "svg",
-                ext: ".svg",
-            });
-        }
-    }, [open, players]);
+    const handleNobody = () => {
+        setSelectedPlayers([]);
+        setNobodyGuessed(true);
+    };
+
+    const handleContinue = () => {
+        onSubmit?.({
+            guessedBy: selectedPlayers,
+            nobodyGuessed,
+            awardedTo: currentPlayerIndex,
+        });
+        onClose?.();
+    };
+
+    const totalCount = Math.max(players.length - 1, 0);
 
     return (
         <AnimatePresence>
             {open && (
-                <>
-                    {/* overlay */}
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 0.5 }}
-                        exit={{ opacity: 0 }}
-                        style={{
-                            position: "fixed",
-                            inset: 0,
-                            backgroundColor: "rgba(0,0,0,0.5)",
-                            zIndex: 100,
-                            opacity: overlayOpacity,
-                        }}
-                        onClick={onClose}
-                    />
-
-                    {/* bottom sheet */}
-                    <motion.div
-                        role="dialog"
-                        aria-modal="true"
-                        initial={{ y: window.innerHeight }}
-                        animate={{ y: 0 }}
-                        exit={{ y: window.innerHeight }}
-                        transition={{ type: "spring", stiffness: 120, damping: 22 }}
-                        drag="y"
-                        dragConstraints={{ top: 0, bottom: window.innerHeight }}
-                        dragElastic={{ top: 0, bottom: 0.2 }}
-                        onDragEnd={handleDragEnd}
-                        style={{
-                            position: "fixed",
-                            bottom: 0,
-                            left: 0,
-                            right: 0,
-                            background: "var(--surface-zero)",
-                            borderTopLeftRadius: 24,
-                            borderTopRightRadius: 24,
-                            padding: 16,
-                            zIndex: 101,
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            touchAction: "none",
-                            transformOrigin: "bottom center",
-                            y,
-                        }}
-                    >
-                        {/* drag handle */}
-                        <div
-                            onPointerDown={(e) => controls.start(e)}
-                            style={{
-                                width: 48,
-                                height: 4,
-                                borderRadius: 2,
-                                backgroundColor: "var(--icotex-low)",
-                                marginBottom: 16,
-                                cursor: "grab",
-                            }}
-                        />
-
-                        {/* title */}
-                        <h2
-                            style={{
-                                fontSize: 24,
-                                fontWeight: 700,
-                                fontFamily: "Gilroy, sans-serif",
-                                marginBottom: 32,
-                            }}
-                        >
-                            Кто угадал
-                        </h2>
-
-                        {/* контейнер игроков + блок "никто не угадал" */}
-                        <div
-                            ref={containerRef}
-                            style={{
-                                width: "100%",
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: 16,
-                                padding: "0 16px",
-                                marginBottom: 32,
-                            }}
-                        >
-                            {/* игроки */}
-                            {players.length > 0 &&
-                                players.map((player, i) => (
-                                    <motion.div
-                                        key={i}
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: i * 0.05 }}
-                                        style={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: 12,
-                                            background: "var(--surface-light)",
-                                            borderRadius: 20,
-                                            padding: "16px 24px",
-                                        }}
-                                    >
-                    <span
-                        className="emoji"
-                        style={{
-                            fontSize: 24,
-                            width: 24,
-                            height: 24,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                        }}
-                    >
-                      {player.emojiData?.emoji || "🙂"}
-                    </span>
-                                        <span
-                                            style={{
-                                                fontFamily: "Gilroy, sans-serif",
-                                                fontWeight: 700,
-                                                fontSize: 24,
-                                                color: "var(--icotex-normal)",
-                                            }}
-                                        >
-                      {player.emojiData?.name || player.name || "Игрок"}
-                    </span>
-                                    </motion.div>
-                                ))}
-
-                            {/* блок "никто не угадал" — с Twemoji крестиком */}
-                            <motion.div
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: players.length * 0.05 + 0.1 }}
-                                style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 12,
-                                    background: "var(--surface-light)",
-                                    borderRadius: 20,
-                                    padding: "16px 24px",
-                                }}
-                            >
-                <span
-                    className="emoji"
-                    style={{
-                        fontSize: 24,
-                        width: 24,
-                        height: 24,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                    }}
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.25 }}
+                    style={overlayStyle}
                 >
-                  ❌
-                </span>
-                                <span
-                                    style={{
-                                        fontFamily: "Gilroy, sans-serif",
-                                        fontWeight: 700,
-                                        fontSize: 24,
-                                        color: "var(--icotex-normal)",
-                                    }}
-                                >
-                  Никто не угадал
-                </span>
-                            </motion.div>
+                    <motion.div
+                        initial={{ y: 50 }}
+                        animate={{ y: 0 }}
+                        exit={{ y: 50 }}
+                        transition={{ duration: 0.25 }}
+                        style={containerStyle}
+                    >
+                        <h2 style={titleStyle}>Кто угадал?</h2>
+
+                        <div style={playersListStyle}>
+                            {displayedPlayers.map(({ player, index }) => {
+                                const selected = selectedPlayers.includes(index);
+                                return (
+                                    <div
+                                        key={index}
+                                        style={{
+                                            ...playerBlockStyle,
+                                            backgroundColor: selected
+                                                ? "var(--surface-zero)"
+                                                : "var(--surface-light)",
+                                        }}
+                                        onClick={() => togglePlayer(index)}
+                                    >
+                                        <div style={playerInfoStyle}>
+                                            <div style={emojiStyle}>
+                                                {player?.emojiData?.emoji || "🙂"}
+                                            </div>
+                                            <div style={playerNameStyle}>
+                                                {player?.emojiData?.name || "Игрок"}
+                                            </div>
+                                        </div>
+
+                                        {/* Индикатор +1 */}
+                                        {selected && (
+                                            <div style={plusIndicatorStyle}>
+                                                <span style={plusTextStyle}>+1</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+
+                            {/* Кнопка "Никто не угадал" */}
+                            <div
+                                style={{
+                                    ...playerBlockStyle,
+                                    backgroundColor: nobodyGuessed
+                                        ? "var(--surface-zero)"
+                                        : "var(--surface-light)",
+                                    marginTop: 8,
+                                }}
+                                onClick={handleNobody}
+                            >
+                                <div style={playerInfoStyle}>
+                                    <div style={playerNameStyle}>Никто не угадал</div>
+                                </div>
+
+                                {nobodyGuessed && (
+                                    <div style={plusIndicatorStyle}>
+                                        <span style={plusTextStyle}>+{totalCount}</span>
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
-                        {/* button */}
-                        <SecondaryButton onClick={onClose}>Следующий игрок</SecondaryButton>
+                        <div style={buttonsContainer}>
+                            <PrimaryButton
+                                textColor={theme.icotex.white}
+                                onClick={handleContinue}
+                            >
+                                Следующий игрок
+                            </PrimaryButton>
+                        </div>
                     </motion.div>
-                </>
+                </motion.div>
             )}
         </AnimatePresence>
     );
 }
+
+/* ======= СТИЛИ ======= */
+const overlayStyle = {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    width: "100vw",
+    height: "100vh",
+    backgroundColor: "rgba(0,0,0,0.5)",
+    zIndex: 9999,
+    display: "flex",
+    alignItems: "flex-end",
+    justifyContent: "center",
+};
+
+const containerStyle = {
+    width: "100%",
+    backgroundColor: "var(--surface-main)",
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    padding: "24px 16px 32px",
+    boxSizing: "border-box",
+};
+
+const titleStyle = {
+    fontFamily: "Gilroy, sans-serif",
+    fontSize: 20,
+    fontWeight: 700,
+    color: "var(--icotex-white)",
+    textAlign: "center",
+    marginBottom: 16,
+};
+
+const playersListStyle = {
+    display: "flex",
+    flexDirection: "column",
+    gap: 8,
+    maxHeight: "50vh",
+    overflowY: "auto",
+    paddingBottom: 16,
+};
+
+const playerBlockStyle = {
+    position: "relative",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "12px 16px",
+    borderRadius: 20,
+    cursor: "pointer",
+    transition: "background-color 0.2s ease",
+};
+
+const playerInfoStyle = {
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+};
+
+const emojiStyle = {
+    fontSize: 32,
+};
+
+const playerNameStyle = {
+    fontFamily: "Gilroy, sans-serif",
+    fontWeight: 600,
+    fontSize: 18,
+    color: "var(--icotex-normal)",
+};
+
+const plusIndicatorStyle = {
+    position: "absolute",
+    right: 24,
+    top: "50%",
+    transform: "translateY(-50%)",
+    backgroundColor: "var(--surface-accent)",
+    borderRadius: 12,
+    width: 32,
+    height: 32,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+};
+
+const plusTextStyle = {
+    fontFamily: "Gilroy, sans-serif",
+    fontWeight: 700,
+    fontSize: 16,
+    color: "var(--icotex-white)",
+};
+
+const buttonsContainer = {
+    marginTop: 12,
+    display: "flex",
+    justifyContent: "center",
+};

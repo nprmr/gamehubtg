@@ -22,6 +22,12 @@ export default function BrainHackGame({ onShowOnboarding }) {
     const [showWhoGuessed, setShowWhoGuessed] = useState(false);
     const [showSheet, setShowSheet] = useState(false);
 
+    const TOTAL_ROUNDS = 15;
+    const [round, setRound] = useState(1);
+
+    // Счёт игроков
+    const [scores, setScores] = useState(() => players.map(() => 0));
+
     const currentPlayer = players[currentIndex];
 
     // 💥 Вибрация
@@ -57,9 +63,6 @@ export default function BrainHackGame({ onShowOnboarding }) {
         };
     }, []);
 
-    // ===== ИГРА =====
-    const TOTAL_ROUNDS = 15;
-    const [round, setRound] = useState(1);
     const localQuestions = [
         [
             "У меня есть скрытый талант, о котором никто не знает",
@@ -74,20 +77,51 @@ export default function BrainHackGame({ onShowOnboarding }) {
             "Я говорил что-то, о чём потом сильно пожалел",
         ],
     ];
-    const currentQuestions = localQuestions[(round - 1) % localQuestions.length];
 
-    const handleNextRound = () => {
-        hapticSoft();
-        if (round < TOTAL_ROUNDS) {
-            setRound((prev) => prev + 1);
-        } else {
-            alert("Игра завершена!");
-        }
-    };
+    // динамически разные вопросы каждому игроку
+    const currentQuestions = localQuestions[(round + currentIndex) % localQuestions.length];
 
+    // переходы
     const handleBackClick = () => {
         hapticSoft();
         setShowSheet(true);
+    };
+
+    const handleScoresUpdate = ({ guessedBy, nobodyGuessed, awardedTo }) => {
+        setScores((prev) => {
+            const updated = [...prev];
+            if (nobodyGuessed && awardedTo != null) {
+                // Все очки текущему игроку
+                updated[awardedTo] += players.length - 1;
+            } else if (players.length >= 3 && guessedBy.length === 1) {
+                // Один угадал → 1 очко ему, остальные текущему игроку
+                const guessedPlayer = guessedBy[0];
+                updated[guessedPlayer] += 1;
+                if (awardedTo != null) updated[awardedTo] += players.length - 2;
+            } else {
+                // Несколько угадали → всем по 1
+                guessedBy.forEach((i) => {
+                    updated[i] += 1;
+                });
+            }
+            return updated;
+        });
+
+        // переход к следующему игроку или раунду
+        if (currentIndex < players.length - 1) {
+            setCurrentIndex((i) => i + 1);
+            setPhase("player");
+        } else {
+            setCurrentIndex(0);
+            if (round < TOTAL_ROUNDS) {
+                setRound((r) => r + 1);
+                setPhase("player");
+            } else {
+                const maxScore = Math.max(...scores);
+                const winners = players.filter((_, i) => scores[i] === maxScore);
+                alert(`🏆 Победитель: ${winners.map((w) => w.emojiData?.name).join(", ")}`);
+            }
+        }
     };
 
     if (!isLoaded) {
@@ -244,6 +278,8 @@ export default function BrainHackGame({ onShowOnboarding }) {
                 open={showWhoGuessed}
                 onClose={() => setShowWhoGuessed(false)}
                 players={players}
+                currentPlayerIndex={currentIndex}
+                onSubmit={handleScoresUpdate}
             />
 
             {/* ======= Вынесенный BottomSheet ======= */}
