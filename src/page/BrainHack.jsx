@@ -188,7 +188,6 @@ function Mozgolomka() {
                             display: "flex",
                             gap: `${GAP}px`,
                             cursor: "grab",
-                            paddingLeft: SIDE_PADDING,
                             paddingRight: SIDE_PADDING,
                         }}
                         drag="x"
@@ -254,7 +253,7 @@ function Mozgolomka() {
                 style={{
                     position: "fixed",
                     bottom:
-                        "calc(max(var(--tg-content-safe-area-inset-bottom, 0px), var(--tg-safe-area-inset-bottom, 0px)) + 16px)",
+                        "calc(max(var(--tg-content-safe-area-inset-bottom, 0px), var(--tg-safe-area-inset-bottom, 0px))",
                     left: 16,
                     right: 16,
                     zIndex: 100,
