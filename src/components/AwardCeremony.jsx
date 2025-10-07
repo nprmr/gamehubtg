@@ -36,12 +36,6 @@ export default function AwardCeremony({ winners = [], onFinish }) {
         transition: { repeat: Infinity, duration: 0.4, ease: "easeInOut" },
     };
 
-    // вращение света
-    const lightAnimation = {
-        rotate: 360,
-        transition: { repeat: Infinity, duration: 40, ease: "linear" },
-    };
-
     const emojiHTML = twemoji.parse(currentWinner?.emoji || "🙂", {
         folder: "svg",
         ext: ".svg",
@@ -95,7 +89,11 @@ export default function AwardCeremony({ winners = [], onFinish }) {
                             key={`card-${step}`}
                             initial={{ opacity: 0, scale: 0.6 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0 }}
+                            exit={{
+                                opacity: 0,
+                                scale: 0.6,
+                                transition: { duration: 0.4, ease: "easeInOut" },
+                            }}
                             transition={{
                                 type: "spring",
                                 stiffness: 400,
@@ -123,7 +121,7 @@ export default function AwardCeremony({ winners = [], onFinish }) {
                                     animate={{ opacity: lightOpacity, rotate: 360 }}
                                     exit={{ opacity: 0 }}
                                     transition={{
-                                        opacity: { duration: 0.6 },
+                                        opacity: { duration: 0.5, ease: "easeOut" },
                                         rotate: { repeat: Infinity, duration: 40, ease: "linear" },
                                     }}
                                 />
@@ -163,7 +161,7 @@ export default function AwardCeremony({ winners = [], onFinish }) {
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -10 }}
-                            transition={{ duration: 0.5, delay: 0.15 }} // чуть дольше
+                            transition={{ duration: 0.5, delay: 0.15 }}
                             style={absoluteTextWrapper}
                         >
                             {!emojiRevealed ? (
