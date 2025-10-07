@@ -19,18 +19,11 @@ export default function BrainHackGame({ onShowOnboarding }) {
 
     const currentPlayer = players[currentIndex];
 
-    // 💥 Вибрация
-    function hapticTugTugPauseTug() {
+    // 💥 Универсальная вибрация
+    function hapticSoft() {
         const H = window.Telegram?.WebApp?.HapticFeedback;
         if (!H) return;
-        const pattern = [
-            { type: "medium", delay: 0 },
-            { type: "medium", delay: 150 },
-            { type: "heavy", delay: 600 },
-        ];
-        pattern.forEach(({ type, delay }) => {
-            setTimeout(() => H.impactOccurred(type), delay);
-        });
+        H.impactOccurred("soft");
     }
 
     // ⚙️ Настраиваем layout под fullscreen / modal
@@ -55,7 +48,8 @@ export default function BrainHackGame({ onShowOnboarding }) {
         img.src = brainplayerBG;
         img.onload = () => {
             setIsLoaded(true);
-            hapticTugTugPauseTug();
+            const H = window.Telegram?.WebApp?.HapticFeedback;
+            H?.impactOccurred("medium");
         };
     }, []);
 
@@ -79,9 +73,9 @@ export default function BrainHackGame({ onShowOnboarding }) {
     const currentQuestions = localQuestions[(round - 1) % localQuestions.length];
 
     const handleNextRound = () => {
+        hapticSoft();
         if (round < TOTAL_ROUNDS) {
             setRound((prev) => prev + 1);
-            hapticTugTugPauseTug();
         } else {
             alert("Игра завершена!");
         }
@@ -141,7 +135,12 @@ export default function BrainHackGame({ onShowOnboarding }) {
                     </div>
 
                     {/* контент */}
-                    <div style={safeAreaContainer}>
+                    <div
+                        style={{
+                            ...safeAreaContainer,
+                            paddingBottom: `calc(env(--tg-content-safe-area-inset-bottom, 0px) + ${layoutOffsets.bottom}px)`,
+                        }}
+                    >
                         <div style={centerContent}>
                             <div style={{ fontSize: 128 }}>
                                 {currentPlayer?.emojiData?.emoji || "🙂"}
@@ -156,7 +155,7 @@ export default function BrainHackGame({ onShowOnboarding }) {
                             <PrimaryButton
                                 textColor={theme.icotex.white}
                                 onClick={() => {
-                                    hapticTugTugPauseTug();
+                                    hapticSoft();
                                     setPhase("game");
                                 }}
                             >
