@@ -1,51 +1,75 @@
 import React, { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import PrimaryButton from "../components/PrimaryButton.jsx";
 import IconButton from "../components/IconButton";
+import PrimaryButton from "../components/PrimaryButton";
 import FaqIcon from "../icons/faq.svg?react";
 import ArrowBackIcon from "../icons/arrowback.svg?react";
 import brainplayerBG from "../assets/brainplayerBG.png";
 import { theme } from "../theme.js";
 
 export default function BrainHackGame({ onShowOnboarding }) {
-    const navigate = useNavigate();
     const location = useLocation();
-
     const players = location.state?.players || [];
-    const [currentIndex, setCurrentIndex] = useState(0);
-    const [isLoaded, setIsLoaded] = useState(false);
 
+    const [phase, setPhase] = useState("player"); // "player" | "game"
+    const [isLoaded, setIsLoaded] = useState(false);
+    const [currentIndex, setCurrentIndex] = useState(0);
     const currentPlayer = players[currentIndex];
 
-    // 🎵 Вибро-паттерн “Туг–Туг … Туг”
+    // 💥 Вибрация
     function hapticTugTugPauseTug() {
         const H = window.Telegram?.WebApp?.HapticFeedback;
         if (!H) return;
-
         const pattern = [
             { type: "medium", delay: 0 },
             { type: "medium", delay: 150 },
             { type: "heavy", delay: 600 },
         ];
-
         pattern.forEach(({ type, delay }) => {
             setTimeout(() => H.impactOccurred(type), delay);
         });
     }
 
-    // 👇 Предзагрузка фона и запуск вибрации
+    // 👇 Предзагрузка фона
     useEffect(() => {
         const img = new Image();
         img.src = brainplayerBG;
         img.onload = () => {
             setIsLoaded(true);
-            hapticTugTugPauseTug(); // 🚀 вибрация при открытии экрана
+            hapticTugTugPauseTug();
         };
     }, []);
 
+    // ===== ИГРОВОЙ ЭКРАН =====
+    const TOTAL_ROUNDS = 15;
+    const [round, setRound] = useState(1);
+    const localQuestions = [
+        [
+            "У меня есть скрытый талант, о котором никто не знает",
+            "Я когда-то притворялся кем-то другим ради выгоды",
+            "Я люблю делать что-то странное, когда никто не видит",
+            "Я когда-то врал, чтобы произвести впечатление",
+        ],
+        [
+            "Я когда-то завалил важное дело и никому не сказал",
+            "Я смеюсь над своими шутками громче всех",
+            "У меня есть нелепый страх, о котором никто не знает",
+            "Я говорил что-то, о чём потом сильно пожалел",
+        ],
+    ];
+    const currentQuestions = localQuestions[(round - 1) % localQuestions.length];
+
+    const handleNextRound = () => {
+        if (round < TOTAL_ROUNDS) {
+            setRound((prev) => prev + 1);
+            hapticTugTugPauseTug();
+        } else {
+            alert("Игра завершена!");
+        }
+    };
+
     if (!isLoaded) {
-        // Пока фон не загружен — просто фон-заглушка
         return (
             <div
                 style={{
@@ -74,160 +98,261 @@ export default function BrainHackGame({ onShowOnboarding }) {
         zIndex: 100,
     };
 
-    const handleNext = () => {
-        if (currentIndex < players.length - 1) {
-            setCurrentIndex((prev) => prev + 1);
-        } else {
-            navigate("/game", { replace: true, state: { players } });
-        }
-    };
-
-    const handleBack = () => {
-        if (currentIndex > 0) setCurrentIndex((prev) => prev - 1);
-        else navigate(-1);
-    };
-
     return (
-        <AnimatePresence mode="sync">
-            <motion.div
-                key="player-turn-screen"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.3 }}
-                style={{
-                    position: "fixed",
-                    top: 0,
-                    left: 0,
-                    width: "100vw",
-                    height: "100vh",
-                    backgroundColor: "rgba(0,0,0,0.85)",
-                    backdropFilter: "blur(8px)",
-                    zIndex: 9999,
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                }}
-            >
+        <AnimatePresence mode="wait">
+            {phase === "player" && (
                 <motion.div
-                    key="player-turn-container"
-                    initial={{ scale: 0.98, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.98, opacity: 0 }}
-                    transition={{ duration: 0.25 }}
-                    style={{
-                        width: "100%",
-                        height: "100%",
-                        position: "relative",
-                        backgroundColor: theme.surface.main,
-                        overflow: "hidden",
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        justifyContent: "center",
-                    }}
+                    key="player-phase"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                    style={overlayStyle}
                 >
                     {/* фон */}
-                    <img
-                        src={brainplayerBG}
-                        alt="background"
-                        style={{
-                            position: "absolute",
-                            top: 0,
-                            left: "50%",
-                            transform: "translateX(-50%)",
-                            width: "120%",
-                            height: "auto",
-                            objectFit: "cover",
-                            zIndex: 0,
-                            opacity: 0.8,
-                            transition: "opacity 0.3s ease",
-                        }}
-                    />
+                    <div style={backgroundContainer}>
+                        <img src={brainplayerBG} alt="background" style={playerBackgroundStyle} />
+                    </div>
 
                     {/* верхние кнопки */}
                     <div style={backIconStyle}>
-                        <IconButton icon={ArrowBackIcon} onClick={handleBack} />
+                        <IconButton icon={ArrowBackIcon} onClick={() => {}} />
                     </div>
                     <div style={faqIconStyle}>
                         <IconButton icon={FaqIcon} onClick={onShowOnboarding} />
                     </div>
 
-                    {/* контент игрока */}
-                    <div
-                        style={{
-                            position: "relative",
-                            zIndex: 2,
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            justifyContent: "center",
-                        }}
-                    >
-                        <motion.div
-                            key={currentPlayer?.id}
-                            initial={{ opacity: 0, scale: 0.8, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.8, y: -20 }}
-                            transition={{ type: "spring", stiffness: 120, damping: 15 }}
-                            style={{ textAlign: "center" }}
-                        >
-                            <div
-                                style={{
-                                    fontSize: 128,
-                                    lineHeight: "128px",
-                                    marginBottom: 32,
-                                    userSelect: "none",
-                                }}
-                            >
+                    {/* контент */}
+                    <div style={safeAreaContainer}>
+                        <div style={centerContent}>
+                            <div style={{ fontSize: 128 }}>
                                 {currentPlayer?.emojiData?.emoji || "🙂"}
                             </div>
-
-                            <div
-                                style={{
-                                    fontFamily: "Gilroy, sans-serif",
-                                    fontWeight: 700,
-                                    fontSize: 32,
-                                    color: theme.icotex.white,
-                                    marginBottom: 4,
-                                }}
-                            >
+                            <div style={nameStyle}>
                                 {currentPlayer?.emojiData?.name || "Игрок"}
                             </div>
+                            <div style={subtextStyle}>твой ход</div>
+                        </div>
 
-                            <div
-                                style={{
-                                    fontFamily: "Gilroy, sans-serif",
-                                    fontWeight: 400,
-                                    fontSize: 18,
-                                    color: theme.icotex.white,
-                                    opacity: 0.9,
+                        <div style={buttonWrapperStyle}>
+                            <PrimaryButton
+                                textColor={theme.icotex.white}
+                                onClick={() => {
+                                    hapticTugTugPauseTug();
+                                    setPhase("game");
                                 }}
                             >
-                                твой ход
-                            </div>
-                        </motion.div>
-                    </div>
-
-                    {/* нижняя кнопка */}
-                    <div
-                        style={{
-                            position: "absolute",
-                            bottom:
-                                "calc(max(var(--tg-content-safe-area-inset-bottom, 0px), var(--tg-safe-area-inset-bottom, 0px)) + 16px)",
-                            left: 16,
-                            right: 16,
-                            zIndex: 10,
-                            display: "flex",
-                            justifyContent: "center",
-                        }}
-                    >
-                        <PrimaryButton textColor={theme.icotex.white} onClick={handleNext}>
-                            Начать
-                        </PrimaryButton>
+                                Начать
+                            </PrimaryButton>
+                        </div>
                     </div>
                 </motion.div>
-            </motion.div>
+            )}
+
+            {phase === "game" && (
+                <motion.div
+                    key="game-phase"
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.98 }}
+                    transition={{ duration: 0.35 }}
+                    style={gameWrapperStyle}
+                >
+                    {/* верхние иконки */}
+                    <div style={backIconStyle}>
+                        <IconButton icon={ArrowBackIcon} onClick={() => setPhase("player")} />
+                    </div>
+                    <div style={faqIconStyle}>
+                        <IconButton icon={FaqIcon} onClick={onShowOnboarding} />
+                    </div>
+
+                    {/* контент */}
+                    <div style={safeAreaContainerGame}>
+                        <div style={titleBlockStyle}>
+                            <h1 style={titleStyle}>Раунд {round} из {TOTAL_ROUNDS}</h1>
+                            <div style={subtitleStyle}>Прочитай или придумай один из фактов</div>
+                        </div>
+
+                        <motion.div
+                            key={round}
+                            initial={{ opacity: 0, scale: 0.96, y: 10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            transition={{ duration: 0.3 }}
+                            style={cardOuterStyle}
+                        >
+                            <div style={cardStyle}>
+                                <div style={questionsContainerStyle}>
+                                    {currentQuestions.map((q, i) => (
+                                        <div key={i} style={questionBlockStyle}>
+                                            <p style={questionTextStyle}>{q}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </motion.div>
+
+                        <div style={buttonWrapperStyle}>
+                            <PrimaryButton textColor={theme.icotex.white} onClick={handleNextRound}>
+                                {round < TOTAL_ROUNDS ? "Подсчитать очки" : "Завершить игру"}
+                            </PrimaryButton>
+                        </div>
+                    </div>
+                </motion.div>
+            )}
         </AnimatePresence>
     );
 }
+
+/* ===== СТИЛИ ===== */
+
+const overlayStyle = {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    width: "100vw",
+    height: "100vh",
+    backgroundColor: "var(--surface-main)",
+    backdropFilter: "blur(8px)",
+    zIndex: 9999,
+    overflow: "hidden",
+};
+
+const backgroundContainer = {
+    position: "absolute",
+    top: "25%",
+    left: "50%",
+    transform: "translate(-50%, -50%)",
+    zIndex: 0,
+    width: "100%",
+    display: "flex",
+    justifyContent: "center",
+    pointerEvents: "none",
+};
+
+const playerBackgroundStyle = {
+    width: "120%",
+    height: "auto",
+    objectFit: "contain",
+};
+
+const safeAreaContainer = {
+    position: "relative",
+    zIndex: 2,
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "space-between",
+    alignItems: "center",
+    height:
+        "calc(100vh - (env(--tg-content-safe-area-inset-top, 0px) + env(--tg-content-safe-area-inset-bottom, 0px)))",
+    paddingTop: "env(--tg-content-safe-area-inset-top, 0px)",
+    paddingBottom: "env(--tg-content-safe-area-inset-bottom, 0px)",
+    paddingLeft: "env(--tg-content-safe-area-inset-left, 16px)",
+    paddingRight: "env(--tg-content-safe-area-inset-right, 16px)",
+    boxSizing: "border-box",
+};
+
+const safeAreaContainerGame = {
+    ...safeAreaContainer,
+    paddingTop:
+        "calc(env(--tg-content-safe-area-inset-top, 0px) + 116px)", // отодвигаем заголовок вниз
+};
+
+const centerContent = {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    flex: 1,
+};
+
+const nameStyle = {
+    fontFamily: "Gilroy, sans-serif",
+    fontWeight: 700,
+    fontSize: 32,
+    color: theme.icotex.white,
+    marginBottom: 4,
+};
+
+const subtextStyle = {
+    fontFamily: "Gilroy, sans-serif",
+    fontWeight: 400,
+    fontSize: 18,
+    color: theme.icotex.white,
+    opacity: 0.9,
+};
+
+const buttonWrapperStyle = {
+    width: "100%",
+    display: "flex",
+    justifyContent: "center",
+};
+
+const gameWrapperStyle = {
+    width: "100vw",
+    height: "100vh",
+    backgroundColor: "var(--surface-main)",
+    position: "relative",
+    overflow: "hidden",
+};
+
+const titleBlockStyle = {
+    textAlign: "center",
+    marginBottom: 24,
+};
+
+const titleStyle = {
+    fontFamily: "Gilroy, sans-serif",
+    fontSize: 28,
+    fontWeight: 700,
+    color: "var(--icotex-white)",
+    margin: 0,
+    marginBottom: 8,
+};
+
+const subtitleStyle = {
+    fontFamily: "Gilroy, sans-serif",
+    fontSize: 16,
+    color: "var(--icotex-low)",
+};
+
+const cardOuterStyle = {
+    width: "100%",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    flex: 1,
+};
+
+const cardStyle = {
+    backgroundColor: "var(--surface-zero)",
+    borderRadius: 32,
+    boxShadow: "0 12px 24px rgba(0,0,0,0.15)",
+    width: "100%",
+    padding: "24px 16px",
+    boxSizing: "border-box",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    gap: 12,
+};
+
+const questionsContainerStyle = {
+    display: "flex",
+    flexDirection: "column",
+    gap: 12,
+};
+
+const questionBlockStyle = {
+    backgroundColor: "var(--surface-light)",
+    borderRadius: 20,
+    padding: "12px 16px",
+};
+
+const questionTextStyle = {
+    fontFamily: "Gilroy, sans-serif",
+    fontSize: 16,
+    fontWeight: 700,
+    color: "var(--icotex-normal)",
+    margin: 0,
+    lineHeight: 1.4,
+};
