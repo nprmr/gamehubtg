@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { motion, useMotionValue, animate } from "framer-motion";
+import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import IconButton from "../components/IconButton";
 import SettingsIcon from "../icons/Settings.svg?react";
@@ -18,12 +18,10 @@ function Mozgolomka() {
     const firstItemRef = useRef(null);
 
     const GAP = 16;
-    const SIDE_PADDING = 24;
-    const RIGHT_MARGIN = 16; // для последней карточки
+    const SIDE_PADDING = 16;
     const maxPlayers = 4;
-    const x = useMotionValue(0);
 
-    // === измерение размеров ===
+    // измеряем ширину карточки
     useEffect(() => {
         const measure = () => {
             if (firstItemRef.current) {
@@ -54,49 +52,28 @@ function Mozgolomka() {
     };
 
     const isMaxPlayers = players.length >= maxPlayers;
-    const visibleCardsCount = players.length + 1;
+
+    // === расчёты для карусели ===
     const step = cardWidth + GAP;
+    const totalCards = isMaxPlayers ? players.length + 1 : players.length + 1; // add/premium тоже карточка
+    const totalWidth = totalCards * cardWidth + (totalCards - 1) * GAP + SIDE_PADDING * 2;
 
-    // полная ширина с учётом паддингов
-    const totalWidth =
-        visibleCardsCount * cardWidth +
-        (visibleCardsCount - 1) * GAP +
-        SIDE_PADDING +
-        RIGHT_MARGIN;
+    // левая и правая границы drag
+    const minX = Math.min(0, viewportWidth - totalWidth + SIDE_PADDING);
+    const maxX = SIDE_PADDING;
 
-    // ограничиваем drag, чтобы последняя карточка имела 16px справа
-    const minX = Math.min(0, viewportWidth - totalWidth);
-    const maxX = 0;
+    const getXForIndex = (i) => {
+        const base = -(i * step) + SIDE_PADDING;
+        const lastIndex = totalCards - 1;
+        const maxScroll = viewportWidth - totalWidth + SIDE_PADDING;
+        // последняя карточка — с отступом 16px справа
+        if (i === lastIndex && base < maxScroll) return maxScroll;
+        return base;
+    };
 
-    const snapToNearest = () => {
-        const currentX = x.get();
-        const center = viewportWidth / 2;
-
-        // определяем ближайший индекс
-        const index = Math.round(
-            (SIDE_PADDING + center - currentX - cardWidth / 2) / step
-        );
-        const clamped = Math.max(0, Math.min(index, visibleCardsCount - 1));
+    const goTo = (i) => {
+        const clamped = Math.max(0, Math.min(i, totalCards - 1));
         setActiveIndex(clamped);
-
-        // позиция карточки
-        let targetX = -(clamped * step) + SIDE_PADDING;
-
-        const lastIndex = visibleCardsCount - 1;
-        const maxScroll = -(totalWidth - viewportWidth + RIGHT_MARGIN);
-        const firstOffset = 16; // отступ первой карточки слева
-
-        // первая карточка — ровно 16 px от левого края
-        if (clamped === 0) targetX = firstOffset;
-
-        // последняя карточка — ровно 16 px от правого края
-        if (clamped === lastIndex && targetX < maxScroll) targetX = maxScroll;
-
-        animate(x, targetX, {
-            type: "spring",
-            stiffness: 200,
-            damping: 32,
-        });
     };
 
     return (
@@ -155,7 +132,8 @@ function Mozgolomka() {
             >
                 {/* заголовки */}
                 <div style={{ textAlign: "center", marginBottom: 16 }}>
-                    <h1
+                    <motion.h1
+                        layoutId="title"
                         style={{
                             fontFamily: "Gilroy, sans-serif",
                             fontSize: 32,
@@ -165,9 +143,10 @@ function Mozgolomka() {
                         }}
                     >
                         Мозголомка
-                    </h1>
+                    </motion.h1>
 
-                    <p
+                    <motion.p
+                        layoutId="subtitle"
                         style={{
                             fontFamily: "Gilroy, sans-serif",
                             fontSize: 14,
@@ -177,9 +156,9 @@ function Mozgolomka() {
                         }}
                     >
                         Можно добавить до 4 игроков
-                    </p>
+                    </motion.p>
 
-                    <p
+                    <motion.p
                         style={{
                             fontFamily: "Gilroy, sans-serif",
                             fontSize: 14,
@@ -188,7 +167,7 @@ function Mozgolomka() {
                         }}
                     >
                         Больше игроков и игровых карточек доступно с Премиум
-                    </p>
+                    </motion.p>
                 </div>
 
                 {/* === Карусель === */}
@@ -208,16 +187,31 @@ function Mozgolomka() {
                         style={{
                             display: "flex",
                             gap: `${GAP}px`,
-                            paddingLeft: SIDE_PADDING,
                             cursor: "grab",
-                            x,
-                            willChange: "transform",
+                            paddingLeft: SIDE_PADDING,
+                            paddingRight: SIDE_PADDING,
                         }}
                         drag="x"
                         dragConstraints={{ left: minX, right: maxX }}
-                        dragElastic={0.2} // чуть мягче
-                        dragMomentum={false} // убрали “инерцию” → легкий обратный свайп
-                        onDragEnd={snapToNearest}
+                        dragElastic={0.08}
+                        dragMomentum={false}
+                        animate={{ x: getXForIndex(activeIndex) }}
+                        transition={{ type: "spring", stiffness: 220, damping: 28 }}
+                        onDragEnd={(_, info) => {
+                            const { offset, velocity } = info;
+                            const dx = offset.x;
+                            const vx = velocity.x;
+
+                            const swipePower = Math.abs(dx) * 0.4 + Math.abs(vx) * 20;
+                            const threshold = step * 0.25;
+
+                            if (Math.abs(dx) > threshold || swipePower > 300) {
+                                if (dx < 0) goTo(activeIndex + 1);
+                                else goTo(activeIndex - 1);
+                            } else {
+                                goTo(activeIndex);
+                            }
+                        }}
                     >
                         {players.map((player, i) => (
                             <div
