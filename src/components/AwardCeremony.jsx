@@ -152,36 +152,91 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
         <motion.div style={overlay}>
             {!final && (
                 <div style={centerContainer}>
-                    <AnimatePresence>
-                        {showMedal && (
-                            <motion.img
-                                key={`light-${step}`}
-                                src={lightImg}
-                                alt="light"
-                                style={lightStyle}
-                                animate={{ rotate: 360 }}
-                                transition={{
-                                    rotate: { repeat: Infinity, duration: 60, ease: "linear" },
-                                }}
-                            />
-                        )}
-                    </AnimatePresence>
+                    {showMedal && (
+                        <motion.img
+                            src={lightImg}
+                            alt="light"
+                            style={lightStyle}
+                            animate={{ rotate: 360 }}
+                            transition={{
+                                rotate: { repeat: Infinity, duration: 60, ease: "linear" },
+                            }}
+                        />
+                    )}
 
+                    {/* --- Медаль + Emoji анимация (исправленная) --- */}
                     <AnimatePresence mode="wait">
                         {showMedal && (
-                            <motion.div key={`center-${step}`} style={centerMedal}>
-                                <img src={medals[step]} alt="medal" style={medal} />
-                                {!revealed ? (
-                                    <motion.img
-                                        src={winnerAskImg}
-                                        alt="waiting"
-                                        style={waitingEmoji}
-                                    />
-                                ) : (
-                                    <motion.div style={emojiWrapper}>
-                                        {renderEmoji(currentWinner?.emoji || "🙂", false, 46, true)}
-                                    </motion.div>
-                                )}
+                            <motion.div
+                                style={centerMedal}
+                                initial={{ scale: 0.8, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{
+                                    scale: 0.8,
+                                    opacity: 0,
+                                    transition: { duration: 0.4, ease: "easeOut" },
+                                }}
+                                transition={{ duration: 0.6, ease: "easeOut" }}
+                            >
+                                <motion.img
+                                    key={`medal-${step}`}
+                                    src={medals[step]}
+                                    alt="medal"
+                                    style={medal}
+                                    initial={{ opacity: 0, scale: 0.8 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{
+                                        opacity: 0,
+                                        scale: 0.8,
+                                        transition: { duration: 0.4, ease: "easeOut" },
+                                    }}
+                                    transition={{ duration: 0.6, ease: "easeOut" }}
+                                />
+
+                                <AnimatePresence mode="wait">
+                                    {!revealed ? (
+                                        <motion.img
+                                            key="ask"
+                                            src={winnerAskImg}
+                                            alt="waiting"
+                                            style={waitingEmoji}
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{
+                                                opacity: 0,
+                                                transition: { duration: 0.3 },
+                                            }}
+                                            transition={{
+                                                duration: 0.4,
+                                                ease: "easeOut",
+                                            }}
+                                        />
+                                    ) : (
+                                        <motion.div
+                                            key="emoji"
+                                            style={emojiWrapper}
+                                            initial={{ scale: 0, opacity: 0 }}
+                                            animate={{
+                                                scale: [0, 1.3, 1],
+                                                opacity: [0, 1, 1],
+                                            }}
+                                            transition={{
+                                                duration: 0.6,
+                                                ease: [0.22, 1, 0.36, 1],
+                                            }}
+                                            exit={{
+                                                scale: 0.8,
+                                                opacity: 0,
+                                                transition: {
+                                                    duration: 0.4,
+                                                    ease: "easeOut",
+                                                },
+                                            }}
+                                        >
+                                            {renderEmoji(currentWinner?.emoji || "🙂", false, 46, true)}
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
                             </motion.div>
                         )}
                     </AnimatePresence>
@@ -228,8 +283,11 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
                                 <motion.div
                                     key={`placed-${i}`}
                                     initial={{ scale: 0 }}
-                                    animate={{ scale: [0, 1.4, 1] }}
-                                    transition={{ duration: 0.6, ease: "easeOut" }}
+                                    animate={{ scale: [0, 1.3, 1] }}
+                                    transition={{
+                                        duration: 0.6,
+                                        ease: "easeOut",
+                                    }}
                                     style={{ position: "relative" }}
                                 >
                                     <img src={medals[i]} alt="m" style={slotMedal} />
@@ -314,7 +372,7 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
     );
 }
 
-/* === стили ниже — без изменений, кроме extraEmojiBox === */
+/* === стили без изменений === */
 
 const SAFE_BOTTOM = "env(--tg-content-safe-area-inset-bottom, 0px)";
 const FOOTER_HEIGHT = 96;
@@ -323,9 +381,9 @@ const overlay = { position: "fixed", top: 0, left: 0, width: "100vw", height: "1
 
 const centerContainer = { position: "relative", width: "100%", minHeight: 260, display: "flex", justifyContent: "center", alignItems: "center", marginTop: 60, transition: "all 0.4s ease" };
 const lightStyle = { position: "absolute", width: 260, height: 260, transform: "translate(-50%, -50%)", opacity: 0.85 };
-const centerMedal = { position: "absolute", top: "50%", left: "50%", width: 200, height: 200, transform: "translate(-50%, -50%)", display: "flex", justifyContent: "center", alignItems: "center" };
+const centerMedal = { position: "absolute", width: 200, height: 200, transform: "translate(-50%, -50%)", display: "flex", justifyContent: "center", alignItems: "center" };
 const waitingEmoji = { position: "absolute", width: 46, top: "50%", left: "50%", height: 46, transform: "translate(-50%, -50%)" };
-const emojiWrapper = { position: "absolute", width: 46, top: "50%", left: "50%", height: 46, transform: "translate(-50%, -50%)" };
+const emojiWrapper = { position: "absolute", width: 46, height: 46, transform: "translate(-50%, -50%)" };
 const medal = { width: 140, height: 180 };
 
 const textZone = { height: 80, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" };
@@ -340,7 +398,7 @@ const slot = { position: "relative", width: 88, height: 120, display: "flex", fl
 const slotEmpty = { width: 88, height: 119, opacity: 0.9 };
 const slotMedal = { width: 88, height: 119 };
 
-const fixedButtons = { position: "fixed", left: 0, right: 0, bottom: `calc(${SAFE_BOTTOM})`, width: "100%", background: "var(--surface-main)", padding: "16px", paddingBottom: `calc(16px + ${SAFE_BOTTOM})`, boxSizing: "border-box", display: "flex", flexDirection: "column", alignItems: "stretch", gap: 8, zIndex: 20 };
+const fixedButtons = { position: "fixed", left: 0, right: 0, bottom: `calc(${SAFE_BOTTOM})`, width: "100%", background: "var(--surface-main)", padding: "16px", paddingBottom: `calc(0px + ${SAFE_BOTTOM})`, boxSizing: "border-box", display: "flex", flexDirection: "column", alignItems: "stretch", gap: 8, zIndex: 20 };
 
 const buttonZone = { display: "flex", flexDirection: "column", width: "100%", alignItems: "center" };
 const finalButtons = { width: "100%", display: "flex", flexDirection: "column", alignItems: "stretch", gap: 8 };

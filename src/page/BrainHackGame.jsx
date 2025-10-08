@@ -45,7 +45,7 @@ export default function BrainHackGame({ onShowOnboarding }) {
 
         const updateLayout = () => {
             const fullscreen = tg.isExpanded;
-            setLayoutOffsets(fullscreen ? { top: 168, bottom: 32 } : { top: 88, bottom: 24 });
+            setLayoutOffsets(fullscreen ? { top: 168, bottom: 0 } : { top: 88, bottom: 24 });
         };
 
         tg.onEvent?.("viewportChanged", updateLayout);

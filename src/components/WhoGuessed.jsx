@@ -172,7 +172,7 @@ const containerStyle = {
     backgroundColor: "var(--surface-zero)",
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
-    padding: "24px 16px 32px",
+    padding: "24px 16px 0px",
     boxSizing: "border-box",
 };
 
