@@ -1,3 +1,4 @@
+// AwardCeremony.jsx
 import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
@@ -8,21 +9,29 @@ import bronzeImg from "../assets/bronze.svg";
 import silverImg from "../assets/silver.svg";
 import goldImg from "../assets/gold.svg";
 import emptyImg from "../assets/empty.svg";
-import winnerAskImg from "../icons/winnerask.svg"; // ✅ новый импорт
+import winnerAskImg from "../icons/winnerask.svg";
 
 import { theme } from "../theme";
 import PrimaryButton from "./PrimaryButton";
 import FlatButton from "./FlatButton";
 
 export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
+    const totalPlayers = winners.length;
+
     const ordered = useMemo(() => {
-        const copy = [...winners];
-        copy.sort((a, b) => (a?.score ?? 0) - (b?.score ?? 0));
-        return copy.slice(0, 3);
+        const copy = [...winners].sort((a, b) => (a?.score ?? 0) - (b?.score ?? 0));
+        const topCount = Math.min(copy.length, 3);
+        return copy.slice(-topCount);
     }, [winners]);
 
-    const medals = [bronzeImg, silverImg, goldImg];
-    const texts = ["3-е место", "2-е место", "Победитель"];
+    const hasExtraPlayers = totalPlayers > 3;
+
+    const medals =
+        totalPlayers === 2 ? [silverImg, goldImg] : [bronzeImg, silverImg, goldImg];
+    const texts =
+        totalPlayers === 2
+            ? ["2-е место", "Победитель"]
+            : ["3-е место", "2-е место", "Победитель"];
 
     const [step, setStep] = useState(0);
     const [revealed, setRevealed] = useState(false);
@@ -30,26 +39,36 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
     const [animating, setAnimating] = useState(false);
     const [final, setFinal] = useState(false);
     const [buttonsVisible, setButtonsVisible] = useState(true);
-    const [viewportHeight, setViewportHeight] = useState(window.innerHeight);
+    const [viewportHeight, setViewportHeight] = useState(
+        typeof window !== "undefined" ? window.innerHeight : 800
+    );
     const [showMedal, setShowMedal] = useState(true);
 
-    const currentWinner = ordered[step] ?? { name: "Игрок", emoji: "🙂", score: 0 };
+    const currentWinner =
+        ordered[step] ?? { name: "Игрок", emoji: "🙂", score: 0 };
 
+    // 📱 Telegram viewport adaptation
     useEffect(() => {
-        if (window.Telegram?.WebApp?.viewportHeight) {
-            setViewportHeight(window.Telegram.WebApp.viewportHeight);
-        } else {
-            setViewportHeight(window.innerHeight);
+        const tg = window.Telegram?.WebApp;
+        function updateViewport() {
+            if (tg?.viewportHeight) {
+                setViewportHeight(tg.viewportHeight);
+            } else {
+                setViewportHeight(window.innerHeight);
+            }
         }
+        tg?.onEvent?.("viewportChanged", updateViewport);
+        updateViewport();
+        return () => tg?.offEvent?.("viewportChanged", updateViewport);
     }, []);
 
-    // Управление порядком показа текста и запуском конфетти один раз
+    // ✨ Эффекты на каждом шаге
     useEffect(() => {
         setRevealed(false);
         const t = setTimeout(() => {
             setRevealed(true);
-            const power = [80, 150, 300][step];
-            const spread = [60, 90, 120][step];
+            const power = [80, 150, 300][step] || 150;
+            const spread = [60, 90, 120][step] || 100;
             confetti({ particleCount: power, spread, origin: { y: 0.6 } });
         }, 1200);
         return () => clearTimeout(t);
@@ -60,21 +79,19 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
         setAnimating(true);
         setShowMedal(false);
 
-        // Добавляем медаль вниз
         setTimeout(() => {
             setPlaced((p) => [...p, step]);
         }, 600);
 
-        // Следующий шаг
         setTimeout(() => {
             setAnimating(false);
-            if (step < 2) {
+            if (step < medals.length - 1) {
                 setStep((s) => s + 1);
                 setShowMedal(true);
             } else {
+                setTimeout(() => setFinal(true), 600);
                 setButtonsVisible(false);
                 setRevealed(false);
-                setTimeout(() => setFinal(true), 1200);
             }
         }, 1000);
     };
@@ -90,7 +107,7 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
         onRestart?.();
     };
 
-    // Финальное конфетти
+    // 🎉 Финальное конфетти
     useEffect(() => {
         if (final) {
             ["light", "medium", "heavy"].forEach((_, i) => {
@@ -106,279 +123,167 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
         }
     }, [final]);
 
-    // ✅ универсальный рендер emoji с нужным размером
-    const renderEmoji = (emoji, small = false) => (
+    // ✅ Универсальная функция для emoji
+    const renderEmoji = (emoji, small = false, sizeOverride, absolute = false) => (
         <div
-            dangerouslySetInnerHTML={{
-                __html: twemoji.parse(emoji || "🙂", {
-                    folder: "svg",
-                    ext: ".svg",
-                }),
-            }}
             style={{
-                width: small ? 32 : 46, // ✅ 32x32 для маленьких медалей
-                height: small ? 32 : 46,
-                position: "absolute",
-                top: "50%",
-                left: "50%",
-                transform: "translate(-50%, -50%)",
-                zIndex: 2,
+                width: sizeOverride || (small ? 32 : 46),
+                height: sizeOverride || (small ? 32 : 46),
+                ...(absolute
+                    ? {
+                        position: "absolute",
+                        top: "50%",
+                        left: "50%",
+                        transform: "translate(-50%, -50%)",
+                    }
+                    : {
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                    }),
+            }}
+            dangerouslySetInnerHTML={{
+                __html: twemoji.parse(emoji || "🙂", { folder: "svg", ext: ".svg" }),
             }}
         />
     );
 
     return (
-        <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            style={overlay}
-        >
-            {/* === Центральная карточка === */}
-            <div style={{ ...centerContainer, position: "relative" }}>
-                {/* Свет */}
-                <AnimatePresence>
-                    {showMedal && !final && (
-                        <motion.img
-                            key={`light-${step}`}
-                            src={lightImg}
-                            alt="light"
-                            style={{
-                                position: "absolute",
-                                top: "50%",
-                                left: "50%",
-                                transformOrigin: "center center",
-                                width: 260,
-                                height: 260,
-                                opacity: 0.85,
-                                zIndex: 0,
-                                pointerEvents: "none",
-                            }}
-                            initial={{ opacity: 0, scale: 0.8, x: "-50%", y: "-50%" }}
-                            animate={{
-                                opacity: 0.85,
-                                scale: 1,
-                                x: "-50%",
-                                y: "-50%",
-                                rotate: 360,
-                            }}
-                            exit={{
-                                opacity: 0,
-                                scale: 0.9,
-                                transition: { duration: 0.4 },
-                            }}
-                            transition={{
-                                rotate: { repeat: Infinity, duration: 60, ease: "linear" },
-                                opacity: { duration: 0.4 },
-                                scale: { duration: 0.4 },
-                            }}
-                        />
-                    )}
-                </AnimatePresence>
-
-                {/* Центральная медаль */}
-                {/* Центральная медаль */}
-                <AnimatePresence mode="wait">
-                    {showMedal && !final && (
-                        <motion.div
-                            key={`center-${step}`}
-                            initial={{ scale: 0.85, opacity: 0, x: "-50%", y: "-50%" }}
-                            animate={{ scale: 1, opacity: 1, x: "-50%", y: "-50%" }}
-                            exit={{ opacity: 0, scale: 0.85 }}
-                            transition={{
-                                type: "spring",
-                                stiffness: 350,
-                                damping: 20,
-                                duration: 0.6,
-                            }}
-                            style={{
-                                position: "absolute",
-                                top: "50%",
-                                left: "50%",
-                                width: 200,
-                                height: 200,
-                                display: "flex",
-                                justifyContent: "center",
-                                alignItems: "center",
-                                zIndex: 1,
-                            }}
-                        >
-                            <motion.div
-                                animate={{ rotate: [-3, 3, -3] }}
+        <motion.div style={overlay}>
+            {!final && (
+                <div style={centerContainer}>
+                    <AnimatePresence>
+                        {showMedal && (
+                            <motion.img
+                                key={`light-${step}`}
+                                src={lightImg}
+                                alt="light"
+                                style={lightStyle}
+                                animate={{ rotate: 360 }}
                                 transition={{
-                                    duration: 0.4,
-                                    repeat: Infinity,
-                                    ease: "easeInOut",
+                                    rotate: { repeat: Infinity, duration: 60, ease: "linear" },
                                 }}
-                                style={{
-                                    width: 200,
-                                    height: 200,
-                                    display: "flex",
-                                    justifyContent: "center",
-                                    alignItems: "center",
-                                }}
-                            >
-                                <img src={medals[step]} alt="medal" style={medal} />
+                            />
+                        )}
+                    </AnimatePresence>
 
-                                {/* ✅ WinnerAsk показывается пока не появился emoji */}
-                                <AnimatePresence mode="wait">
-                                    {!revealed && (
-                                        <motion.img
-                                            key={`waiting-${step}`}
-                                            src={winnerAskImg}
-                                            alt="waiting"
-                                            initial={{ opacity: 0, scale: 0.9 }}
-                                            animate={{ opacity: 1, scale: 1 }}
-                                            exit={{ opacity: 0, scale: 0.85 }}
-                                            transition={{
-                                                opacity: { duration: 0.3, ease: "easeInOut" },
-                                                scale: { duration: 0.3, ease: "easeOut" },
-                                            }}
-                                            style={{
-                                                position: "absolute",
-                                                width: 46,
-                                                height: 46,
-                                                transform: "translate(-50%, -50%)",
-                                                zIndex: 2,
-                                            }}
-                                        />
-                                    )}
-                                </AnimatePresence>
-
-                                {/* ✅ Emoji с эффектом bounce при появлении и мягким исчезновением */}
-                                <AnimatePresence mode="wait">
-                                    {revealed && (
-                                        <motion.div
-                                            key={`emoji-${step}`}
-                                            initial={{ opacity: 0, scale: 0 }}
-                                            animate={{
-                                                opacity: 1,
-                                                scale: [0, 1.4, 0.95, 1], // 🎯 bounce через ключевые кадры
-                                            }}
-                                            exit={{ opacity: 0, scale: 0.8 }}
-                                            transition={{
-                                                opacity: { duration: 0.3, ease: "easeInOut" },
-                                                scale: {
-                                                    duration: 0.8,
-                                                    ease: [0.22, 1.0, 0.36, 1.0], // cubic-bezier для мягкого отскока
-                                                },
-                                            }}
-                                            style={{
-                                                position: "absolute",
-                                                transform: "translate(-50%, -50%)",
-                                                zIndex: 3,
-                                                width: 46,
-                                                height: 46,
-                                            }}
-                                            dangerouslySetInnerHTML={{
-                                                __html: twemoji.parse(currentWinner?.emoji || "🙂", {
-                                                    folder: "svg",
-                                                    ext: ".svg",
-                                                }),
-                                            }}
-                                        />
-                                    )}
-                                </AnimatePresence>
-                            </motion.div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-            </div>
-
-            {/* === Текст под карточкой === */}
-            {!final && showMedal && (
-                <div style={textZone}>
                     <AnimatePresence mode="wait">
-                        {!revealed ? (
-                            <motion.div
-                                key="place"
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -10 }}
-                                transition={{ duration: 0.5 }}
-                            >
-                                <div style={placeText}>{texts[step]}</div>
-                            </motion.div>
-                        ) : (
-                            <motion.div
-                                key="name"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                transition={{ duration: 0.5 }}
-                            >
-                                <div style={nameText}>{currentWinner?.name}</div>
-                                <div style={scoreText}>{currentWinner?.score} очков</div>
+                        {showMedal && (
+                            <motion.div key={`center-${step}`} style={centerMedal}>
+                                <img src={medals[step]} alt="medal" style={medal} />
+                                {!revealed ? (
+                                    <motion.img
+                                        src={winnerAskImg}
+                                        alt="waiting"
+                                        style={waitingEmoji}
+                                    />
+                                ) : (
+                                    <motion.div style={emojiWrapper}>
+                                        {renderEmoji(currentWinner?.emoji || "🙂", false, 46, true)}
+                                    </motion.div>
+                                )}
                             </motion.div>
                         )}
                     </AnimatePresence>
                 </div>
             )}
 
-            {/* === Нижние слоты === */}
-            <div style={bottomZone}>
-                <motion.div layout style={slotContainer}>
+            {!final && showMedal && (
+                <div style={textZone}>
+                    {!revealed ? (
+                        <div style={placeText}>{texts[step]}</div>
+                    ) : (
+                        <>
+                            <div style={nameText}>{currentWinner?.name}</div>
+                            <div style={scoreText}>{currentWinner?.score} очков</div>
+                        </>
+                    )}
+                </div>
+            )}
+
+            <motion.div
+                layout
+                style={awardsContainer}
+                animate={
+                    final
+                        ? {
+                            y: -Math.min(viewportHeight * 0.25, 180),
+                            transition: { duration: 1.2, ease: [0.22, 1, 0.36, 1] },
+                        }
+                        : { y: 0 }
+                }
+            >
+                <div style={growSpacer} />
+
+                <motion.div
+                    layout
+                    style={{
+                        ...slotContainer,
+                        justifyContent: totalPlayers === 2 ? "center" : "space-between",
+                    }}
+                >
                     {ordered.map((w, i) => (
-                        <motion.div
-                            key={i}
-                            style={slot}
-                            animate={
-                                final && placed.includes(i)
-                                    ? {
-                                        y: -viewportHeight / 2 + 60,
-                                        scale: [1, 1.08, 1],
-                                        opacity: 1,
-                                        transition: {
-                                            duration: 1.2,
-                                            ease: [0.22, 1, 0.36, 1],
-                                        },
-                                    }
-                                    : { y: 0, scale: 1, opacity: 1 }
-                            }
-                        >
+                        <motion.div key={i} style={slot}>
                             {placed.includes(i) ? (
                                 <motion.div
                                     key={`placed-${i}`}
                                     initial={{ scale: 0 }}
-                                    animate={{
-                                        scale: [0, 1.4, 1],
-                                        transition: { duration: 0.6, ease: "easeOut" },
-                                    }}
+                                    animate={{ scale: [0, 1.4, 1] }}
+                                    transition={{ duration: 0.6, ease: "easeOut" }}
                                     style={{ position: "relative" }}
                                 >
                                     <img src={medals[i]} alt="m" style={slotMedal} />
-                                    {renderEmoji(w.emoji, true)} {/* ✅ маленький emoji */}
+                                    {renderEmoji(w.emoji, true, null, true)}
                                 </motion.div>
                             ) : (
                                 <img src={emptyImg} alt="empty" style={slotEmpty} />
                             )}
-
                             {final && (
-                                <motion.div
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    transition={{ delay: 0.8, duration: 0.6 }}
-                                    style={{ marginTop: 8 }}
-                                >
+                                <>
                                     <div style={finalName}>{w.name}</div>
                                     <div style={finalScore}>{w.score} очков</div>
-                                </motion.div>
+                                </>
                             )}
                         </motion.div>
                     ))}
                 </motion.div>
 
-                {/* === Кнопки === */}
+                <AnimatePresence mode="wait">
+                    {final && hasExtraPlayers && (
+                        <motion.div
+                            key="extra"
+                            initial={{ opacity: 0, y: 60 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 60 }}
+                            transition={{ delay: 0.4, duration: 0.6 }}
+                            style={extraZone}
+                        >
+                            <div style={extraTitle}>Игроки не вошедшие в топ</div>
+                            <div style={extraList}>
+                                {[...winners]
+                                    .sort((a, b) => (b?.score ?? 0) - (a?.score ?? 0))
+                                    .slice(3)
+                                    .map((w, i) => (
+                                        <div key={i} style={extraPlayerCard}>
+                                            <div style={extraEmojiBox}>
+                                                {renderEmoji(w.emoji, false, 24, false)}
+                                            </div>
+                                            <div style={extraPlayerInfo}>
+                                                <div style={extraName}>{w.name}</div>
+                                                <div style={extraScore}>{w.score} очков</div>
+                                            </div>
+                                        </div>
+                                    ))}
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </motion.div>
+
+            <div style={fixedButtons}>
                 <AnimatePresence mode="wait">
                     {buttonsVisible ? (
-                        <motion.div
-                            key="main-buttons"
-                            initial={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.3 }}
-                            style={buttonZone}
-                        >
+                        <motion.div key="main-buttons" style={buttonZone}>
                             <PrimaryButton
                                 onClick={handleContinue}
                                 disabled={animating}
@@ -393,16 +298,8 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
                                 key="final-buttons"
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
-                                transition={{ duration: 0.6, delay: 1.0 }}
-                                style={{
-                                    width: "100%",
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    alignItems: "stretch",
-                                    gap: 8,
-                                    padding: "0 16px",
-                                    boxSizing: "border-box",
-                                }}
+                                transition={{ duration: 0.6, delay: 0.2 }}
+                                style={finalButtons}
                             >
                                 <FlatButton onClick={handleRestart}>Сыграть ещё раз</FlatButton>
                                 <PrimaryButton textColor={theme.icotex.white} onClick={onFinish}>
@@ -417,111 +314,44 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
     );
 }
 
-/* === Стили === */
-const overlay = {
-    position: "fixed",
-    top: 0,
-    left: 0,
-    width: "100vw",
-    height: "100vh",
-    backgroundColor: "var(--surface-main)",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "flex-start",
-    overflow: "hidden",
-};
+/* === стили ниже — без изменений, кроме extraEmojiBox === */
 
-const centerContainer = {
-    position: "relative",
-    width: "100%",
-    height: 260,
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 60,
-};
+const SAFE_BOTTOM = "env(--tg-content-safe-area-inset-bottom, 0px)";
+const FOOTER_HEIGHT = 96;
 
-const medal = { width: 140, height: 180, zIndex: 1 };
+const overlay = { position: "fixed", top: 0, left: 0, width: "100vw", height: "100dvh", backgroundColor: "var(--surface-main)", display: "flex", flexDirection: "column", paddingBottom: `calc(${FOOTER_HEIGHT}px + 24px)`, boxSizing: "border-box", overflow: "hidden" };
 
-const textZone = {
-    height: 80,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    flexDirection: "column",
-    overflow: "hidden",
-};
+const centerContainer = { position: "relative", width: "100%", minHeight: 260, display: "flex", justifyContent: "center", alignItems: "center", marginTop: 60, transition: "all 0.4s ease" };
+const lightStyle = { position: "absolute", width: 260, height: 260, transform: "translate(-50%, -50%)", opacity: 0.85 };
+const centerMedal = { position: "absolute", top: "50%", left: "50%", width: 200, height: 200, transform: "translate(-50%, -50%)", display: "flex", justifyContent: "center", alignItems: "center" };
+const waitingEmoji = { position: "absolute", width: 46, top: "50%", left: "50%", height: 46, transform: "translate(-50%, -50%)" };
+const emojiWrapper = { position: "absolute", width: 46, top: "50%", left: "50%", height: 46, transform: "translate(-50%, -50%)" };
+const medal = { width: 140, height: 180 };
 
-const placeText = {
-    fontSize: 36,
-    fontWeight: 700,
-    color: "white",
-};
+const textZone = { height: 80, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" };
+const placeText = { fontSize: 36, fontWeight: 700, color: "white" };
+const nameText = { fontSize: 32, fontWeight: 700, color: "white" };
+const scoreText = { fontSize: 22, color: "var(--icotex-lowest)" };
 
-const nameText = {
-    fontSize: 32,
-    fontWeight: 700,
-    color: "white",
-};
-
-const scoreText = {
-    fontSize: 22,
-    textAlign: "center",
-    fontWeight: 600,
-    color: "var(--icotex-lowest)",
-};
-
-const bottomZone = {
-    position: "absolute",
-    bottom: "calc(env(--tg-content-safe-area-inset-bottom, 0px) + 24px)",
-    width: "100%",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 16,
-};
-
-const slotContainer = {
-    display: "flex",
-    justifyContent: "center",
-    gap: 24,
-    alignItems: "flex-end",
-};
-
-const slot = {
-    position: "relative",
-    width: 88,
-    height: 120,
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-};
-
+const awardsContainer = { flex: 1, width: "100%", display: "flex", flexDirection: "column", alignItems: "stretch", justifyContent: "flex-end", overflowY: "auto", padding: "0 16px", boxSizing: "border-box", minHeight: 0 };
+const growSpacer = { flex: 1 };
+const slotContainer = { display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 24, width: "100%", marginBottom: 24 };
+const slot = { position: "relative", width: 88, height: 120, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" };
 const slotEmpty = { width: 88, height: 119, opacity: 0.9 };
 const slotMedal = { width: 88, height: 119 };
 
-const buttonZone = {
-    display: "flex",
-    flexDirection: "column",
-    width: "100%",
-    padding: "0 16px",
-    boxSizing: "border-box",
-    alignItems: "center",
-};
+const fixedButtons = { position: "fixed", left: 0, right: 0, bottom: `calc(${SAFE_BOTTOM})`, width: "100%", background: "var(--surface-main)", padding: "16px", paddingBottom: `calc(16px + ${SAFE_BOTTOM})`, boxSizing: "border-box", display: "flex", flexDirection: "column", alignItems: "stretch", gap: 8, zIndex: 20 };
 
-const finalName = {
-    fontSize: 14,
-    fontWeight: 700,
-    color: "white",
-    textAlign: "center",
-};
+const buttonZone = { display: "flex", flexDirection: "column", width: "100%", alignItems: "center" };
+const finalButtons = { width: "100%", display: "flex", flexDirection: "column", alignItems: "stretch", gap: 8 };
+const finalName = { fontSize: 14, fontWeight: 700, color: "white", textAlign: "center" };
+const finalScore = { fontSize: 12, fontWeight: 500, color: "var(--icotex-lowest)", textAlign: "center" };
 
-const finalScore = {
-    fontSize: 12,
-    fontWeight: 500,
-    color: "var(--icotex-lowest)",
-    textAlign: "center",
-};
+const extraZone = { marginTop: 32, width: "100%", boxSizing: "border-box" };
+const extraTitle = { fontFamily: "Gilroy", fontSize: 24, fontWeight: 700, color: "var(--icotex-white)", textAlign: "center" };
+const extraList = { marginTop: 16, display: "flex", flexDirection: "column", gap: 12, width: "100%" };
+const extraPlayerCard = { display: "flex", alignItems: "center", background: "var(--surface-normal-alfa)", borderRadius: 20, backdropFilter: "blur(20px)", height: 56, width: "100%", boxSizing: "border-box" };
+const extraEmojiBox = { position: "relative", width: 56, height: 56, background: "var(--surface-normal-alfa)", borderRadius: 20, display: "flex", alignItems: "center", justifyContent: "center" };
+const extraPlayerInfo = { display: "flex", flexDirection: "column", justifyContent: "center", marginLeft: 12, textAlign: "left" };
+const extraName = { fontFamily: "Gilroy", fontSize: 16, fontWeight: 700, color: "var(--icotex-white)" };
+const extraScore = { marginTop: 4, fontFamily: "Gilroy", fontSize: 12, fontWeight: 400, color: "var(--icotex-low)" };

@@ -23,7 +23,7 @@ export default function BrainHackGame({ onShowOnboarding }) {
     const [showWhoGuessed, setShowWhoGuessed] = useState(false);
     const [showSheet, setShowSheet] = useState(false);
 
-    const TOTAL_ROUNDS = 2;
+    const TOTAL_ROUNDS = 1;
     const [round, setRound] = useState(1);
 
     // Счёт игроков
@@ -92,15 +92,12 @@ export default function BrainHackGame({ onShowOnboarding }) {
         setScores((prev) => {
             const updated = [...prev];
             if (nobodyGuessed && awardedTo != null) {
-                // Все очки текущему игроку
                 updated[awardedTo] += players.length - 1;
             } else if (players.length >= 3 && guessedBy.length === 1) {
-                // Один угадал → 1 очко ему, остальные текущему игроку
                 const guessedPlayer = guessedBy[0];
                 updated[guessedPlayer] += 1;
                 if (awardedTo != null) updated[awardedTo] += players.length - 2;
             } else {
-                // Несколько угадали → всем по 1
                 guessedBy.forEach((i) => {
                     updated[i] += 1;
                 });
@@ -124,15 +121,14 @@ export default function BrainHackGame({ onShowOnboarding }) {
         }
     };
 
-    // вычисляем топ-3 победителей
-    const top3Winners = [...players]
+    // ✅ Исправлено: теперь передаём ВСЕХ игроков, а не только топ-3
+    const winners = [...players]
         .map((p, i) => ({
             name: p.emojiData?.name || "Игрок",
             emoji: p.emojiData?.emoji || "🙂",
             score: scores[i],
         }))
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 3);
+        .sort((a, b) => b.score - a.score);
 
     if (!isLoaded) {
         return (
@@ -284,7 +280,7 @@ export default function BrainHackGame({ onShowOnboarding }) {
 
                 {phase === "award" && (
                     <AwardCeremony
-                        winners={top3Winners}
+                        winners={winners}
                         onFinish={() => navigate("/brainhack", { replace: true })}
                     />
                 )}

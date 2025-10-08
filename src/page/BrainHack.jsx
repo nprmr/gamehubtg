@@ -26,7 +26,7 @@ function BrainHack() {
 
     const GAP = 16;
     const SIDE_PADDING = 16;
-    const maxPlayers = 4;
+    const maxPlayers = 5;
 
     useEffect(() => {
         const measure = () => {
@@ -177,7 +177,7 @@ function BrainHack() {
                             marginRight: 16,
                         }}
                     >
-                        Можно добавить до 4 игроков
+                        Можно добавить до 5 игроков
                     </p>
 
                     <p
