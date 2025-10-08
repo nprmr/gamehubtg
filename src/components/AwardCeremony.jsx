@@ -398,7 +398,7 @@ const slot = { position: "relative", width: 88, height: 120, display: "flex", fl
 const slotEmpty = { width: 88, height: 119, opacity: 0.9 };
 const slotMedal = { width: 88, height: 119 };
 
-const fixedButtons = { position: "fixed", left: 0, right: 0, bottom: `calc(${SAFE_BOTTOM})`, width: "100%", background: "var(--surface-main)", padding: "16px", paddingBottom: `calc(0px + ${SAFE_BOTTOM})`, boxSizing: "border-box", display: "flex", flexDirection: "column", alignItems: "stretch", gap: 8, zIndex: 20 };
+const fixedButtons = { position: "fixed", left: 0, right: 0, bottom: `calc(${SAFE_BOTTOM})`, width: "100%", background: "var(--surface-main)", padding: "16px", paddingBottom: `calc(24px + ${SAFE_BOTTOM})`, boxSizing: "border-box", display: "flex", flexDirection: "column", alignItems: "stretch", gap: 8, zIndex: 20 };
 
 const buttonZone = { display: "flex", flexDirection: "column", width: "100%", alignItems: "center" };
 const finalButtons = { width: "100%", display: "flex", flexDirection: "column", alignItems: "stretch", gap: 8 };
