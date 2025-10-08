@@ -44,23 +44,42 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
     );
     const [showMedal, setShowMedal] = useState(true);
 
-    const currentWinner =
-        ordered[step] ?? { name: "Игрок", emoji: "🙂", score: 0 };
+    // 🧠 Безопасные отступы (safe area)
+    const [safeAreaTop, setSafeAreaTop] = useState(0);
+    const [safeAreaBottom, setSafeAreaBottom] = useState(0);
 
-    // 📱 Telegram viewport adaptation
     useEffect(() => {
         const tg = window.Telegram?.WebApp;
-        function updateViewport() {
+
+        const updateSafeArea = () => {
+            const top = tg?.safeAreaInsetTop ?? parseInt(
+                getComputedStyle(document.documentElement)
+                    .getPropertyValue("--tg-content-safe-area-inset-top") || "0", 10
+            );
+            const bottom = tg?.safeAreaInsetBottom ?? parseInt(
+                getComputedStyle(document.documentElement)
+                    .getPropertyValue("--tg-content-safe-area-inset-bottom") || "0", 10
+            );
+            setSafeAreaTop(top);
+            setSafeAreaBottom(bottom);
+        };
+
+        const updateViewport = () => {
             if (tg?.viewportHeight) {
                 setViewportHeight(tg.viewportHeight);
             } else {
                 setViewportHeight(window.innerHeight);
             }
-        }
+        };
+
         tg?.onEvent?.("viewportChanged", updateViewport);
         updateViewport();
+        updateSafeArea();
+
         return () => tg?.offEvent?.("viewportChanged", updateViewport);
     }, []);
+
+    const currentWinner = ordered[step] ?? { name: "Игрок", emoji: "🙂", score: 0 };
 
     // ✨ Эффекты на каждом шаге
     useEffect(() => {
@@ -123,7 +142,7 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
         }
     }, [final]);
 
-    // ✅ Универсальная функция для emoji
+    // ✅ Emoji renderer
     const renderEmoji = (emoji, small = false, sizeOverride, absolute = false) => (
         <div
             style={{
@@ -149,9 +168,19 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
     );
 
     return (
-        <motion.div style={overlay}>
+        <motion.div
+            style={{
+                ...overlay,
+                paddingBottom: `calc(${safeAreaBottom}px + 96px)`,
+            }}
+        >
             {!final && (
-                <div style={centerContainer}>
+                <div
+                    style={{
+                        ...centerContainer,
+                        paddingTop: `${safeAreaTop + 160}px`,
+                    }}
+                >
                     {showMedal && (
                         <motion.img
                             src={lightImg}
@@ -164,7 +193,7 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
                         />
                     )}
 
-                    {/* --- Медаль + Emoji анимация (исправленная) --- */}
+                    {/* --- Медаль + Emoji анимация --- */}
                     <AnimatePresence mode="wait">
                         {showMedal && (
                             <motion.div
@@ -338,7 +367,13 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
                 </AnimatePresence>
             </motion.div>
 
-            <div style={fixedButtons}>
+            {/* Кнопки */}
+            <div
+                style={{
+                    ...fixedButtons,
+                    paddingBottom: `calc(${safeAreaBottom}px + 24px)`,
+                }}
+            >
                 <AnimatePresence mode="wait">
                     {buttonsVisible ? (
                         <motion.div key="main-buttons" style={buttonZone}>
@@ -372,39 +407,29 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
     );
 }
 
-/* === стили без изменений === */
-const SAFE_TOP = "env(--tg-content-safe-area-inset-top, 0px)";
-const SAFE_BOTTOM = "env(--tg-content-safe-area-inset-bottom, 0px)";
-const FOOTER_HEIGHT = 96;
-
-const overlay = { position: "fixed", top: 0, left: 0, width: "100vw", height: "100dvh", backgroundColor: "var(--surface-main)", display: "flex", flexDirection: "column", paddingBottom: `calc(${FOOTER_HEIGHT}px + 24px)`, boxSizing: "border-box", overflow: "hidden" };
-
-const centerContainer = { position: "relative", width: "100%", minHeight: 260, display: "flex", justifyContent: "center", alignItems: "center", paddingTop: `calc(${SAFE_TOP}px + 160px}`, transition: "all 0.4s ease" };
+/* === Стили без изменений, кроме layout === */
+const overlay = { position: "fixed", top: 0, left: 0, width: "100vw", height: "100dvh", backgroundColor: "var(--surface-main)", display: "flex", flexDirection: "column", boxSizing: "border-box", overflow: "hidden" };
+const centerContainer = { position: "relative", width: "100%", minHeight: 260, display: "flex", justifyContent: "center", alignItems: "center", transition: "all 0.4s ease" };
 const lightStyle = { position: "absolute", width: 260, height: 260, transform: "translate(-50%, -50%)", opacity: 0.85 };
 const centerMedal = { position: "absolute", width: 200, height: 200, transform: "translate(-50%, -50%)", display: "flex", justifyContent: "center", alignItems: "center" };
-const waitingEmoji = { position: "absolute", width: 46, top: "50%", left: "50%", height: 46, transform: "translate(-50%, -50%)" };
-const emojiWrapper = { position: "absolute", width: 46, height: 46, transform: "translate(-50%, -50%)" };
+const waitingEmoji = { position: "absolute", width: 46, height: 46, top: "50%", left: "50%", transform: "translate(-50%, -50%)" };
+const emojiWrapper = { position: "absolute", width: 46, height: 46, top: "50%", left: "50%", transform: "translate(-50%, -50%)" };
 const medal = { width: 140, height: 180 };
-
 const textZone = { height: 80, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" };
 const placeText = { fontSize: 36, fontWeight: 700, color: "white" };
 const nameText = { fontSize: 32, fontWeight: 700, color: "white" };
 const scoreText = { fontSize: 22, color: "var(--icotex-lowest)" };
-
-const awardsContainer = { flex: 1, width: "100%", display: "flex", flexDirection: "column", alignItems: "stretch", justifyContent: "flex-end", overflowY: "auto", padding: "0 16px", boxSizing: "border-box", minHeight: 0 };
+const awardsContainer = { flex: 1, width: "100%", display: "flex", flexDirection: "column", alignItems: "stretch", justifyContent: "flex-end", overflowY: "auto", padding: "0 16px", boxSizing: "border-box" };
 const growSpacer = { flex: 1 };
 const slotContainer = { display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 24, width: "100%", marginBottom: 24 };
 const slot = { position: "relative", width: 88, height: 120, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" };
 const slotEmpty = { width: 88, height: 119, opacity: 0.9 };
 const slotMedal = { width: 88, height: 119 };
-
-const fixedButtons = { position: "fixed", left: 0, right: 0, bottom: `calc(${SAFE_BOTTOM})`, width: "100%", background: "var(--surface-main)", padding: "16px", paddingBottom: `calc(32px + ${SAFE_BOTTOM})`, boxSizing: "border-box", display: "flex", flexDirection: "column", alignItems: "stretch", gap: 8, zIndex: 20 };
-
+const fixedButtons = { position: "fixed", left: 0, right: 0, bottom: 0, width: "100%", background: "var(--surface-main)", padding: "16px", boxSizing: "border-box", display: "flex", flexDirection: "column", alignItems: "stretch", gap: 8, zIndex: 20 };
 const buttonZone = { display: "flex", flexDirection: "column", width: "100%", alignItems: "center" };
 const finalButtons = { width: "100%", display: "flex", flexDirection: "column", alignItems: "stretch", gap: 8 };
 const finalName = { fontSize: 14, fontWeight: 700, color: "white", textAlign: "center" };
 const finalScore = { fontSize: 12, fontWeight: 500, color: "var(--icotex-lowest)", textAlign: "center" };
-
 const extraZone = { marginTop: 32, width: "100%", boxSizing: "border-box" };
 const extraTitle = { fontFamily: "Gilroy", fontSize: 24, fontWeight: 700, color: "var(--icotex-white)", textAlign: "center" };
 const extraList = { marginTop: 16, display: "flex", flexDirection: "column", gap: 12, width: "100%" };
