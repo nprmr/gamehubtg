@@ -178,6 +178,7 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
                 </AnimatePresence>
 
                 {/* Центральная медаль */}
+                {/* Центральная медаль */}
                 <AnimatePresence mode="wait">
                     {showMedal && !final && (
                         <motion.div
@@ -219,26 +220,66 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
                                 }}
                             >
                                 <img src={medals[step]} alt="medal" style={medal} />
+
                                 {/* ✅ WinnerAsk показывается пока не появился emoji */}
-                                {!revealed && (
-                                    <motion.img
-                                        key={`waiting-${step}`}
-                                        src={winnerAskImg}
-                                        alt="waiting"
-                                        initial={{ opacity: 0, scale: 0.8 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        exit={{ opacity: 0, scale: 0.8 }}
-                                        transition={{ duration: 0.4 }}
-                                        style={{
-                                            position: "absolute",
-                                            width: 46,
-                                            height: 46,
-                                            transform: "translate(-50%, -50%)",
-                                            zIndex: 2,
-                                        }}
-                                    />
-                                )}
-                                {revealed && renderEmoji(currentWinner?.emoji)}
+                                <AnimatePresence mode="wait">
+                                    {!revealed && (
+                                        <motion.img
+                                            key={`waiting-${step}`}
+                                            src={winnerAskImg}
+                                            alt="waiting"
+                                            initial={{ opacity: 0, scale: 0.9 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            exit={{ opacity: 0, scale: 0.85 }}
+                                            transition={{
+                                                opacity: { duration: 0.3, ease: "easeInOut" },
+                                                scale: { duration: 0.3, ease: "easeOut" },
+                                            }}
+                                            style={{
+                                                position: "absolute",
+                                                width: 46,
+                                                height: 46,
+                                                transform: "translate(-50%, -50%)",
+                                                zIndex: 2,
+                                            }}
+                                        />
+                                    )}
+                                </AnimatePresence>
+
+                                {/* ✅ Emoji с эффектом bounce при появлении и мягким исчезновением */}
+                                <AnimatePresence mode="wait">
+                                    {revealed && (
+                                        <motion.div
+                                            key={`emoji-${step}`}
+                                            initial={{ opacity: 0, scale: 0 }}
+                                            animate={{
+                                                opacity: 1,
+                                                scale: [0, 1.4, 0.95, 1], // 🎯 bounce через ключевые кадры
+                                            }}
+                                            exit={{ opacity: 0, scale: 0.8 }}
+                                            transition={{
+                                                opacity: { duration: 0.3, ease: "easeInOut" },
+                                                scale: {
+                                                    duration: 0.8,
+                                                    ease: [0.22, 1.0, 0.36, 1.0], // cubic-bezier для мягкого отскока
+                                                },
+                                            }}
+                                            style={{
+                                                position: "absolute",
+                                                transform: "translate(-50%, -50%)",
+                                                zIndex: 3,
+                                                width: 46,
+                                                height: 46,
+                                            }}
+                                            dangerouslySetInnerHTML={{
+                                                __html: twemoji.parse(currentWinner?.emoji || "🙂", {
+                                                    folder: "svg",
+                                                    ext: ".svg",
+                                                }),
+                                            }}
+                                        />
+                                    )}
+                                </AnimatePresence>
                             </motion.div>
                         </motion.div>
                     )}
