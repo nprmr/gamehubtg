@@ -8,6 +8,7 @@ import bronzeImg from "../assets/bronze.svg";
 import silverImg from "../assets/silver.svg";
 import goldImg from "../assets/gold.svg";
 import emptyImg from "../assets/empty.svg";
+import winnerAskImg from "../icons/winnerask.svg"; // ✅ новый импорт
 
 import { theme } from "../theme";
 import PrimaryButton from "./PrimaryButton";
@@ -105,7 +106,8 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
         }
     }, [final]);
 
-    const renderEmoji = (emoji) => (
+    // ✅ универсальный рендер emoji с нужным размером
+    const renderEmoji = (emoji, small = false) => (
         <div
             dangerouslySetInnerHTML={{
                 __html: twemoji.parse(emoji || "🙂", {
@@ -114,8 +116,8 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
                 }),
             }}
             style={{
-                width: 46,
-                height: 46,
+                width: small ? 32 : 46, // ✅ 32x32 для маленьких медалей
+                height: small ? 32 : 46,
                 position: "absolute",
                 top: "50%",
                 left: "50%",
@@ -217,6 +219,25 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
                                 }}
                             >
                                 <img src={medals[step]} alt="medal" style={medal} />
+                                {/* ✅ WinnerAsk показывается пока не появился emoji */}
+                                {!revealed && (
+                                    <motion.img
+                                        key={`waiting-${step}`}
+                                        src={winnerAskImg}
+                                        alt="waiting"
+                                        initial={{ opacity: 0, scale: 0.8 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 0.8 }}
+                                        transition={{ duration: 0.4 }}
+                                        style={{
+                                            position: "absolute",
+                                            width: 46,
+                                            height: 46,
+                                            transform: "translate(-50%, -50%)",
+                                            zIndex: 2,
+                                        }}
+                                    />
+                                )}
                                 {revealed && renderEmoji(currentWinner?.emoji)}
                             </motion.div>
                         </motion.div>
@@ -286,7 +307,7 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
                                     style={{ position: "relative" }}
                                 >
                                     <img src={medals[i]} alt="m" style={slotMedal} />
-                                    {renderEmoji(w.emoji)}
+                                    {renderEmoji(w.emoji, true)} {/* ✅ маленький emoji */}
                                 </motion.div>
                             ) : (
                                 <img src={emptyImg} alt="empty" style={slotEmpty} />
@@ -332,7 +353,15 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 transition={{ duration: 0.6, delay: 1.0 }}
-                                style={{ width: "-webkit-fill-available", display: "flex", flexDirection: "column", gap: 8, marginLeft: 16, marginRight: 16 }}
+                                style={{
+                                    width: "100%",
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "stretch",
+                                    gap: 8,
+                                    padding: "0 16px",
+                                    boxSizing: "border-box",
+                                }}
                             >
                                 <FlatButton onClick={handleRestart}>Сыграть ещё раз</FlatButton>
                                 <PrimaryButton textColor={theme.icotex.white} onClick={onFinish}>
