@@ -373,13 +373,13 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
 }
 
 /* === стили без изменений === */
-
+const SAFE_TOP = "env(--tg-content-safe-area-inset-top, 0px)";
 const SAFE_BOTTOM = "env(--tg-content-safe-area-inset-bottom, 0px)";
 const FOOTER_HEIGHT = 96;
 
 const overlay = { position: "fixed", top: 0, left: 0, width: "100vw", height: "100dvh", backgroundColor: "var(--surface-main)", display: "flex", flexDirection: "column", paddingBottom: `calc(${FOOTER_HEIGHT}px + 24px)`, boxSizing: "border-box", overflow: "hidden" };
 
-const centerContainer = { position: "relative", width: "100%", minHeight: 260, display: "flex", justifyContent: "center", alignItems: "center", marginTop: 60, transition: "all 0.4s ease" };
+const centerContainer = { position: "relative", width: "100%", minHeight: 260, display: "flex", justifyContent: "center", alignItems: "center", marginTop: `calc(${SAFE_TOP}px + 60px}`, transition: "all 0.4s ease" };
 const lightStyle = { position: "absolute", width: 260, height: 260, transform: "translate(-50%, -50%)", opacity: 0.85 };
 const centerMedal = { position: "absolute", width: 200, height: 200, transform: "translate(-50%, -50%)", display: "flex", justifyContent: "center", alignItems: "center" };
 const waitingEmoji = { position: "absolute", width: 46, top: "50%", left: "50%", height: 46, transform: "translate(-50%, -50%)" };
