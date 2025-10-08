@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { theme } from "../theme";
-import PrimaryButton from "./PrimaryButton";
+import SecondaryButton from "./SecondaryButton";
 
 /**
  * Props:
@@ -91,7 +91,7 @@ export default function WhoGuessed({
                                         style={{
                                             ...playerBlockStyle,
                                             backgroundColor: selected
-                                                ? "var(--surface-zero)"
+                                                ? "var(--surface-light)"
                                                 : "var(--surface-light)",
                                         }}
                                         onClick={() => togglePlayer(index)}
@@ -120,7 +120,7 @@ export default function WhoGuessed({
                                 style={{
                                     ...playerBlockStyle,
                                     backgroundColor: nobodyGuessed
-                                        ? "var(--surface-zero)"
+                                        ? "var(--surface-light)"
                                         : "var(--surface-light)",
                                     marginTop: 8,
                                 }}
@@ -139,12 +139,12 @@ export default function WhoGuessed({
                         </div>
 
                         <div style={buttonsContainer}>
-                            <PrimaryButton
+                            <SecondaryButton
                                 textColor={theme.icotex.white}
                                 onClick={handleContinue}
                             >
                                 Следующий игрок
-                            </PrimaryButton>
+                            </SecondaryButton>
                         </div>
                     </motion.div>
                 </motion.div>
@@ -169,7 +169,7 @@ const overlayStyle = {
 
 const containerStyle = {
     width: "100%",
-    backgroundColor: "var(--surface-main)",
+    backgroundColor: "var(--surface-zero)",
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     padding: "24px 16px 32px",
@@ -180,7 +180,7 @@ const titleStyle = {
     fontFamily: "Gilroy, sans-serif",
     fontSize: 20,
     fontWeight: 700,
-    color: "var(--icotex-white)",
+    color: "var(--icotex-normal)",
     textAlign: "center",
     marginBottom: 16,
 };
@@ -199,7 +199,9 @@ const playerBlockStyle = {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: "12px 16px",
+    paddingLeft: 16,
+    paddingRight: 16,
+    minHeight: 64,
     borderRadius: 20,
     cursor: "pointer",
     transition: "background-color 0.2s ease",

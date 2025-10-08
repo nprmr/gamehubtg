@@ -30,6 +30,7 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
     const [final, setFinal] = useState(false);
     const [buttonsVisible, setButtonsVisible] = useState(true);
     const [viewportHeight, setViewportHeight] = useState(window.innerHeight);
+    const [showMedal, setShowMedal] = useState(true);
 
     const currentWinner = ordered[step] ?? { name: "Игрок", emoji: "🙂", score: 0 };
 
@@ -41,31 +42,38 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
         }
     }, []);
 
+    // Управление порядком показа текста и запуском конфетти один раз
     useEffect(() => {
         setRevealed(false);
-        const t = setTimeout(() => setRevealed(true), 1200);
+        const t = setTimeout(() => {
+            setRevealed(true);
+            const power = [80, 150, 300][step];
+            const spread = [60, 90, 120][step];
+            confetti({ particleCount: power, spread, origin: { y: 0.6 } });
+        }, 1200);
         return () => clearTimeout(t);
     }, [step]);
-
-    useEffect(() => {
-        if (!revealed) return;
-        const power = [80, 150, 300][step];
-        const spread = [60, 90, 120][step];
-        confetti({ particleCount: power, spread, origin: { y: 0.6 } });
-    }, [revealed, step]);
 
     const handleContinue = () => {
         if (animating) return;
         setAnimating(true);
+        setShowMedal(false);
+
+        // Добавляем медаль вниз
         setTimeout(() => {
             setPlaced((p) => [...p, step]);
+        }, 600);
+
+        // Следующий шаг
+        setTimeout(() => {
             setAnimating(false);
             if (step < 2) {
                 setStep((s) => s + 1);
+                setShowMedal(true);
             } else {
                 setButtonsVisible(false);
                 setRevealed(false);
-                setTimeout(() => setFinal(true), 1400);
+                setTimeout(() => setFinal(true), 1200);
             }
         }, 1000);
     };
@@ -77,9 +85,11 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
         setAnimating(false);
         setFinal(false);
         setButtonsVisible(true);
+        setShowMedal(true);
         onRestart?.();
     };
 
+    // Финальное конфетти
     useEffect(() => {
         if (final) {
             ["light", "medium", "heavy"].forEach((_, i) => {
@@ -125,37 +135,53 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
         >
             {/* === Центральная карточка === */}
             <div style={{ ...centerContainer, position: "relative" }}>
-                {/* Свет (light) — вращается под медалью */}
-                <motion.img
-                    src={lightImg}
-                    alt="light"
-                    style={{
-                        position: "absolute",
-                        top: "50%",
-                        left: "50%",
-                        transform: "translate(-50%, -50%)",
-                        transformOrigin: "center center",
-                        width: 260,
-                        height: 260,
-                        opacity: 0.85,
-                        zIndex: 0,
-                        pointerEvents: "none",
-                    }}
-                    animate={{ rotate: 360 }}
-                    transition={{
-                        repeat: Infinity,
-                        duration: 60,
-                        ease: "linear",
-                    }}
-                />
+                {/* Свет */}
+                <AnimatePresence>
+                    {showMedal && !final && (
+                        <motion.img
+                            key={`light-${step}`}
+                            src={lightImg}
+                            alt="light"
+                            style={{
+                                position: "absolute",
+                                top: "50%",
+                                left: "50%",
+                                transformOrigin: "center center",
+                                width: 260,
+                                height: 260,
+                                opacity: 0.85,
+                                zIndex: 0,
+                                pointerEvents: "none",
+                            }}
+                            initial={{ opacity: 0, scale: 0.8, x: "-50%", y: "-50%" }}
+                            animate={{
+                                opacity: 0.85,
+                                scale: 1,
+                                x: "-50%",
+                                y: "-50%",
+                                rotate: 360,
+                            }}
+                            exit={{
+                                opacity: 0,
+                                scale: 0.9,
+                                transition: { duration: 0.4 },
+                            }}
+                            transition={{
+                                rotate: { repeat: Infinity, duration: 60, ease: "linear" },
+                                opacity: { duration: 0.4 },
+                                scale: { duration: 0.4 },
+                            }}
+                        />
+                    )}
+                </AnimatePresence>
 
                 {/* Центральная медаль */}
                 <AnimatePresence mode="wait">
-                    {!final && (
+                    {showMedal && !final && (
                         <motion.div
                             key={`center-${step}`}
-                            initial={{ scale: 0.85, opacity: 0 }}
-                            animate={{ scale: 1, opacity: final ? 0 : 1 }}
+                            initial={{ scale: 0.85, opacity: 0, x: "-50%", y: "-50%" }}
+                            animate={{ scale: 1, opacity: 1, x: "-50%", y: "-50%" }}
                             exit={{ opacity: 0, scale: 0.85 }}
                             transition={{
                                 type: "spring",
@@ -164,7 +190,9 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
                                 duration: 0.6,
                             }}
                             style={{
-                                position: "relative",
+                                position: "absolute",
+                                top: "50%",
+                                left: "50%",
                                 width: 200,
                                 height: 200,
                                 display: "flex",
@@ -197,7 +225,7 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
             </div>
 
             {/* === Текст под карточкой === */}
-            {!final && (
+            {!final && showMedal && (
                 <div style={textZone}>
                     <AnimatePresence mode="wait">
                         {!revealed ? (
@@ -304,12 +332,12 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 transition={{ duration: 0.6, delay: 1.0 }}
-                                style={buttonZone}
+                                style={{ width: "-webkit-fill-available", display: "flex", flexDirection: "column", gap: 8, marginLeft: 16, marginRight: 16 }}
                             >
+                                <FlatButton onClick={handleRestart}>Сыграть ещё раз</FlatButton>
                                 <PrimaryButton textColor={theme.icotex.white} onClick={onFinish}>
                                     Все игры
                                 </PrimaryButton>
-                                <FlatButton onClick={handleRestart}>Сыграть ещё раз</FlatButton>
                             </motion.div>
                         )
                     )}
@@ -369,6 +397,7 @@ const nameText = {
 
 const scoreText = {
     fontSize: 22,
+    textAlign: "center",
     fontWeight: 600,
     color: "var(--icotex-lowest)",
 };
@@ -407,7 +436,6 @@ const slotMedal = { width: 88, height: 119 };
 const buttonZone = {
     display: "flex",
     flexDirection: "column",
-    gap: 8,
     width: "100%",
     padding: "0 16px",
     boxSizing: "border-box",
