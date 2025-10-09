@@ -277,16 +277,19 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
                 layout
                 style={{
                     ...awardsContainer,
-                    paddingBottom: `calc(${safeAreaBottom}px + 140px)`, // ↑ запас под bounce
+                    // 👇 динамический отступ снизу:
+                    paddingBottom: final
+                        ? `calc(${safeAreaBottom}px + 140px)` // при финале — больше воздуха
+                        : `calc(${safeAreaBottom}px + 80px)`, // в начале — меньше
                 }}
                 animate={
                     final
                         ? {
-                            y: -Math.min(viewportHeight * 0.2, 160),
+                            y: -Math.min(viewportHeight * 0.18, 80), // чуть меньше подъём
                             transition: { duration: 1.2, ease: [0.22, 1, 0.36, 1] },
                         }
                         : {
-                            y: -20, // чуть выше baseline
+                            y: -10, // минимальный сдвиг вверх, чтобы визуально центрировать
                             transition: { duration: 0.8, ease: "easeOut" },
                         }
                 }
