@@ -409,8 +409,8 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
 const overlay = { position: "fixed", top: 0, left: 0, width: "100vw", height: "100dvh", backgroundColor: "var(--surface-main)", display: "flex", flexDirection: "column", boxSizing: "border-box", overflow: "hidden" };
 const centerContainer = { position: "relative", width: "100%", minHeight: 260, display: "flex", justifyContent: "center", alignItems: "center", transition: "all 0.4s ease" };
 // 🔧 FIX #1: добавить top/left 50% чтобы избежать моргания у левого края до применения transform
-const lightStyle = { position: "absolute", width: 260, height: 260, top: "50%", left: "50%", transform: "translate(-50%, -50%)", opacity: 0.85, willChange: "transform, opacity", contain: "paint layout" };
-const centerMedal = { position: "absolute", width: 200, height: 200, top: "50%", left: "50%", transform: "translate(-50%, -50%)", display: "flex", justifyContent: "center", alignItems: "center", willChange: "transform, opacity" };
+const lightStyle = { position: "absolute", width: 260, height: 260, transform: "translate(-50%, -50%)", opacity: 0.85, willChange: "transform, opacity", contain: "paint layout" };
+const centerMedal = { position: "absolute", width: 200, height: 200, transform: "translate(-50%, -50%)", display: "flex", justifyContent: "center", alignItems: "center", willChange: "transform, opacity" };
 const waitingEmoji = { position: "absolute", width: 46, height: 46, top: "50%", left: "50%", transform: "translate(-50%, -50%)" };
 const emojiWrapper = { position: "absolute", width: 46, height: 46, transform: "translate(-50%, -50%)" };
 const medal = { width: 140, height: 180 };
