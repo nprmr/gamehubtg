@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useMotionValue, animate, useTransform } from "framer-motion";
 import { theme } from "../theme";
 import SecondaryButton from "./SecondaryButton";
 
@@ -8,7 +8,7 @@ import SecondaryButton from "./SecondaryButton";
  * - open: boolean
  * - onClose: () => void
  * - players: Array<{ emojiData?: { emoji?: string; name?: string } }>
- * - currentPlayerIndex: number // индекс текущего игрока
+ * - currentPlayerIndex: number
  * - onSubmit: (payload: { guessedBy: number[], nobodyGuessed: boolean, awardedTo: number | null }) => void
  */
 export default function WhoGuessed({
@@ -20,6 +20,9 @@ export default function WhoGuessed({
                                    }) {
     const [selectedPlayers, setSelectedPlayers] = useState([]);
     const [nobodyGuessed, setNobodyGuessed] = useState(false);
+
+    const y = useMotionValue(0);
+    const overlayOpacity = useTransform(y, [0, 300], [0.5, 0]);
 
     // Отображаем всех, кроме текущего игрока
     const displayedPlayers = useMemo(
@@ -62,25 +65,68 @@ export default function WhoGuessed({
     };
 
     const totalCount = Math.max(players.length - 1, 0);
-    const canContinue = selectedPlayers.length > 0 || nobodyGuessed; // ✅ новое условие
+    const canContinue = selectedPlayers.length > 0 || nobodyGuessed;
+
+    // 👇 свайп вниз для закрытия
+    const handleDragEnd = (_e, info) => {
+        const draggedDownEnough = info.offset.y > 120 || info.velocity.y > 600;
+        if (draggedDownEnough) {
+            animate(y, window.innerHeight, {
+                type: "spring",
+                stiffness: 200,
+                damping: 30,
+                onComplete: onClose,
+            });
+        } else {
+            animate(y, 0, { type: "spring", stiffness: 300, damping: 30 });
+        }
+    };
 
     return (
         <AnimatePresence>
             {open && (
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.25 }}
-                    style={overlayStyle}
-                >
+                <>
+                    {/* overlay */}
                     <motion.div
-                        initial={{ y: 50 }}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 0.5 }}
+                        exit={{ opacity: 0 }}
+                        style={{
+                            position: "fixed",
+                            inset: 0,
+                            backgroundColor: "rgba(0,0,0,0.5)",
+                            zIndex: 9998,
+                            opacity: overlayOpacity,
+                        }}
+                        onClick={onClose} // 👉 клик по фону закрывает
+                    />
+
+                    {/* bottom sheet */}
+                    <motion.div
+                        initial={{ y: window.innerHeight }}
                         animate={{ y: 0 }}
-                        exit={{ y: 50 }}
-                        transition={{ duration: 0.25 }}
-                        style={containerStyle}
+                        exit={{ y: window.innerHeight }}
+                        transition={{ type: "spring", stiffness: 120, damping: 22 }}
+                        drag="y"
+                        dragConstraints={{ top: 0, bottom: window.innerHeight }}
+                        dragElastic={{ top: 0, bottom: 0.2 }}
+                        onDragEnd={handleDragEnd}
+                        style={{
+                            ...containerStyle,
+                            y,
+                        }}
                     >
+                        {/* верхняя полоска */}
+                        <div
+                            style={{
+                                width: 48,
+                                height: 4,
+                                borderRadius: 2,
+                                backgroundColor: "var(--icotex-low)",
+                                margin: "0 auto 16px",
+                            }}
+                        />
+
                         <h2 style={titleStyle}>Кто угадал?</h2>
 
                         <div style={playersListStyle}>
@@ -106,7 +152,6 @@ export default function WhoGuessed({
                                             </div>
                                         </div>
 
-                                        {/* Индикатор +1 */}
                                         {selected && (
                                             <div style={plusIndicatorStyle}>
                                                 <span style={plusTextStyle}>+1</span>
@@ -116,7 +161,7 @@ export default function WhoGuessed({
                                 );
                             })}
 
-                            {/* Кнопка "Никто не угадал" */}
+                            {/* Никто не угадал */}
                             <div
                                 style={{
                                     ...playerBlockStyle,
@@ -143,39 +188,31 @@ export default function WhoGuessed({
                             <SecondaryButton
                                 textColor={theme.icotex.white}
                                 onClick={handleContinue}
-                                disabled={!canContinue} // ✅ кнопка неактивна, если не выбрано
+                                disabled={!canContinue}
                             >
                                 Следующий игрок
                             </SecondaryButton>
                         </div>
                     </motion.div>
-                </motion.div>
+                </>
             )}
         </AnimatePresence>
     );
 }
 
 /* ======= СТИЛИ ======= */
-const overlayStyle = {
-    position: "fixed",
-    top: 0,
-    left: 0,
-    width: "100vw",
-    height: "100vh",
-    backgroundColor: "rgba(0,0,0,0.5)",
-    zIndex: 9999,
-    display: "flex",
-    alignItems: "flex-end",
-    justifyContent: "center",
-};
 
 const containerStyle = {
-    width: "100%",
+    position: "fixed",
+    bottom: 0,
+    left: 0,
+    right: 0,
     backgroundColor: "var(--surface-zero)",
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
-    padding: "24px 16px 32px",
+    padding: "16px 16px 32px",
     boxSizing: "border-box",
+    zIndex: 9999,
 };
 
 const titleStyle = {
