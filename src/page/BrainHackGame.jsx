@@ -16,7 +16,7 @@ export default function BrainHackGame({ onShowOnboarding }) {
     const navigate = useNavigate();
     const players = location.state?.players || [];
 
-    const [phase, setPhase] = useState("player"); // "player" | "game" | "award"
+    const [phase, setPhase] = useState("player");
     const [isLoaded, setIsLoaded] = useState(false);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [layoutOffsets, setLayoutOffsets] = useState({ top: 100, bottom: 24 });
@@ -26,28 +26,21 @@ export default function BrainHackGame({ onShowOnboarding }) {
     const TOTAL_ROUNDS = 1;
     const [round, setRound] = useState(1);
 
-    // Счёт игроков
     const [scores, setScores] = useState(() => players.map(() => 0));
-
     const currentPlayer = players[currentIndex];
 
-    // ⚙️ Layout адаптация
     useEffect(() => {
         const tg = window.Telegram?.WebApp;
         if (!tg) return;
-
         const updateLayout = () => {
             const fullscreen = tg.isExpanded;
             setLayoutOffsets(fullscreen ? { top: 168, bottom: 32 } : { top: 88, bottom: 24 });
         };
-
         tg.onEvent?.("viewportChanged", updateLayout);
         updateLayout();
-
         return () => tg.offEvent?.("viewportChanged", updateLayout);
     }, []);
 
-    // 👇 Предзагрузка фона
     useEffect(() => {
         const img = new Image();
         img.src = brainplayerBG;
@@ -56,6 +49,10 @@ export default function BrainHackGame({ onShowOnboarding }) {
             window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("medium");
         };
     }, []);
+
+    useEffect(() => {
+        if (showSheet) setShowWhoGuessed(false);
+    }, [showSheet]);
 
     const localQuestions = [
         [
@@ -72,13 +69,9 @@ export default function BrainHackGame({ onShowOnboarding }) {
         ],
     ];
 
-    // динамически разные вопросы каждому игроку
     const currentQuestions = localQuestions[(round + currentIndex) % localQuestions.length];
 
-    // переходы
-    const handleBackClick = () => {
-        setShowSheet(true);
-    };
+    const handleBackClick = () => setShowSheet(true);
 
     const handleScoresUpdate = ({ guessedBy, nobodyGuessed, awardedTo }) => {
         setScores((prev) => {
@@ -90,14 +83,11 @@ export default function BrainHackGame({ onShowOnboarding }) {
                 updated[guessedPlayer] += 1;
                 if (awardedTo != null) updated[awardedTo] += players.length - 2;
             } else {
-                guessedBy.forEach((i) => {
-                    updated[i] += 1;
-                });
+                guessedBy.forEach((i) => (updated[i] += 1));
             }
             return updated;
         });
 
-        // переход к следующему игроку или раунду
         if (currentIndex < players.length - 1) {
             setCurrentIndex((i) => i + 1);
             setPhase("player");
@@ -107,13 +97,11 @@ export default function BrainHackGame({ onShowOnboarding }) {
                 setRound((r) => r + 1);
                 setPhase("player");
             } else {
-                // конец игры → переход к награждению
                 setTimeout(() => setPhase("award"), 800);
             }
         }
     };
 
-    // ✅ Исправлено: теперь передаём ВСЕХ игроков, а не только топ-3
     const winners = [...players]
         .map((p, i) => ({
             name: p.emojiData?.name || "Игрок",
@@ -143,7 +131,6 @@ export default function BrainHackGame({ onShowOnboarding }) {
         left: "16px",
         zIndex: 100,
     };
-
     const faqIconStyle = {
         position: "absolute",
         top: "calc(max(var(--tg-content-safe-area-inset-top, 0px), var(--tg-safe-area-inset-top, 0px)) + 48px)",
@@ -153,144 +140,138 @@ export default function BrainHackGame({ onShowOnboarding }) {
 
     return (
         <>
-            {/* ======= Основные фазы ======= */}
-            <AnimatePresence mode="wait">
-                {phase === "player" && (
-                    <motion.div
-                        key="player-phase"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.3 }}
-                        style={overlayStyle}
-                    >
-                        <div style={backgroundContainer}>
-                            <img src={brainplayerBG} alt="background" style={playerBackgroundStyle} />
-                        </div>
-
-                        {/* Верхние кнопки */}
-                        <div style={backIconStyle}>
-                            <IconButton icon={ArrowBackIcon} onClick={handleBackClick} />
-                        </div>
-                        <div style={faqIconStyle}>
-                            <IconButton icon={FaqIcon} onClick={onShowOnboarding} />
-                        </div>
-
-                        {/* Контент */}
-                        <div
-                            style={{
-                                ...safeAreaContainer,
-                                paddingBottom: `calc(env(--tg-content-safe-area-inset-bottom, 0px) + ${layoutOffsets.bottom}px)`,
-                            }}
+            {/* без pointerEvents:none — overlay шита сам блокирует фон */}
+            <div>
+                <AnimatePresence mode="wait">
+                    {phase === "player" && (
+                        <motion.div
+                            key="player-phase"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.3 }}
+                            style={overlayStyle}
                         >
-                            <div style={centerContent}>
-                                <div style={{ fontSize: 128 }}>
-                                    {currentPlayer?.emojiData?.emoji || "🙂"}
-                                </div>
-                                <div style={nameStyle}>
-                                    {currentPlayer?.emojiData?.name || "Игрок"}
-                                </div>
-                                <div style={subtextStyle}>твой ход</div>
+                            <div style={backgroundContainer}>
+                                <img src={brainplayerBG} alt="background" style={playerBackgroundStyle} />
                             </div>
 
-                            <div style={buttonWrapperStyle}>
-                                <PrimaryButton
-                                    textColor={theme.icotex.white}
-                                    onClick={() => setPhase("game")}
-                                >
-                                    Начать
-                                </PrimaryButton>
+                            <div style={backIconStyle}>
+                                <IconButton icon={ArrowBackIcon} onClick={handleBackClick} />
                             </div>
-                        </div>
-                    </motion.div>
-                )}
-
-                {phase === "game" && (
-                    <motion.div
-                        key="game-phase"
-                        initial={{ opacity: 0, scale: 0.98 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.98 }}
-                        transition={{ duration: 0.35 }}
-                        style={gameWrapperStyle}
-                    >
-                        <div style={backIconStyle}>
-                            <IconButton icon={ArrowBackIcon} onClick={handleBackClick} />
-                        </div>
-                        <div style={faqIconStyle}>
-                            <IconButton icon={FaqIcon} onClick={onShowOnboarding} />
-                        </div>
-
-                        {/* Контент */}
-                        <div
-                            style={{
-                                ...safeAreaContainer,
-                                paddingTop: `calc(env(--tg-content-safe-area-inset-top, 0px) + ${layoutOffsets.top}px)`,
-                                paddingBottom: `calc(env(--tg-content-safe-area-inset-bottom, 0px) + ${layoutOffsets.bottom}px)`,
-                            }}
-                        >
-                            <div style={titleBlockStyle}>
-                                <h1 style={titleStyle}>Раунд {round} из {TOTAL_ROUNDS}</h1>
-                                <div style={subtitleStyle}>Прочитай или придумай один из фактов</div>
+                            <div style={faqIconStyle}>
+                                <IconButton icon={FaqIcon} onClick={onShowOnboarding} />
                             </div>
 
-                            <motion.div
-                                key={round}
-                                initial={{ opacity: 0, scale: 0.96, y: 10 }}
-                                animate={{ opacity: 1, scale: 1, y: 0 }}
-                                transition={{ duration: 0.3 }}
-                                style={cardOuterStyle}
+                            <div
+                                style={{
+                                    ...safeAreaContainer,
+                                    paddingBottom: `calc(env(--tg-content-safe-area-inset-bottom, 0px) + ${layoutOffsets.bottom}px)`,
+                                }}
                             >
-                                <div style={cardStyle}>
-                                    <div style={questionsContainerStyle}>
-                                        {currentQuestions.map((q, i) => (
-                                            <div key={i} style={questionBlockStyle}>
-                                                <p style={questionTextStyle}>{q}</p>
-                                            </div>
-                                        ))}
+                                <div style={centerContent}>
+                                    <div style={{ fontSize: 128 }}>
+                                        {currentPlayer?.emojiData?.emoji || "🙂"}
                                     </div>
+                                    <div style={nameStyle}>
+                                        {currentPlayer?.emojiData?.name || "Игрок"}
+                                    </div>
+                                    <div style={subtextStyle}>твой ход</div>
                                 </div>
-                            </motion.div>
 
-                            <div style={buttonWrapperStyle}>
-                                <PrimaryButton
-                                    textColor={theme.icotex.white}
-                                    onClick={() => setShowWhoGuessed(true)}
-                                >
-                                    {round < TOTAL_ROUNDS ? "Подсчитать очки" : "Завершить игру"}
-                                </PrimaryButton>
+                                <div style={buttonWrapperStyle}>
+                                    <PrimaryButton textColor={theme.icotex.white} onClick={() => setPhase("game")}>
+                                        Начать
+                                    </PrimaryButton>
+                                </div>
                             </div>
-                        </div>
-                    </motion.div>
-                )}
+                        </motion.div>
+                    )}
 
-                {phase === "award" && (
-                    <AwardCeremony
-                        winners={winners}
-                        onFinish={() => navigate("/brainhack", { replace: true })}
-                    />
-                )}
-            </AnimatePresence>
+                    {phase === "game" && (
+                        <motion.div
+                            key="game-phase"
+                            initial={{ opacity: 0, scale: 0.98 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.98 }}
+                            transition={{ duration: 0.35 }}
+                            style={gameWrapperStyle}
+                        >
+                            <div style={backIconStyle}>
+                                <IconButton icon={ArrowBackIcon} onClick={handleBackClick} />
+                            </div>
+                            <div style={faqIconStyle}>
+                                <IconButton icon={FaqIcon} onClick={onShowOnboarding} />
+                            </div>
 
-            {/* ======= ВНЕ фазы ======= */}
-            <WhoGuessed
-                open={showWhoGuessed}
-                onClose={() => setShowWhoGuessed(false)}
-                players={players}
-                currentPlayerIndex={currentIndex}
-                onSubmit={handleScoresUpdate}
-            />
+                            <div
+                                style={{
+                                    ...safeAreaContainer,
+                                    paddingTop: `calc(env(--tg-content-safe-area-inset-top, 0px) + ${layoutOffsets.top}px)`,
+                                    paddingBottom: `calc(env(--tg-content-safe-area-inset-bottom, 0px) + ${layoutOffsets.bottom}px)`,
+                                }}
+                            >
+                                <div style={titleBlockStyle}>
+                                    <h1 style={titleStyle}>Раунд {round} из {TOTAL_ROUNDS}</h1>
+                                    <div style={subtitleStyle}>Прочитай или придумай один из фактов</div>
+                                </div>
 
-            <div style={{ position: "fixed", zIndex: 10000 }}>
-                <BottomSheet
-                    open={showSheet}
-                    onClose={() => setShowSheet(false)}
-                    onConfirm={() => navigate("/brainhack", { replace: true })}
-                    riveFile="/rive/tv.riv"
-                    stateMachine="State Machine 1"
-                    trigger="clickActivation"
+                                <motion.div
+                                    key={round}
+                                    initial={{ opacity: 0, scale: 0.96, y: 10 }}
+                                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                                    transition={{ duration: 0.3 }}
+                                    style={cardOuterStyle}
+                                >
+                                    <div style={cardStyle}>
+                                        <div style={questionsContainerStyle}>
+                                            {currentQuestions.map((q, i) => (
+                                                <div key={i} style={questionBlockStyle}>
+                                                    <p style={questionTextStyle}>{q}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </motion.div>
+
+                                <div style={buttonWrapperStyle}>
+                                    <PrimaryButton
+                                        textColor={theme.icotex.white}
+                                        onClick={() => setShowWhoGuessed(true)}
+                                    >
+                                        {round < TOTAL_ROUNDS ? "Подсчитать очки" : "Завершить игру"}
+                                    </PrimaryButton>
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+
+                    {phase === "award" && (
+                        <AwardCeremony
+                            winners={winners}
+                            onFinish={() => navigate("/brainhack", { replace: true })}
+                        />
+                    )}
+                </AnimatePresence>
+
+                <WhoGuessed
+                    open={showWhoGuessed}
+                    onClose={() => setShowWhoGuessed(false)}
+                    players={players}
+                    currentPlayerIndex={currentIndex}
+                    onSubmit={handleScoresUpdate}
                 />
             </div>
+
+            {/* BottomSheet — портал, без обёрток */}
+            <BottomSheet
+                open={showSheet}
+                onClose={() => setShowSheet(false)}
+                onConfirm={() => navigate("/brainhack", { replace: true })}
+                riveFile="/rive/tv.riv"
+                stateMachine="State Machine 1"
+                trigger="clickActivation"
+            />
         </>
     );
 }
@@ -303,9 +284,9 @@ const overlayStyle = {
     width: "100vw",
     height: "100vh",
     backgroundColor: "var(--surface-main)",
-    backdropFilter: "blur(8px)",
     zIndex: 9999,
     overflow: "hidden",
+    // pointerEvents убрали полностью!
 };
 
 const backgroundContainer = {
