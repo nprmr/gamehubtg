@@ -31,13 +31,6 @@ export default function BrainHackGame({ onShowOnboarding }) {
 
     const currentPlayer = players[currentIndex];
 
-    // 💥 Вибрация
-    function hapticSoft() {
-        const H = window.Telegram?.WebApp?.HapticFeedback;
-        if (!H) return;
-        H.impactOccurred("soft");
-    }
-
     // ⚙️ Layout адаптация
     useEffect(() => {
         const tg = window.Telegram?.WebApp;
@@ -84,7 +77,6 @@ export default function BrainHackGame({ onShowOnboarding }) {
 
     // переходы
     const handleBackClick = () => {
-        hapticSoft();
         setShowSheet(true);
     };
 
@@ -204,10 +196,7 @@ export default function BrainHackGame({ onShowOnboarding }) {
                             <div style={buttonWrapperStyle}>
                                 <PrimaryButton
                                     textColor={theme.icotex.white}
-                                    onClick={() => {
-                                        hapticSoft();
-                                        setPhase("game");
-                                    }}
+                                    onClick={() => setPhase("game")}
                                 >
                                     Начать
                                 </PrimaryButton>
@@ -266,10 +255,7 @@ export default function BrainHackGame({ onShowOnboarding }) {
                             <div style={buttonWrapperStyle}>
                                 <PrimaryButton
                                     textColor={theme.icotex.white}
-                                    onClick={() => {
-                                        hapticSoft();
-                                        setShowWhoGuessed(true);
-                                    }}
+                                    onClick={() => setShowWhoGuessed(true)}
                                 >
                                     {round < TOTAL_ROUNDS ? "Подсчитать очки" : "Завершить игру"}
                                 </PrimaryButton>

@@ -279,7 +279,7 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
                     ...awardsContainer,
                     // 👇 динамический отступ снизу:
                     paddingBottom: final
-                        ? `calc(${safeAreaBottom}px + 140px)` // при финале — больше воздуха
+                        ? `calc(${safeAreaBottom}px + 260px)` // при финале — больше воздуха
                         : `calc(${safeAreaBottom}px + 60px)`, // в начале — меньше
                 }}
                 animate={
