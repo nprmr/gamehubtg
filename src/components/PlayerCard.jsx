@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import PlayerAddIcon from "../icons/addPlayer.svg?react";
+import CloseIcon from "../icons/close.svg?react"; // ✅ крестик
 import { emojiMap } from "../data/emojiMap";
 import { theme } from "../theme";
 import PremiumCard from "./PremiumCard";
@@ -9,10 +10,12 @@ export default function PlayerCard({
                                        id,
                                        state = "active",
                                        playerNumber = 1,
-                                       emojiData,                // 👉 данные игрока приходят из родителя
+                                       emojiData,
                                        onAdd = () => {},
                                        onOpenPremium = () => {},
-                                       onUpdate = () => {},      // 👉 сообщаем родителю о смене
+                                       onUpdate = () => {},
+                                       onRemove = () => {},
+                                       canRemove = true, // ✅ возможность удаления
                                    }) {
     const emojiRef = useRef(null);
 
@@ -20,7 +23,6 @@ export default function PlayerCard({
         return emojiMap[Math.floor(Math.random() * emojiMap.length)];
     }
 
-    // Парсим emoji через twemoji, когда меняется emojiData
     useEffect(() => {
         if (emojiRef.current) {
             twemoji.parse(emojiRef.current, {
@@ -36,8 +38,6 @@ export default function PlayerCard({
         }
     }, [emojiData]);
 
-    // Тап по карточке — выбираем новый emoji и передаем его наверх,
-    // сама карточка НИЧЕГО локально не запоминает
     const handleCardClick = () => {
         const newEmoji = randomEmojiData();
         onUpdate({ emojiData: newEmoji });
@@ -52,7 +52,7 @@ export default function PlayerCard({
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "flex-start",
-            flex: "0 0 auto",
+            position: "relative",
             transition: "all 0.2s ease",
             boxSizing: "border-box",
             overflow: "hidden",
@@ -91,6 +91,23 @@ export default function PlayerCard({
             width: "100%",
             height: 20,
         },
+        closeButton: {
+            position: "absolute",
+            top: 16,
+            right: 16,
+            width: 24,
+            height: 24,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 2,
+        },
+        closeIcon: {
+            width: 24,
+            height: 24,
+            fill: theme.icotex.white,
+        },
     };
 
     // --- Активная карточка игрока ---
@@ -101,12 +118,25 @@ export default function PlayerCard({
                 style={{ ...styles.cardBase, backgroundColor: theme.surface.zero }}
                 onClick={handleCardClick}
             >
+                {/* ✅ крестик показываем только если можно удалить */}
+                {canRemove && (
+                    <div
+                        style={styles.closeButton}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onRemove(id);
+                        }}
+                        aria-label="Удалить игрока"
+                    >
+                        <CloseIcon style={styles.closeIcon} />
+                    </div>
+                )}
+
                 <div style={styles.emoji} ref={emojiRef}>
                     {emojiData?.emoji || "🙂"}
                 </div>
 
                 <div style={styles.title}>{emojiData?.name || "Игрок"}</div>
-
                 <div style={styles.subtitle}>Тапните, чтобы сменить</div>
             </div>
         );

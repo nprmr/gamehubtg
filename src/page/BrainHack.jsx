@@ -18,7 +18,13 @@ function BrainHack() {
             state: "active",
             emojiData: emojiMap[Math.floor(Math.random() * emojiMap.length)],
         },
+        {
+            id: 2,
+            state: "active",
+            emojiData: emojiMap[Math.floor(Math.random() * emojiMap.length)],
+        },
     ]);
+
     const [cardWidth, setCardWidth] = useState(260);
     const [viewportWidth, setViewportWidth] = useState(window.innerWidth);
     const [activeIndex, setActiveIndex] = useState(0);
@@ -41,14 +47,29 @@ function BrainHack() {
         return () => window.removeEventListener("resize", measure);
     }, []);
 
+    // ✅ Добавление игрока
     const handleAddPlayer = () => {
         if (players.length < maxPlayers) {
+            const usedEmojis = players.map((p) => p.emojiData?.emoji);
+            const availableEmojis = emojiMap.filter(
+                (e) => !usedEmojis.includes(e.emoji)
+            );
+            const pool = availableEmojis.length > 0 ? availableEmojis : emojiMap;
+            const newEmoji = pool[Math.floor(Math.random() * pool.length)];
+
             const newPlayer = {
                 id: Date.now(),
                 state: "active",
-                emojiData: emojiMap[Math.floor(Math.random() * emojiMap.length)],
+                emojiData: newEmoji,
             };
-            setPlayers((prev) => [...prev, newPlayer]);
+
+            setPlayers((prev) => {
+                const updated = [...prev, newPlayer];
+                setTimeout(() => {
+                    setActiveIndex(updated.length - 1);
+                }, 50);
+                return updated;
+            });
         }
     };
 
@@ -56,6 +77,28 @@ function BrainHack() {
         setPlayers((prev) =>
             prev.map((p) => (p.id === id ? { ...p, ...updatedData } : p))
         );
+    };
+
+    // 🗑️ Удаление игрока (с защитой)
+    const handleRemovePlayer = (id) => {
+        setPlayers((prev) => {
+            const idx = prev.findIndex((p) => p.id === id);
+
+            // ❌ первые два нельзя удалять
+            if (idx > -1 && idx < 2) {
+                window.Telegram?.WebApp?.showPopup?.({
+                    title: "Нельзя удалить",
+                    message: "Первые два игрока удалить нельзя.",
+                    buttons: [{ id: "ok", type: "close", text: "Ок" }],
+                });
+                return prev;
+            }
+
+            const updated = prev.filter((p) => p.id !== id);
+            const newIndex = Math.max(0, Math.min(activeIndex, updated.length - 1));
+            setTimeout(() => setActiveIndex(newIndex), 50);
+            return updated;
+        });
     };
 
     const handleOpenPremium = () => {
@@ -151,7 +194,6 @@ function BrainHack() {
             >
                 {/* заголовки */}
                 <div style={{ textAlign: "center", marginBottom: 16 }}>
-                    {/* ❌ без motion — никаких анимаций */}
                     <h1
                         style={{
                             fontFamily: "Gilroy, sans-serif",
@@ -248,6 +290,8 @@ function BrainHack() {
                                     playerNumber={i + 1}
                                     emojiData={player.emojiData}
                                     onUpdate={(data) => handleUpdatePlayer(player.id, data)}
+                                    onRemove={() => handleRemovePlayer(player.id)}
+                                    canRemove={i >= 2} // ✅ первые два нельзя удалять
                                 />
                             </div>
                         ))}
@@ -279,7 +323,7 @@ function BrainHack() {
                 style={{
                     position: "fixed",
                     bottom:
-                        "calc(max(var(--tg-content-safe-area-inset-bottom, 0px), var(--tg-safe-area-inset-bottom, 0px))",
+                        "calc(max(var(--tg-content-safe-area-inset-bottom, 0px), var(--tg-safe-area-inset-bottom, 0px)))",
                     left: 16,
                     right: 16,
                     zIndex: 100,
