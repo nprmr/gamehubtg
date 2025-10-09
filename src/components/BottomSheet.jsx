@@ -253,12 +253,14 @@ export default function BottomSheet({
                         {/* Rive-canvas */}
                         <canvas
                             ref={canvasRef}
+                            tabIndex={-1} // убирает возможность сфокусироваться
                             onPointerUp={(e) => {
+                                e.preventDefault(); // <-- важно для мобилок
                                 e.stopPropagation();
                                 fireRive();
                             }}
                             onClick={(e) => {
-                                // на десктопах
+                                e.preventDefault();
                                 e.stopPropagation();
                                 fireRive();
                             }}
@@ -268,15 +270,17 @@ export default function BottomSheet({
                                 marginBottom: 16,
                                 display: "block",
                                 background: "transparent",
-                                outline: "none",
                                 cursor: "pointer",
                                 pointerEvents: "auto",
                                 userSelect: "none",
                                 touchAction: "none",
+                                outline: "none",
+                                WebkitTapHighlightColor: "transparent", // <-- убирает черный блип в Safari/Telegram
                                 position: "relative",
                                 zIndex: 2,
                             }}
                         />
+
 
                         <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>
                             Завершить игру?
