@@ -62,6 +62,7 @@ export default function WhoGuessed({
     };
 
     const totalCount = Math.max(players.length - 1, 0);
+    const canContinue = selectedPlayers.length > 0 || nobodyGuessed; // ✅ новое условие
 
     return (
         <AnimatePresence>
@@ -142,6 +143,7 @@ export default function WhoGuessed({
                             <SecondaryButton
                                 textColor={theme.icotex.white}
                                 onClick={handleContinue}
+                                disabled={!canContinue} // ✅ кнопка неактивна, если не выбрано
                             >
                                 Следующий игрок
                             </SecondaryButton>
