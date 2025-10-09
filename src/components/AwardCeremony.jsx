@@ -280,12 +280,12 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
                     // 👇 динамический отступ снизу:
                     paddingBottom: final
                         ? `calc(${safeAreaBottom}px + 140px)` // при финале — больше воздуха
-                        : `calc(${safeAreaBottom}px + 80px)`, // в начале — меньше
+                        : `calc(${safeAreaBottom}px + 60px)`, // в начале — меньше
                 }}
                 animate={
                     final
                         ? {
-                            y: -Math.min(viewportHeight * 0.18, 80), // чуть меньше подъём
+                            y: -Math.min(viewportHeight * 0.18, 60), // чуть меньше подъём
                             transition: { duration: 1.2, ease: [0.22, 1, 0.36, 1] },
                         }
                         : {
@@ -405,7 +405,7 @@ const centerContainer = { position: "relative", width: "100%", minHeight: 260, d
 const lightStyle = { position: "absolute", width: 260, height: 260, transform: "translate(-50%, -50%)", opacity: 0.85 };
 const centerMedal = { position: "absolute", width: 200, height: 200, transform: "translate(-50%, -50%)", display: "flex", justifyContent: "center", alignItems: "center" };
 const waitingEmoji = { position: "absolute", width: 46, height: 46, top: "50%", left: "50%", transform: "translate(-50%, -50%)" };
-const emojiWrapper = { position: "absolute", width: 46, height: 46, top: "50%", left: "50%", transform: "translate(-50%, -50%)" };
+const emojiWrapper = { position: "absolute", width: 46, height: 46, transform: "translate(-50%, -50%)" };
 const medal = { width: 140, height: 180 };
 const textZone = { height: 80, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" };
 const placeText = { fontSize: 36, fontWeight: 700, color: "white" };
