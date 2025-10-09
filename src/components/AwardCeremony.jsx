@@ -1,4 +1,4 @@
-// AwardCeremony.jsx
+// AwardCeremony.jsx (patched)
 import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
@@ -44,12 +44,14 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
     const [showMedal, setShowMedal] = useState(true);
     const [safeAreaTop, setSafeAreaTop] = useState(0);
     const [safeAreaBottom, setSafeAreaBottom] = useState(0);
+    const [isTelegram, setIsTelegram] = useState(false);
 
     const currentWinner = ordered[step] ?? { name: "Игрок", emoji: "🙂", score: 0 };
 
-    // 📱 адаптация Telegram viewport + safe area
+    // 📱 адаптация Telegram viewport + safe area + признак Telegram
     useEffect(() => {
         const tg = window.Telegram?.WebApp;
+        setIsTelegram(Boolean(tg));
 
         const updateViewport = () => {
             setViewportHeight(tg?.viewportHeight || window.innerHeight);
@@ -178,9 +180,11 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
                             src={lightImg}
                             alt="light"
                             style={lightStyle}
-                            animate={{ rotate: 360 }}
+                            animate={{ rotate: 360, opacity: 0.85 }}
+                            initial={{ opacity: 0 }}
                             transition={{
                                 rotate: { repeat: Infinity, duration: 60, ease: "linear" },
+                                opacity: { duration: 0.2 },
                             }}
                         />
                     )}
@@ -211,6 +215,8 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
                                         transition: { duration: 0.4, ease: "easeOut" },
                                     }}
                                     transition={{ duration: 0.6, ease: "easeOut" }}
+                                    decoding="async"
+                                    fetchpriority="high"
                                 />
 
                                 <AnimatePresence mode="wait">
@@ -299,12 +305,12 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
                 <motion.div
                     layout
                     style={{
-                        ...slotContainer,
+                        ...slotContainer(final),
                         justifyContent: totalPlayers === 2 ? "center" : "space-between",
                     }}
                 >
                     {ordered.map((w, i) => (
-                        <motion.div key={i} style={slot}>
+                        <motion.div key={i} style={slot(final)}>
                             {placed.includes(i) ? (
                                 <motion.div
                                     key={`placed-${i}`}
@@ -321,8 +327,8 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
                             )}
                             {final && (
                                 <>
-                                    <div style={finalName}>{w.name}</div>
-                                    <div style={finalScore}>{w.score} очков</div>
+                                    <div style={finalName(isTelegram)}>{w.name}</div>
+                                    <div style={finalScore(isTelegram)}>{w.score} очков</div>
                                 </>
                             )}
                         </motion.div>
@@ -338,7 +344,7 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
                             transition={{ delay: 0.4, duration: 0.6 }}
                             style={extraZone}
                         >
-                            <div style={extraTitle}>Игроки не вошедшие в топ</div>
+                            <div style={extraTitle(isTelegram)}>Игроки не вошедшие в топ</div>
                             <div style={extraList}>
                                 {[...winners]
                                     .sort((a, b) => (b?.score ?? 0) - (a?.score ?? 0))
@@ -349,8 +355,8 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
                                                 {renderEmoji(w.emoji, false, 24, false)}
                                             </div>
                                             <div style={extraPlayerInfo}>
-                                                <div style={extraName}>{w.name}</div>
-                                                <div style={extraScore}>{w.score} очков</div>
+                                                <div style={extraName(isTelegram)}>{w.name}</div>
+                                                <div style={extraScore(isTelegram)}>{w.score} очков</div>
                                             </div>
                                         </div>
                                     ))}
@@ -402,8 +408,9 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
 /* === стили === */
 const overlay = { position: "fixed", top: 0, left: 0, width: "100vw", height: "100dvh", backgroundColor: "var(--surface-main)", display: "flex", flexDirection: "column", boxSizing: "border-box", overflow: "hidden" };
 const centerContainer = { position: "relative", width: "100%", minHeight: 260, display: "flex", justifyContent: "center", alignItems: "center", transition: "all 0.4s ease" };
-const lightStyle = { position: "absolute", width: 260, height: 260, transform: "translate(-50%, -50%)", opacity: 0.85 };
-const centerMedal = { position: "absolute", width: 200, height: 200, transform: "translate(-50%, -50%)", display: "flex", justifyContent: "center", alignItems: "center" };
+// 🔧 FIX #1: добавить top/left 50% чтобы избежать моргания у левого края до применения transform
+const lightStyle = { position: "absolute", width: 260, height: 260, top: "50%", left: "50%", transform: "translate(-50%, -50%)", opacity: 0.85, willChange: "transform, opacity", contain: "paint layout" };
+const centerMedal = { position: "absolute", width: 200, height: 200, top: "50%", left: "50%", transform: "translate(-50%, -50%)", display: "flex", justifyContent: "center", alignItems: "center", willChange: "transform, opacity" };
 const waitingEmoji = { position: "absolute", width: 46, height: 46, top: "50%", left: "50%", transform: "translate(-50%, -50%)" };
 const emojiWrapper = { position: "absolute", width: 46, height: 46, transform: "translate(-50%, -50%)" };
 const medal = { width: 140, height: 180 };
@@ -413,20 +420,23 @@ const nameText = { fontSize: 32, fontWeight: 700, color: "white" };
 const scoreText = { fontSize: 22, color: "var(--icotex-lowest)" };
 const awardsContainer = { flex: 1, width: "100%", display: "flex", flexDirection: "column", alignItems: "stretch", justifyContent: "flex-end", overflowY: "visible", padding: "0 16px", boxSizing: "border-box", minHeight: 0 };
 const growSpacer = { flex: 1 };
-const slotContainer = { display: "flex", justifyContent: "space-evenly", alignItems: "flex-end", gap: 24, width: "100%", marginBottom: 24 };
-const slot = { position: "relative", width: 88, height: 120, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" };
+// 🔧 FIX #3: на финале выравниваем по верхнему краю, чтобы карточка с переносом имени не "вскакивала" одна
+const slotContainer = (isFinal) => ({ display: "flex", justifyContent: "space-evenly", alignItems: isFinal ? "flex-start" : "flex-end", gap: 24, width: "100%", marginBottom: 24 });
+// даём авто-высоту, но фиксируем минимальную
+const slot = (isFinal) => ({ position: "relative", width: 88, minHeight: 120, height: isFinal ? "auto" : 120, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: isFinal ? "flex-start" : "center" });
 const slotEmpty = { width: 88, height: 119, opacity: 0.9 };
 const slotMedal = { width: 88, height: 119 };
 const fixedButtons = { position: "fixed", left: 0, right: 0, bottom: 0, width: "100%", background: "var(--surface-main)", padding: "16px", boxSizing: "border-box", display: "flex", flexDirection: "column", alignItems: "stretch", gap: 8, zIndex: 20 };
 const buttonZone = { display: "flex", flexDirection: "column", width: "100%", alignItems: "center" };
 const finalButtons = { width: "100%", display: "flex", flexDirection: "column", alignItems: "stretch", gap: 8 };
-const finalName = { fontSize: 14, fontWeight: 700, color: "white", textAlign: "center" };
-const finalScore = { fontSize: 12, fontWeight: 500, color: "var(--icotex-lowest)", textAlign: "center" };
+// 🔤 Шрифты для финального списка и "игроки, не вошедшие в топ": в Telegram не используем Gilroy
+const finalName = (isTg) => ({ fontSize: 14, fontWeight: 700, color: "white", textAlign: "center", ...(isTg ? {} : { fontFamily: "Gilroy" }) });
+const finalScore = (isTg) => ({ fontSize: 12, fontWeight: 500, color: "var(--icotex-lowest)", textAlign: "center", ...(isTg ? {} : { fontFamily: "Gilroy" }) });
 const extraZone = { marginTop: 32, width: "100%", boxSizing: "border-box" };
-const extraTitle = { fontFamily: "Gilroy", fontSize: 24, fontWeight: 700, color: "var(--icotex-white)", textAlign: "center" };
+const extraTitle = (isTg) => ({ fontSize: 24, fontWeight: 700, color: "var(--icotex-white)", textAlign: "center", ...(isTg ? {} : { fontFamily: "Gilroy" }) });
 const extraList = { marginTop: 16, display: "flex", flexDirection: "column", gap: 12, width: "100%" };
 const extraPlayerCard = { display: "flex", alignItems: "center", background: "var(--surface-normal-alfa)", borderRadius: 20, backdropFilter: "blur(20px)", height: 56, width: "100%", boxSizing: "border-box" };
 const extraEmojiBox = { position: "relative", width: 56, height: 56, background: "var(--surface-normal-alfa)", borderRadius: 20, display: "flex", alignItems: "center", justifyContent: "center" };
 const extraPlayerInfo = { display: "flex", flexDirection: "column", justifyContent: "center", marginLeft: 12, textAlign: "left" };
-const extraName = { fontFamily: "Gilroy", fontSize: 16, fontWeight: 700, color: "var(--icotex-white)" };
-const extraScore = { marginTop: 4, fontFamily: "Gilroy", fontSize: 12, fontWeight: 400, color: "var(--icotex-low)" };
+const extraName = (isTg) => ({ fontSize: 16, fontWeight: 700, color: "var(--icotex-white)", ...(isTg ? {} : { fontFamily: "Gilroy" }) });
+const extraScore = (isTg) => ({ marginTop: 4, fontSize: 12, fontWeight: 400, color: "var(--icotex-low)", ...(isTg ? {} : { fontFamily: "Gilroy" }) });
