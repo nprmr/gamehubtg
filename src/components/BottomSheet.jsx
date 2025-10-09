@@ -18,7 +18,7 @@ export default function BottomSheet({
                                         onConfirm,
                                         riveFile = "/rive/tv.riv",
                                         stateMachine = "State Machine 1",
-                                        trigger = "clickTrigger", // ожидаемое имя, но ниже есть умный fallback
+                                        trigger = "clickTrigger",
                                         size = 128,
                                     }) {
     const y = useMotionValue(0);
@@ -32,83 +32,44 @@ export default function BottomSheet({
     // ---------- helpers ----------
     const pickInput = (inputs, expectedName) => {
         if (!inputs || !inputs.length) return null;
-
-        // 1) точное совпадение
         let chosen = inputs.find((i) => i?.name === expectedName);
         if (chosen) return chosen;
-
-        // 2) без учета регистра
         chosen = inputs.find(
             (i) => i?.name?.toLowerCase?.() === expectedName?.toLowerCase?.()
         );
         if (chosen) return chosen;
-
-        // 3) любой Trigger (у которого есть .fire)
         chosen = inputs.find((i) => typeof i?.fire === "function");
         if (chosen) return chosen;
-
-        // 4) любой Boolean (у которого есть boolean value)
         chosen = inputs.find((i) => typeof i?.value === "boolean");
-        if (chosen) return chosen;
-
-        return null;
+        return chosen || null;
     };
 
     const setTriggerFromRive = (rive, expectedName) => {
         try {
             const inputs = rive.stateMachineInputs(stateMachine) || [];
-            console.log("✅ Inputs found:", inputs.map((i) => i.name));
-            const chosen = pickInput(inputs, expectedName);
-            triggerInputRef.current = chosen || null;
-            console.log(
-                chosen
-                    ? `🎯 Using input: ${chosen.name}`
-                    : "⚠️ Could not pick any input (no trigger/boolean found)"
-            );
-        } catch (e) {
-            console.warn("⚠️ Cannot read stateMachineInputs:", e);
+            triggerInputRef.current = pickInput(inputs, expectedName);
+        } catch {
             triggerInputRef.current = null;
         }
     };
 
     const ensureTriggerOnce = () => {
-        // если по какой-то причине ещё не выбран — попробуем ещё раз дочитать
-        if (!riveRef.current) return;
-        if (triggerInputRef.current) return;
+        if (!riveRef.current || triggerInputRef.current) return;
         setTriggerFromRive(riveRef.current, trigger);
     };
 
     const fireRive = () => {
-        console.log("🟡 fireRive called, triggerInputRef =", triggerInputRef.current);
+        if (!triggerInputRef.current) ensureTriggerOnce();
+        const input = triggerInputRef.current;
+        if (!input) return;
 
-        // если по клику вдруг ещё не был подобран инпут — попробуем подобрать прямо сейчас
-        if (!triggerInputRef.current) {
-            ensureTriggerOnce();
-        }
-        if (!triggerInputRef.current) {
-            console.warn("⚠️ triggerInputRef is null, skipping fireRive()");
-            return;
-        }
+        window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("soft");
 
-        try {
-            window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("soft");
-
-            // приоритет для Trigger
-            if (typeof triggerInputRef.current.fire === "function") {
-                triggerInputRef.current.fire();
-                console.log("✅ Trigger fired");
-                return;
-            }
-            // запасной вариант — Boolean toggle
-            if (typeof triggerInputRef.current.value === "boolean") {
-                triggerInputRef.current.value = !triggerInputRef.current.value;
-                console.log("✅ Boolean toggled");
-                return;
-            }
-
-            console.warn("⚠️ Input exists but has unknown type:", triggerInputRef.current);
-        } catch (err) {
-            console.error("🔥 Error firing Rive input:", err);
+        if (typeof input.fire === "function") {
+            input.fire();
+        } else if (typeof input.value === "boolean") {
+            input.value = true;
+            setTimeout(() => (input.value = false), 200);
         }
     };
 
@@ -129,8 +90,11 @@ export default function BottomSheet({
     // ---------- Rive init ----------
     useEffect(() => {
         if (!open || !canvasRef.current) return;
+        if (riveRef.current) {
+            riveRef.current.play();
+            return;
+        }
 
-        console.log("🎨 Initializing Rive...");
         const canvas = canvasRef.current;
         const ratio = window.devicePixelRatio || 1;
         canvas.width = size * ratio;
@@ -142,25 +106,11 @@ export default function BottomSheet({
             src: riveFile,
             canvas,
             autoplay: true,
-            stateMachines: stateMachine, // стабильный путь
+            stateMachines: stateMachine,
             fit: "cover",
-            onLoad: () => {
-                console.log("✅ Rive loaded:", riveFile, "| SM:", stateMachine);
-
-                // 1) первая попытка сразу
-                setTriggerFromRive(rive, trigger);
-
-                // 2) если сразу не нашли — повторим через небольшой таймаут
-                if (!triggerInputRef.current) {
-                    setTimeout(() => {
-                        console.log("🔁 Retrying to bind input...");
-                        setTriggerFromRive(rive, trigger);
-                    }, 250);
-                }
-            },
+            onLoad: () => setTriggerFromRive(rive, trigger),
         });
 
-        // прозрачный фон (если доступен renderer)
         try {
             if (rive.renderer) rive.renderer.clearColor = [0, 0, 0, 0];
         } catch {}
@@ -168,7 +118,6 @@ export default function BottomSheet({
         riveRef.current = rive;
 
         return () => {
-            console.log("🧹 Cleanup Rive");
             try {
                 rive.cleanup();
             } catch {}
@@ -176,6 +125,13 @@ export default function BottomSheet({
             triggerInputRef.current = null;
         };
     }, [open, riveFile, stateMachine, trigger, size]);
+
+    // при закрытии просто пауза
+    useEffect(() => {
+        if (!open && riveRef.current) {
+            riveRef.current.pause();
+        }
+    }, [open]);
 
     const sheet = (
         <AnimatePresence>
@@ -201,9 +157,13 @@ export default function BottomSheet({
                     <motion.div
                         role="dialog"
                         aria-modal="true"
-                        initial={{ y: typeof window !== "undefined" ? window.innerHeight : 0 }}
+                        initial={{
+                            y: typeof window !== "undefined" ? window.innerHeight : 0,
+                        }}
                         animate={{ y: 0 }}
-                        exit={{ y: typeof window !== "undefined" ? window.innerHeight : 0 }}
+                        exit={{
+                            y: typeof window !== "undefined" ? window.innerHeight : 0,
+                        }}
                         transition={{ type: "spring", stiffness: 120, damping: 22 }}
                         drag="y"
                         dragListener={false}
@@ -232,7 +192,6 @@ export default function BottomSheet({
                             y,
                         }}
                     >
-                        {/* ручка */}
                         <div
                             onPointerDown={(e) => {
                                 e.preventDefault();
@@ -250,12 +209,11 @@ export default function BottomSheet({
                             }}
                         />
 
-                        {/* Rive-canvas */}
                         <canvas
                             ref={canvasRef}
-                            tabIndex={-1} // убирает возможность сфокусироваться
+                            tabIndex={-1}
                             onPointerUp={(e) => {
-                                e.preventDefault(); // <-- важно для мобилок
+                                e.preventDefault();
                                 e.stopPropagation();
                                 fireRive();
                             }}
@@ -275,12 +233,11 @@ export default function BottomSheet({
                                 userSelect: "none",
                                 touchAction: "none",
                                 outline: "none",
-                                WebkitTapHighlightColor: "transparent", // <-- убирает черный блип в Safari/Telegram
+                                WebkitTapHighlightColor: "transparent",
                                 position: "relative",
                                 zIndex: 2,
                             }}
                         />
-
 
                         <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>
                             Завершить игру?
