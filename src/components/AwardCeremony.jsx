@@ -25,7 +25,6 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
     }, [winners]);
 
     const hasExtraPlayers = totalPlayers > 3;
-
     const medals =
         totalPlayers === 2 ? [silverImg, goldImg] : [bronzeImg, silverImg, goldImg];
     const texts =
@@ -46,16 +45,14 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
     const [safeAreaTop, setSafeAreaTop] = useState(0);
     const [safeAreaBottom, setSafeAreaBottom] = useState(0);
 
-    const currentWinner =
-        ordered[step] ?? { name: "Игрок", emoji: "🙂", score: 0 };
+    const currentWinner = ordered[step] ?? { name: "Игрок", emoji: "🙂", score: 0 };
 
     // 📱 адаптация Telegram viewport + safe area
     useEffect(() => {
         const tg = window.Telegram?.WebApp;
 
         const updateViewport = () => {
-            if (tg?.viewportHeight) setViewportHeight(tg.viewportHeight);
-            else setViewportHeight(window.innerHeight);
+            setViewportHeight(tg?.viewportHeight || window.innerHeight);
         };
 
         const updateSafeArea = () => {
@@ -71,12 +68,8 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
                     ?.trim() || "0",
                 10
             );
-
-            const top = tg?.safeAreaInsetTop ?? topCSS ?? 0;
-            const bottom = tg?.safeAreaInsetBottom ?? bottomCSS ?? 0;
-
-            setSafeAreaTop(top);
-            setSafeAreaBottom(bottom);
+            setSafeAreaTop(tg?.safeAreaInsetTop ?? topCSS ?? 0);
+            setSafeAreaBottom(tg?.safeAreaInsetBottom ?? bottomCSS ?? 0);
         };
 
         updateViewport();
@@ -103,9 +96,7 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
         setAnimating(true);
         setShowMedal(false);
 
-        setTimeout(() => {
-            setPlaced((p) => [...p, step]);
-        }, 600);
+        setTimeout(() => setPlaced((p) => [...p, step]), 600);
 
         setTimeout(() => {
             setAnimating(false);
@@ -171,7 +162,6 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
         />
     );
 
-    // 🧮 Расчёт безопасного верхнего отступа (устраняет "уход вверх" в fullscreen)
     const safeTopOffset = Math.max(safeAreaTop, viewportHeight < 700 ? 64 : 48) + 120;
 
     return (
@@ -182,12 +172,7 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
             }}
         >
             {!final && (
-                <div
-                    style={{
-                        ...centerContainer,
-                        paddingTop: `${safeTopOffset}px`,
-                    }}
-                >
+                <div style={{ ...centerContainer, paddingTop: `${safeTopOffset}px` }}>
                     {showMedal && (
                         <motion.img
                             src={lightImg}
@@ -241,10 +226,7 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
                                                 opacity: 0,
                                                 transition: { duration: 0.3 },
                                             }}
-                                            transition={{
-                                                duration: 0.4,
-                                                ease: "easeOut",
-                                            }}
+                                            transition={{ duration: 0.4, ease: "easeOut" }}
                                         />
                                     ) : (
                                         <motion.div
@@ -293,14 +275,20 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
 
             <motion.div
                 layout
-                style={awardsContainer}
+                style={{
+                    ...awardsContainer,
+                    paddingBottom: `calc(${safeAreaBottom}px + 140px)`, // ↑ запас под bounce
+                }}
                 animate={
                     final
                         ? {
-                            y: -Math.min(viewportHeight * 0.25, 180),
+                            y: -Math.min(viewportHeight * 0.2, 160),
                             transition: { duration: 1.2, ease: [0.22, 1, 0.36, 1] },
                         }
-                        : { y: 0 }
+                        : {
+                            y: -20, // чуть выше baseline
+                            transition: { duration: 0.8, ease: "easeOut" },
+                        }
                 }
             >
                 <div style={growSpacer} />
@@ -319,10 +307,7 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
                                     key={`placed-${i}`}
                                     initial={{ scale: 0 }}
                                     animate={{ scale: [0, 1.3, 1] }}
-                                    transition={{
-                                        duration: 0.6,
-                                        ease: "easeOut",
-                                    }}
+                                    transition={{ duration: 0.6, ease: "easeOut" }}
                                     style={{ position: "relative" }}
                                 >
                                     <img src={medals[i]} alt="m" style={slotMedal} />
@@ -340,7 +325,6 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
                         </motion.div>
                     ))}
                 </motion.div>
-
                 <AnimatePresence mode="wait">
                     {final && hasExtraPlayers && (
                         <motion.div
@@ -418,13 +402,13 @@ const centerContainer = { position: "relative", width: "100%", minHeight: 260, d
 const lightStyle = { position: "absolute", width: 260, height: 260, transform: "translate(-50%, -50%)", opacity: 0.85 };
 const centerMedal = { position: "absolute", width: 200, height: 200, transform: "translate(-50%, -50%)", display: "flex", justifyContent: "center", alignItems: "center" };
 const waitingEmoji = { position: "absolute", width: 46, height: 46, top: "50%", left: "50%", transform: "translate(-50%, -50%)" };
-const emojiWrapper = { position: "absolute", width: 46, height: 46, transform: "translate(-50%, -50%)" };
+const emojiWrapper = { position: "absolute", width: 46, height: 46, top: "50%", left: "50%", transform: "translate(-50%, -50%)" };
 const medal = { width: 140, height: 180 };
 const textZone = { height: 80, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" };
 const placeText = { fontSize: 36, fontWeight: 700, color: "white" };
 const nameText = { fontSize: 32, fontWeight: 700, color: "white" };
 const scoreText = { fontSize: 22, color: "var(--icotex-lowest)" };
-const awardsContainer = { flex: 1, width: "100%", display: "flex", flexDirection: "column", alignItems: "stretch", justifyContent: "flex-end", overflowY: "auto", padding: "0 16px", boxSizing: "border-box" };
+const awardsContainer = { flex: 1, width: "100%", display: "flex", flexDirection: "column", alignItems: "stretch", justifyContent: "flex-end", overflowY: "visible", padding: "0 16px", boxSizing: "border-box", minHeight: 0 };
 const growSpacer = { flex: 1 };
 const slotContainer = { display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 24, width: "100%", marginBottom: 24 };
 const slot = { position: "relative", width: 88, height: 120, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" };
