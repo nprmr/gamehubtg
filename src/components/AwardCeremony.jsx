@@ -48,6 +48,14 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
 
     const currentWinner = ordered[step] ?? { name: "Игрок", emoji: "🙂", score: 0 };
 
+    // 👉 HAPTIC helper for Telegram Mini App (no-op elsewhere)
+    const haptic = (type = "light") => {
+        try {
+            const hf = window?.Telegram?.WebApp?.HapticFeedback;
+            hf?.impactOccurred?.(type);
+        } catch (_) {}
+    };
+
     // 📱 адаптация Telegram viewport + safe area + признак Telegram
     useEffect(() => {
         const tg = window.Telegram?.WebApp;
@@ -88,7 +96,9 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
             setRevealed(true);
             const power = [80, 150, 300][step] || 150;
             const spread = [60, 90, 120][step] || 100;
+            // fire confetti + haptic per shot
             confetti({ particleCount: power, spread, origin: { y: 0.6 } });
+            haptic(["light", "medium", "heavy"][step] || "medium");
         }, 1200);
         return () => clearTimeout(t);
     }, [step]);
@@ -124,7 +134,7 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
         onRestart?.();
     };
 
-    // 🎉 Финальное конфетти
+    // 🎉 Финальное конфетти (каждый залп + хаптик)
     useEffect(() => {
         if (final) {
             ["light", "medium", "heavy"].forEach((_, i) => {
@@ -135,6 +145,7 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
                         startVelocity: 40 + i * 10,
                         origin: { y: 0.6 - i * 0.1 },
                     });
+                    haptic(["light", "medium", "heavy"][i] || "medium");
                 }, i * 300);
             });
         }
