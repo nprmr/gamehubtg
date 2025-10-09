@@ -43,43 +43,48 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
         typeof window !== "undefined" ? window.innerHeight : 800
     );
     const [showMedal, setShowMedal] = useState(true);
-
-    // 🧠 Безопасные отступы (safe area)
     const [safeAreaTop, setSafeAreaTop] = useState(0);
     const [safeAreaBottom, setSafeAreaBottom] = useState(0);
 
+    const currentWinner =
+        ordered[step] ?? { name: "Игрок", emoji: "🙂", score: 0 };
+
+    // 📱 адаптация Telegram viewport + safe area
     useEffect(() => {
         const tg = window.Telegram?.WebApp;
 
+        const updateViewport = () => {
+            if (tg?.viewportHeight) setViewportHeight(tg.viewportHeight);
+            else setViewportHeight(window.innerHeight);
+        };
+
         const updateSafeArea = () => {
-            const top = tg?.safeAreaInsetTop ?? parseInt(
+            const topCSS = parseInt(
                 getComputedStyle(document.documentElement)
-                    .getPropertyValue("--tg-content-safe-area-inset-top") || "0", 10
+                    .getPropertyValue("--tg-content-safe-area-inset-top")
+                    ?.trim() || "0",
+                10
             );
-            const bottom = tg?.safeAreaInsetBottom ?? parseInt(
+            const bottomCSS = parseInt(
                 getComputedStyle(document.documentElement)
-                    .getPropertyValue("--tg-content-safe-area-inset-bottom") || "0", 10
+                    .getPropertyValue("--tg-content-safe-area-inset-bottom")
+                    ?.trim() || "0",
+                10
             );
+
+            const top = tg?.safeAreaInsetTop ?? topCSS ?? 0;
+            const bottom = tg?.safeAreaInsetBottom ?? bottomCSS ?? 0;
+
             setSafeAreaTop(top);
             setSafeAreaBottom(bottom);
         };
 
-        const updateViewport = () => {
-            if (tg?.viewportHeight) {
-                setViewportHeight(tg.viewportHeight);
-            } else {
-                setViewportHeight(window.innerHeight);
-            }
-        };
-
-        tg?.onEvent?.("viewportChanged", updateViewport);
         updateViewport();
         updateSafeArea();
 
+        tg?.onEvent?.("viewportChanged", updateViewport);
         return () => tg?.offEvent?.("viewportChanged", updateViewport);
     }, []);
-
-    const currentWinner = ordered[step] ?? { name: "Игрок", emoji: "🙂", score: 0 };
 
     // ✨ Эффекты на каждом шаге
     useEffect(() => {
@@ -142,7 +147,6 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
         }
     }, [final]);
 
-    // ✅ Emoji renderer
     const renderEmoji = (emoji, small = false, sizeOverride, absolute = false) => (
         <div
             style={{
@@ -167,6 +171,9 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
         />
     );
 
+    // 🧮 Расчёт безопасного верхнего отступа (устраняет "уход вверх" в fullscreen)
+    const safeTopOffset = Math.max(safeAreaTop, viewportHeight < 700 ? 64 : 48) + 120;
+
     return (
         <motion.div
             style={{
@@ -178,7 +185,7 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
                 <div
                     style={{
                         ...centerContainer,
-                        paddingTop: `${safeAreaTop + 160}px`,
+                        paddingTop: `${safeTopOffset}px`,
                     }}
                 >
                     {showMedal && (
@@ -193,7 +200,6 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
                         />
                     )}
 
-                    {/* --- Медаль + Emoji анимация --- */}
                     <AnimatePresence mode="wait">
                         {showMedal && (
                             <motion.div
@@ -367,7 +373,6 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
                 </AnimatePresence>
             </motion.div>
 
-            {/* Кнопки */}
             <div
                 style={{
                     ...fixedButtons,
@@ -407,7 +412,7 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
     );
 }
 
-/* === Стили без изменений, кроме layout === */
+/* === стили === */
 const overlay = { position: "fixed", top: 0, left: 0, width: "100vw", height: "100dvh", backgroundColor: "var(--surface-main)", display: "flex", flexDirection: "column", boxSizing: "border-box", overflow: "hidden" };
 const centerContainer = { position: "relative", width: "100%", minHeight: 260, display: "flex", justifyContent: "center", alignItems: "center", transition: "all 0.4s ease" };
 const lightStyle = { position: "absolute", width: 260, height: 260, transform: "translate(-50%, -50%)", opacity: 0.85 };
