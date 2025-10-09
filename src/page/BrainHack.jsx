@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion"; // ✅ добавили AnimatePresence
+import { motion } from "framer-motion"; // ✅ без AnimatePresence
 import { useNavigate } from "react-router-dom";
 import IconButton from "../components/IconButton";
 import SettingsIcon from "../icons/Settings.svg?react";
@@ -47,6 +47,7 @@ function BrainHack() {
         return () => window.removeEventListener("resize", measure);
     }, []);
 
+    // ✅ Добавление игрока
     const handleAddPlayer = () => {
         if (players.length < maxPlayers) {
             const usedEmojis = players.map((p) => p.emojiData?.emoji);
@@ -76,7 +77,7 @@ function BrainHack() {
         );
     };
 
-    // 🗑️ Удаление игрока с защитой и анимацией
+    // 🗑️ Удаление игрока (с защитой)
     const handleRemovePlayer = (id) => {
         setPlayers((prev) => {
             const idx = prev.findIndex((p) => p.id === id);
@@ -91,14 +92,11 @@ function BrainHack() {
                 return prev;
             }
 
-            // просто удаляем из массива (AnimatePresence обработает анимацию)
-            return prev.filter((p) => p.id !== id);
+            const updated = prev.filter((p) => p.id !== id);
+            const newIndex = Math.max(0, Math.min(activeIndex, updated.length - 1));
+            setTimeout(() => setActiveIndex(newIndex), 50);
+            return updated;
         });
-
-        // сдвигаем активный индекс чуть позже
-        setTimeout(() => {
-            setActiveIndex((prev) => Math.max(0, prev - 1));
-        }, 200);
     };
 
     const handleOpenPremium = () => {
@@ -110,12 +108,14 @@ function BrainHack() {
         });
     };
 
+    // ✅ убрали лишний haptic — он уже внутри PrimaryButton
     const handlePlay = () => {
         const shuffled = [...players].sort(() => Math.random() - 0.5);
         navigate("/brainhackgame", { state: { players: shuffled } });
     };
 
     const isMaxPlayers = players.length >= maxPlayers;
+
     const step = cardWidth + GAP;
     const totalCards = players.length + 1;
     const totalWidth =
@@ -135,19 +135,6 @@ function BrainHack() {
     const goTo = (i) => {
         const clamped = Math.max(0, Math.min(i, totalCards - 1));
         setActiveIndex(clamped);
-    };
-
-    // 🔮 варианты анимации карточки
-    const cardVariants = {
-        initial: { opacity: 0, scale: 0.9, y: 20 },
-        animate: { opacity: 1, scale: 1, y: 0, rotate: 0 },
-        exit: {
-            opacity: 0,
-            x: 120,          // 👉 уезжает вправо
-            rotate: 15,      // лёгкий поворот
-            scale: 0.8,
-            transition: { duration: 0.3, ease: "easeInOut" },
-        },
     };
 
     return (
@@ -219,6 +206,7 @@ function BrainHack() {
                     >
                         Мозголомка
                     </h1>
+
                     <p
                         style={{
                             fontFamily: "Gilroy, sans-serif",
@@ -232,6 +220,7 @@ function BrainHack() {
                     >
                         Можно добавить до 5 игроков
                     </p>
+
                     <p
                         style={{
                             fontFamily: "Gilroy, sans-serif",
@@ -273,64 +262,57 @@ function BrainHack() {
                         dragMomentum={false}
                         animate={{ x: getXForIndex(activeIndex) }}
                         transition={{ type: "spring", stiffness: 220, damping: 28 }}
-                    >
-                        <AnimatePresence initial={false}>
-                            {players.map((player, i) => (
-                                <motion.div
-                                    key={player.id}
-                                    ref={i === 0 ? firstItemRef : undefined}
-                                    style={{ flex: "0 0 auto" }}
-                                    variants={cardVariants}
-                                    initial="initial"
-                                    animate="animate"
-                                    exit="exit"
-                                    layout
-                                >
-                                    <PlayerCard
-                                        id={player.id}
-                                        state={player.state}
-                                        playerNumber={i + 1}
-                                        emojiData={player.emojiData}
-                                        onUpdate={(data) => handleUpdatePlayer(player.id, data)}
-                                        onRemove={() => handleRemovePlayer(player.id)}
-                                        canRemove={i >= 2}
-                                    />
-                                </motion.div>
-                            ))}
+                        onDragEnd={(_, info) => {
+                            const { offset, velocity } = info;
+                            const dx = offset.x;
+                            const vx = velocity.x;
+                            const swipePower = Math.abs(dx) * 0.4 + Math.abs(vx) * 20;
+                            const threshold = step * 0.25;
 
-                            {!isMaxPlayers ? (
-                                <motion.div
-                                    key="add-player"
-                                    style={{ flex: "0 0 auto" }}
-                                    variants={cardVariants}
-                                    initial="initial"
-                                    animate="animate"
-                                    exit="exit"
-                                >
-                                    <PlayerCard
-                                        id="add-player"
-                                        state="add"
-                                        playerNumber={players.length + 1}
-                                        onAdd={handleAddPlayer}
-                                    />
-                                </motion.div>
-                            ) : (
-                                <motion.div
-                                    key="premium-card"
-                                    style={{ flex: "0 0 auto" }}
-                                    variants={cardVariants}
-                                    initial="initial"
-                                    animate="animate"
-                                    exit="exit"
-                                >
-                                    <PlayerCard
-                                        id="premium-card"
-                                        state="premium"
-                                        onOpenPremium={handleOpenPremium}
-                                    />
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
+                            if (Math.abs(dx) > threshold || swipePower > 300) {
+                                if (dx < 0) goTo(activeIndex + 1);
+                                else goTo(activeIndex - 1);
+                            } else {
+                                goTo(activeIndex);
+                            }
+                        }}
+                    >
+                        {players.map((player, i) => (
+                            <div
+                                key={player.id}
+                                ref={i === 0 ? firstItemRef : undefined}
+                                style={{ flex: "0 0 auto" }}
+                            >
+                                <PlayerCard
+                                    id={player.id}
+                                    state={player.state}
+                                    playerNumber={i + 1}
+                                    emojiData={player.emojiData}
+                                    onUpdate={(data) => handleUpdatePlayer(player.id, data)}
+                                    onRemove={() => handleRemovePlayer(player.id)}
+                                    canRemove={i >= 2}
+                                />
+                            </div>
+                        ))}
+
+                        {!isMaxPlayers ? (
+                            <div style={{ flex: "0 0 auto" }}>
+                                <PlayerCard
+                                    id="add-player"
+                                    state="add"
+                                    playerNumber={players.length + 1}
+                                    onAdd={handleAddPlayer}
+                                />
+                            </div>
+                        ) : (
+                            <div style={{ flex: "0 0 auto" }}>
+                                <PlayerCard
+                                    id="premium-card"
+                                    state="premium"
+                                    onOpenPremium={handleOpenPremium}
+                                />
+                            </div>
+                        )}
                     </motion.div>
                 </div>
             </div>
