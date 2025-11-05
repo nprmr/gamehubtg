@@ -1,5 +1,5 @@
 // src/screens/NeverEver.jsx
-import React, { useState } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import "../theme.css";
@@ -24,15 +24,15 @@ function NeverEver() {
     });
     const navigate = useNavigate();
 
-    const toggleCategory = (title) => {
+    const toggleCategory = useCallback((title) => {
         setSelectedCategories((prev) =>
             prev.includes(title)
                 ? prev.filter((t) => t !== title)
                 : [...prev, title]
         );
-    };
+    }, []);
 
-    const openLockedCategory = async (cat) => {
+    const openLockedCategory = useCallback(async (cat) => {
         try {
             const data = await getQuestionsByCategory(cat.title);
             setLockedSheet({
@@ -46,7 +46,27 @@ function NeverEver() {
             console.error("Ошибка загрузки вопросов:", err);
             setLockedSheet({ open: true, category: cat, phrases: [] });
         }
-    };
+    }, []);
+
+    const handleCloseSheet = useCallback(() => {
+        setLockedSheet({ open: false, category: null, phrases: [] });
+    }, []);
+
+    const handleNavigateHome = useCallback(() => {
+        navigate("/", { replace: true });
+    }, [navigate]);
+
+    const handlePlay = useCallback(() => {
+        if (hasOnboarded()) {
+            navigate("/game", {
+                state: { categories: selectedCategories },
+            });
+        } else {
+            navigate("/onboarding", {
+                state: { categories: selectedCategories, from: "/neverever" },
+            });
+        }
+    }, [navigate, selectedCategories]);
 
     if (loading) {
         return (
@@ -67,10 +87,10 @@ function NeverEver() {
         );
     }
 
-    const safeCategories = Array.isArray(categories) ? categories : [];
-    const half = Math.ceil(safeCategories.length / 2);
-    const topRow = safeCategories.slice(0, half);
-    const bottomRow = safeCategories.slice(half);
+    const safeCategories = useMemo(() => (Array.isArray(categories) ? categories : []), [categories]);
+    const half = useMemo(() => Math.ceil(safeCategories.length / 2), [safeCategories.length]);
+    const topRow = useMemo(() => safeCategories.slice(0, half), [safeCategories, half]);
+    const bottomRow = useMemo(() => safeCategories.slice(half), [safeCategories, half]);
 
     return (
         <div
@@ -227,7 +247,7 @@ function NeverEver() {
                     gap: 8,
                 }}
             >
-                <IconPrimaryButton onClick={() => navigate("/", { replace: true })} />
+                <IconPrimaryButton onClick={handleNavigateHome} />
                 {selectedCategories.length === 0 ? (
                     <PrimaryButton textColor="var(--icotex-white-alfa)" disabled>
                         Выберите категории
@@ -235,17 +255,7 @@ function NeverEver() {
                 ) : (
                     <PrimaryButton
                         textColor="var(--icotex-white)"
-                        onClick={() => {
-                            if (hasOnboarded()) {
-                                navigate("/game", {
-                                    state: { categories: selectedCategories },
-                                });
-                            } else {
-                                navigate("/onboarding", {
-                                    state: { categories: selectedCategories, from: "/neverever" },
-                                });
-                            }
-                        }}
+                        onClick={handlePlay}
                         description={`Выбрано категорий ${selectedCategories.length}`}
                     >
                         Играть
@@ -256,9 +266,7 @@ function NeverEver() {
             {/* BottomSheet для заблокированных */}
             <LockedCategorySheet
                 open={lockedSheet.open}
-                onClose={() =>
-                    setLockedSheet({ open: false, category: null, phrases: [] })
-                }
+                onClose={handleCloseSheet}
                 categoryTitle={lockedSheet.category?.title}
                 riveFile={lockedSheet.category?.riveFile}
                 phrases={lockedSheet.phrases}
