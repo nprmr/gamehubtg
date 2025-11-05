@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef, useCallback } from "react";
 import { useRive, useStateMachineInput } from "@rive-app/react-canvas";
 
 export default function RivePlayer({
@@ -11,6 +11,8 @@ export default function RivePlayer({
                                        width = 128,   // дефолтный размер
                                        height = 128,  // дефолтный размер
                                        background = "transparent", // можно задать фон
+                                       className,
+                                       ariaLabel,
                                    }) {
     const { rive, RiveComponent } = useRive({
         src,
@@ -19,6 +21,7 @@ export default function RivePlayer({
     });
 
     const triggerInput = useStateMachineInput(rive, stateMachine, trigger);
+    const containerRef = useRef(null);
 
     // 🔹 Автозапуск для bool input
     useEffect(() => {
@@ -44,7 +47,7 @@ export default function RivePlayer({
     }, [autoTrigger, triggerInput]);
 
     // 🔹 Клик-триггер
-    const handleClick = () => {
+    const handleClick = useCallback(() => {
         if (!triggerInput) return;
 
         try {
@@ -53,14 +56,16 @@ export default function RivePlayer({
             } else if (triggerInput.fire) {
                 triggerInput.fire();
             }
+            window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("light");
         } catch (e) {
             console.warn("Ошибка при handleClick:", e);
         }
-    };
+    }, [triggerInput]);
 
     // 🔹 Фикс размеров + clearColor для Telegram WebApp
     useEffect(() => {
-        const canvas = document.querySelector(".rive-container canvas");
+        const container = containerRef.current;
+        const canvas = container?.querySelector?.("canvas");
         if (canvas) {
             canvas.setAttribute("width", String(width));
             canvas.setAttribute("height", String(height));
@@ -82,6 +87,8 @@ export default function RivePlayer({
 
     return (
         <div
+            ref={containerRef}
+            className={className}
             style={{
                 width,
                 height,
@@ -93,6 +100,7 @@ export default function RivePlayer({
                 className="rive-container"
                 tabIndex={-1} // убираем фокусировку
                 onClick={clickToTrigger ? handleClick : undefined}
+                aria-label={ariaLabel}
                 style={{
                     width: "100%",
                     height: "100%",

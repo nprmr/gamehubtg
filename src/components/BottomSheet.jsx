@@ -21,6 +21,8 @@ export default function BottomSheet({
                                         trigger = "clickTrigger",
                                         size = 128,
                                     }) {
+    const Z_INDEX_OVERLAY = 2147483646;
+    const Z_INDEX_SHEET = 2147483647;
     const y = useMotionValue(0);
     const overlayOpacity = useTransform(y, [0, 300], [0.5, 0]);
 
@@ -133,6 +135,26 @@ export default function BottomSheet({
         }
     }, [open]);
 
+    // ---------- UX: lock scroll and close on Escape ----------
+    useEffect(() => {
+        if (!open) return;
+
+        const previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+
+        const onKeyDown = (e) => {
+            if (e.key === "Escape") {
+                onClose?.();
+            }
+        };
+        window.addEventListener("keydown", onKeyDown);
+
+        return () => {
+            document.body.style.overflow = previousOverflow;
+            window.removeEventListener("keydown", onKeyDown);
+        };
+    }, [open, onClose]);
+
     const sheet = (
         <AnimatePresence>
             {open && (
@@ -140,13 +162,12 @@ export default function BottomSheet({
                     {/* overlay */}
                     <motion.div
                         initial={{ opacity: 0 }}
-                        animate={{ opacity: 0.5 }}
                         exit={{ opacity: 0 }}
                         style={{
                             position: "fixed",
                             inset: 0,
                             backgroundColor: "rgba(0,0,0,0.5)",
-                            zIndex: 2147483646,
+                            zIndex: Z_INDEX_OVERLAY,
                             opacity: overlayOpacity,
                             pointerEvents: "auto",
                         }}
@@ -183,7 +204,7 @@ export default function BottomSheet({
                             borderTopLeftRadius: 24,
                             borderTopRightRadius: 24,
                             padding: 16,
-                            zIndex: 2147483647,
+                            zIndex: Z_INDEX_SHEET,
                             display: "flex",
                             flexDirection: "column",
                             alignItems: "center",

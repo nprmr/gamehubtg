@@ -1,7 +1,7 @@
 import { useRive } from "@rive-app/react-canvas";
 import FlatButton from "../components/FlatButton";
 
-export default function NoWordsCard({ onChangeCategory }) {
+export default function NoWordsCard({ onChangeCategory, className }) {
     const { RiveComponent } = useRive({
         src: "/rive/nowords.riv",
         stateMachines: "State Machine 1", // 👈 правильное имя
@@ -10,6 +10,7 @@ export default function NoWordsCard({ onChangeCategory }) {
 
     return (
         <div
+            className={className}
             style={{
                 width: "100%",
                 backgroundColor: "var(--surface-normal-alfa)",
@@ -21,7 +22,7 @@ export default function NoWordsCard({ onChangeCategory }) {
                 justifyContent: "center",
             }}
         >
-            <div style={{ width: 128, height: 128, marginBottom: 8 }}>
+            <div style={{ width: 128, height: 128, marginBottom: 8 }} aria-hidden="true">
                 <RiveComponent />
             </div>
 

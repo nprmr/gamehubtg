@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo, useCallback } from "react";
 import { useRive, useStateMachineInput } from "@rive-app/react-canvas";
 import "../theme.css";
 
@@ -50,7 +50,7 @@ function CategoryCard({
         }
     }, [activationInput]);
 
-    const handleClick = () => {
+    const handleClick = useCallback(() => {
         // 👉 теперь не блокируем клик, а просто отдаём наружу
         if (onClick) {
             onClick();
@@ -64,20 +64,33 @@ function CategoryCard({
                 activationInput.fire(); // fallback если вдруг trigger
             }
         }
-    };
+    }, [onClick, locked, activationInput]);
+
+    const handleKeyDown = useCallback((e) => {
+        if (locked) return;
+        if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            handleClick();
+        }
+    }, [locked, handleClick]);
 
     // иконки (по умолчанию — из /icons)
     const adultIconSrc = badgeIcons.adult || adultIcon;
     const lockIconSrc = badgeIcons.lock || lockIcon;
 
-    const badges = [
+    const badges = useMemo(() => ([
         adult ? { key: "adult", src: adultIconSrc, alt: "18+" } : null,
         locked ? { key: "lock", src: lockIconSrc, alt: "locked" } : null,
-    ].filter(Boolean);
+    ].filter(Boolean)), [adult, locked, adultIconSrc, lockIconSrc]);
 
     return (
         <div
             onClick={handleClick}
+            onKeyDown={handleKeyDown}
+            role="button"
+            tabIndex={locked ? -1 : 0}
+            aria-pressed={selected}
+            aria-disabled={locked}
             style={{
                 width: "156px",
                 height: "172px",
@@ -96,6 +109,7 @@ function CategoryCard({
                 cursor: locked ? "not-allowed" : "pointer",
                 position: "relative",
                 transition: "transform 0.2s ease",
+                outline: "none",
             }}
         >
             {/* Rive 92x92 */}

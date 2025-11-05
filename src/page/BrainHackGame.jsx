@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import IconButton from "../components/IconButton";
@@ -69,11 +69,14 @@ export default function BrainHackGame({ onShowOnboarding }) {
         ],
     ];
 
-    const currentQuestions = localQuestions[(round + currentIndex) % localQuestions.length];
+    const currentQuestions = useMemo(
+        () => localQuestions[(round + currentIndex) % localQuestions.length],
+        [localQuestions, round, currentIndex]
+    );
 
-    const handleBackClick = () => setShowSheet(true);
+    const handleBackClick = useCallback(() => setShowSheet(true), []);
 
-    const handleScoresUpdate = ({ guessedBy, nobodyGuessed, awardedTo }) => {
+    const handleScoresUpdate = useCallback(({ guessedBy, nobodyGuessed, awardedTo }) => {
         setScores((prev) => {
             const updated = [...prev];
             if (nobodyGuessed && awardedTo != null) {
@@ -100,15 +103,17 @@ export default function BrainHackGame({ onShowOnboarding }) {
                 setTimeout(() => setPhase("award"), 800);
             }
         }
-    };
+    }, [players.length, currentIndex, round]);
 
-    const winners = [...players]
-        .map((p, i) => ({
-            name: p.emojiData?.name || "Игрок",
-            emoji: p.emojiData?.emoji || "🙂",
-            score: scores[i],
-        }))
-        .sort((a, b) => b.score - a.score);
+    const winners = useMemo(() => (
+        [...players]
+            .map((p, i) => ({
+                name: p.emojiData?.name || "Игрок",
+                emoji: p.emojiData?.emoji || "🙂",
+                score: scores[i],
+            }))
+            .sort((a, b) => b.score - a.score)
+    ), [players, scores]);
 
     if (!isLoaded) {
         return (

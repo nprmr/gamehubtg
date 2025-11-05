@@ -1,16 +1,39 @@
-import React from "react";
+import React, { forwardRef, useCallback } from "react";
 import "../theme.css";
 import { useRive } from "@rive-app/react-canvas";
 
-function GameCard({ title, subtitle, label, players, categories, riveAnimation }) {
+const GameCard = forwardRef(function GameCard({
+    title,
+    subtitle,
+    label,
+    players,
+    categories,
+    riveAnimation,
+    onClick,
+    className,
+}, ref) {
     // Хук вызывается всегда (ESLint не будет ругаться)
     const { RiveComponent } = useRive({
         src: riveAnimation || "", // если пусто, хук всё равно вызовется
         autoplay: true,
     });
 
+    const handleKeyDown = useCallback((e) => {
+        if (!onClick) return;
+        if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onClick(e);
+        }
+    }, [onClick]);
+
     return (
         <div
+            ref={ref}
+            className={className}
+            onClick={onClick}
+            onKeyDown={handleKeyDown}
+            role={onClick ? "button" : undefined}
+            tabIndex={onClick ? 0 : undefined}
             style={{
                 width: "300px",
                 height: "292px",
@@ -22,6 +45,7 @@ function GameCard({ title, subtitle, label, players, categories, riveAnimation }
                 flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "space-between",
+                cursor: onClick ? "pointer" : "default",
             }}
         >
             {/* Метка сверху */}
@@ -172,6 +196,6 @@ function GameCard({ title, subtitle, label, players, categories, riveAnimation }
             )}
         </div>
     );
-}
+});
 
 export default GameCard;

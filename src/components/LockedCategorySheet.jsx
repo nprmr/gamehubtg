@@ -1,35 +1,46 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, forwardRef, useCallback, useRef } from "react";
 import { useRive } from "@rive-app/react-canvas";
 import PlayerAddIcon from "../icons/addPlayer.svg?react";
 import { emojiMap } from "../data/emojiMap";
 import { theme } from "../theme";
 
-export default function PlayerCard({
+const PlayerCard = forwardRef(function PlayerCard({
                                        id,
                                        state = "active", // "active" | "add" | "premium"
                                        playerNumber = 1,
                                        onAdd = () => {},
                                        onEditTitle = () => {},
                                        onOpenPremium = () => {},
-                                   }) {
+                                   }, ref) {
     const [emojiData, setEmojiData] = useState(randomEmojiData());
+    const hapticRef = useRef(false);
 
     function randomEmojiData() {
         return emojiMap[Math.floor(Math.random() * emojiMap.length)];
     }
 
-    const handleEmojiClick = () => {
+    const handleEmojiClick = useCallback(() => {
         const newEmoji = randomEmojiData();
         setEmojiData(newEmoji);
-    };
+    }, []);
 
-    const handleTitleClick = () => {
+    const handleTitleClick = useCallback(() => {
         const newTitle = prompt("Введите новый заголовок", emojiData.name);
         if (newTitle) {
             setEmojiData({ ...emojiData, name: newTitle });
             onEditTitle(newTitle);
         }
-    };
+    }, [emojiData, onEditTitle]);
+
+    const hapticStart = useCallback(() => {
+        if (!hapticRef.current) {
+            hapticRef.current = true;
+            window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("light");
+        }
+    }, []);
+    const hapticEnd = useCallback(() => {
+        hapticRef.current = false;
+    }, []);
 
     // 🎨 Общие стили
     const styles = {
@@ -104,7 +115,19 @@ export default function PlayerCard({
         return (
             <div
                 id={id}
+                ref={ref}
                 onClick={onAdd}
+                onPointerDown={hapticStart}
+                onPointerUp={hapticEnd}
+                onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        onAdd();
+                    }
+                }}
+                role="button"
+                tabIndex={0}
+                aria-label={`Добавить игрока ${playerNumber}`}
                 style={{
                     ...styles.cardBase,
                     backgroundColor: theme.surface.normalAlfa,
@@ -178,7 +201,19 @@ export default function PlayerCard({
         return (
             <div
                 id={id}
+                ref={ref}
                 onClick={onOpenPremium}
+                onPointerDown={hapticStart}
+                onPointerUp={hapticEnd}
+                onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        onOpenPremium();
+                    }
+                }}
+                role="button"
+                tabIndex={0}
+                aria-label="Открыть премиум"
                 style={{
                     ...styles.cardBase,
                     backgroundColor: theme.surface.normalAlfa,
@@ -236,4 +271,6 @@ export default function PlayerCard({
     }
 
     return null;
-}
+});
+
+export default PlayerCard;

@@ -1,41 +1,45 @@
-import React, { useRef } from "react";
+import React, { useRef, useCallback, forwardRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import "../theme.css";
 
-function FlatButton({
+const FlatButton = forwardRef(function FlatButton({
                         children,
                         onClick,
                         disabled = false,
                         description,
-                    }) {
+                        type = "button",
+                        className,
+                    }, ref) {
     const hapticTriggered = useRef(false);
 
-    const handleClick = (e) => {
+    const handleClick = useCallback((e) => {
         if (disabled) return;
         onClick?.(e);
         // 👇 сбрасываем флаг после клика
         hapticTriggered.current = false;
-    };
+    }, [disabled, onClick]);
 
-    const handlePressStart = () => {
+    const handlePressStart = useCallback(() => {
         if (!disabled && !hapticTriggered.current) {
             hapticTriggered.current = true;
             window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("light");
         }
-    };
+    }, [disabled]);
 
-    const handlePressEnd = () => {
+    const handlePressEnd = useCallback(() => {
         hapticTriggered.current = false;
-    };
+    }, []);
 
     return (
-        <button
+        <motion.button
+            ref={ref}
             onClick={handleClick}
-            onMouseDown={handlePressStart}
-            onTouchStart={handlePressStart}
-            onMouseUp={handlePressEnd}
-            onTouchEnd={handlePressEnd}
+            onPointerDown={handlePressStart}
+            onPointerUp={handlePressEnd}
             disabled={disabled}
+            type={type}
+            className={className}
+            whileTap={disabled ? undefined : { scale: 0.985 }}
             style={{
                 display: "flex",
                 flexDirection: "column",
@@ -51,7 +55,6 @@ function FlatButton({
                 fontFamily: "Gilroy, sans-serif",
                 backdropFilter: "blur(20px)",
                 WebkitBackdropFilter: "blur(20px)",
-                transition: "transform 0.1s ease",
                 boxSizing: "border-box",
                 overflow: "hidden",
                 outline: "none",
@@ -60,18 +63,6 @@ function FlatButton({
                 WebkitTouchCallout: "none",
                 userSelect: "none",
             }}
-            onMouseLeave={(e) =>
-                !disabled && (e.currentTarget.style.transform = "scale(1)")
-            }
-            onMouseUp={(e) =>
-                !disabled && (e.currentTarget.style.transform = "scale(1)")
-            }
-            onTouchEnd={(e) =>
-                !disabled && (e.currentTarget.style.transform = "scale(1)")
-            }
-            onMouseDownCapture={(e) =>
-                !disabled && (e.currentTarget.style.transform = "scale(0.985)")
-            }
         >
       <span
           style={{
@@ -104,8 +95,8 @@ function FlatButton({
                     </motion.span>
                 )}
             </AnimatePresence>
-        </button>
+        </motion.button>
     );
-}
+});
 
 export default FlatButton;

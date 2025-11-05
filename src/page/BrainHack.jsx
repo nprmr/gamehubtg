@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { motion } from "framer-motion"; // ✅ без AnimatePresence
 import { useNavigate } from "react-router-dom";
 import IconButton from "../components/IconButton";
@@ -48,7 +48,7 @@ function BrainHack() {
     }, []);
 
     // ✅ Добавление игрока
-    const handleAddPlayer = () => {
+    const handleAddPlayer = useCallback(() => {
         if (players.length < maxPlayers) {
             const usedEmojis = players.map((p) => p.emojiData?.emoji);
             const availableEmojis = emojiMap.filter(
@@ -69,16 +69,14 @@ function BrainHack() {
                 return updated;
             });
         }
-    };
+    }, [players, maxPlayers]);
 
-    const handleUpdatePlayer = (id, updatedData) => {
-        setPlayers((prev) =>
-            prev.map((p) => (p.id === id ? { ...p, ...updatedData } : p))
-        );
-    };
+    const handleUpdatePlayer = useCallback((id, updatedData) => {
+        setPlayers((prev) => prev.map((p) => (p.id === id ? { ...p, ...updatedData } : p)));
+    }, []);
 
     // 🗑️ Удаление игрока (с защитой)
-    const handleRemovePlayer = (id) => {
+    const handleRemovePlayer = useCallback((id) => {
         setPlayers((prev) => {
             const idx = prev.findIndex((p) => p.id === id);
 
@@ -97,22 +95,22 @@ function BrainHack() {
             setTimeout(() => setActiveIndex(newIndex), 50);
             return updated;
         });
-    };
+    }, [activeIndex]);
 
-    const handleOpenPremium = () => {
+    const handleOpenPremium = useCallback(() => {
         window.Telegram?.WebApp?.showPopup({
             title: "Премиум",
             message:
                 "Добавьте больше игроков и получите доступ к новым карточкам с премиум-аккаунтом!",
             buttons: [{ id: "ok", type: "close", text: "Ок" }],
         });
-    };
+    }, []);
 
     // ✅ убрали лишний haptic — он уже внутри PrimaryButton
-    const handlePlay = () => {
+    const handlePlay = useCallback(() => {
         const shuffled = [...players].sort(() => Math.random() - 0.5);
         navigate("/brainhackgame", { state: { players: shuffled } });
-    };
+    }, [players, navigate]);
 
     const isMaxPlayers = players.length >= maxPlayers;
 
@@ -124,18 +122,18 @@ function BrainHack() {
     const minX = Math.min(0, viewportWidth - totalWidth + SIDE_PADDING);
     const maxX = SIDE_PADDING;
 
-    const getXForIndex = (i) => {
+    const getXForIndex = useCallback((i) => {
         const base = -(i * step) + SIDE_PADDING;
         const lastIndex = totalCards - 1;
         const maxScroll = viewportWidth - totalWidth + SIDE_PADDING;
         if (i === lastIndex && base < maxScroll) return maxScroll;
         return base;
-    };
+    }, [step, SIDE_PADDING, totalCards, viewportWidth, totalWidth]);
 
-    const goTo = (i) => {
+    const goTo = useCallback((i) => {
         const clamped = Math.max(0, Math.min(i, totalCards - 1));
         setActiveIndex(clamped);
-    };
+    }, [totalCards]);
 
     return (
         <div

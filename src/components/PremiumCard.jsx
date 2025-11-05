@@ -1,12 +1,21 @@
-import { useEffect } from "react";
+import { useEffect, forwardRef, useRef, useCallback } from "react";
 import { useRive } from "@rive-app/react-canvas";
 
-export default function PremiumCard({ id, onOpenPremium, theme, styles }) {
+const PremiumCard = forwardRef(function PremiumCard({ id, onOpenPremium, theme, styles, className }, ref) {
     const { rive, RiveComponent } = useRive({
         src: "/rive/crystall.riv",
         stateMachines: "State Machine 1",
         autoplay: true,
     });
+
+    const hapticRef = useRef(false);
+    const hapticStart = useCallback(() => {
+        if (!hapticRef.current) {
+            hapticRef.current = true;
+            window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("medium");
+        }
+    }, []);
+    const hapticEnd = useCallback(() => { hapticRef.current = false; }, []);
 
     useEffect(() => {
         return () => {
@@ -17,7 +26,20 @@ export default function PremiumCard({ id, onOpenPremium, theme, styles }) {
     return (
         <div
             id={id}
+            ref={ref}
+            className={className}
             onClick={onOpenPremium}
+            onPointerDown={hapticStart}
+            onPointerUp={hapticEnd}
+            onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onOpenPremium?.();
+                }
+            }}
+            role="button"
+            tabIndex={0}
+            aria-label="Открыть премиум"
             style={{
                 ...styles.cardBase,
                 backgroundColor: theme.surface.normalAlfa,
@@ -72,4 +94,6 @@ export default function PremiumCard({ id, onOpenPremium, theme, styles }) {
             </div>
         </div>
     );
-}
+});
+
+export default PremiumCard;

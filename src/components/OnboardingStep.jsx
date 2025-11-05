@@ -72,9 +72,15 @@ const textVariants = {
     exit: { y: -40, opacity: 0, transition: { duration: 0.3 } },
 };
 
-function OnboardingStep({ number, title, subtitle }) {
+function OnboardingStep({ number, title, subtitle, className }) {
     return (
-        <div style={stepWrapper}>
+        <div
+            className={className}
+            style={stepWrapper}
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+        >
             <AnimatePresence mode="wait">
                 <motion.div
                     key={number}

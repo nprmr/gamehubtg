@@ -1,8 +1,34 @@
 // components/ModalWrapper.jsx
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const ModalWrapper = ({ isOpen, onClose, children }) => {
+    const contentRef = useRef(null);
+
+    // lock body scroll + Escape close
+    useEffect(() => {
+        if (!isOpen) return;
+        const prevOverflow = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+        const onKey = (e) => {
+            if (e.key === "Escape") onClose?.();
+        };
+        window.addEventListener("keydown", onKey);
+        return () => {
+            document.body.style.overflow = prevOverflow;
+            window.removeEventListener("keydown", onKey);
+        };
+    }, [isOpen, onClose]);
+
+    // move focus into modal for accessibility (best-effort)
+    useEffect(() => {
+        if (isOpen) {
+            // slight delay to ensure presence
+            const t = setTimeout(() => contentRef.current?.focus?.(), 0);
+            return () => clearTimeout(t);
+        }
+    }, [isOpen]);
+
     return (
         <AnimatePresence>
             {isOpen && (
@@ -39,6 +65,10 @@ const ModalWrapper = ({ isOpen, onClose, children }) => {
                             overflow: "hidden",
                             borderRadius: 0, // fullscreen
                         }}
+                        role="dialog"
+                        aria-modal="true"
+                        tabIndex={-1}
+                        ref={contentRef}
                     >
                         {children}
                     </motion.div>

@@ -1,5 +1,5 @@
 // AwardCeremony.jsx (patched)
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
 import twemoji from "twemoji";
@@ -25,12 +25,14 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
     }, [winners]);
 
     const hasExtraPlayers = totalPlayers > 3;
-    const medals =
-        totalPlayers === 2 ? [silverImg, goldImg] : [bronzeImg, silverImg, goldImg];
-    const texts =
+    const medals = useMemo(() => (
+        totalPlayers === 2 ? [silverImg, goldImg] : [bronzeImg, silverImg, goldImg]
+    ), [totalPlayers]);
+    const texts = useMemo(() => (
         totalPlayers === 2
             ? ["2-е место", "Победитель"]
-            : ["3-е место", "2-е место", "Победитель"];
+            : ["3-е место", "2-е место", "Победитель"]
+    ), [totalPlayers]);
 
     const [step, setStep] = useState(0);
     const [revealed, setRevealed] = useState(false);
@@ -49,12 +51,12 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
     const currentWinner = ordered[step] ?? { name: "Игрок", emoji: "🙂", score: 0 };
 
     // 👉 HAPTIC helper for Telegram Mini App (no-op elsewhere)
-    const haptic = (type = "light") => {
+    const haptic = useCallback((type = "light") => {
         try {
             const hf = window?.Telegram?.WebApp?.HapticFeedback;
             hf?.impactOccurred?.(type);
         } catch (_) {}
-    };
+    }, []);
 
     // 📱 адаптация Telegram viewport + safe area + признак Telegram
     useEffect(() => {
@@ -103,7 +105,7 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
         return () => clearTimeout(t);
     }, [step]);
 
-    const handleContinue = () => {
+    const handleContinue = useCallback(() => {
         if (animating) return;
         setAnimating(true);
         setShowMedal(false);
@@ -121,9 +123,9 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
                 setRevealed(false);
             }
         }, 1000);
-    };
+    }, [animating, step, medals.length]);
 
-    const handleRestart = () => {
+    const handleRestart = useCallback(() => {
         setStep(0);
         setRevealed(false);
         setPlaced([]);
@@ -132,7 +134,7 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
         setButtonsVisible(true);
         setShowMedal(true);
         onRestart?.();
-    };
+    }, [onRestart]);
 
     // 🎉 Финальное конфетти (каждый залп + хаптик)
     useEffect(() => {
@@ -151,7 +153,16 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
         }
     }, [final]);
 
-    const renderEmoji = (emoji, small = false, sizeOverride, absolute = false) => (
+    const emojiCache = useMemo(() => new Map(), []);
+    const getEmojiSvg = useCallback((emoji) => {
+        if (!emoji) return twemoji.parse("🙂", { folder: "svg", ext: ".svg" });
+        if (emojiCache.has(emoji)) return emojiCache.get(emoji);
+        const svg = twemoji.parse(emoji, { folder: "svg", ext: ".svg" });
+        emojiCache.set(emoji, svg);
+        return svg;
+    }, [emojiCache]);
+
+    const renderEmoji = useCallback((emoji, small = false, sizeOverride, absolute = false) => (
         <div
             style={{
                 width: sizeOverride || (small ? 32 : 46),
@@ -170,10 +181,10 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
                     }),
             }}
             dangerouslySetInnerHTML={{
-                __html: twemoji.parse(emoji || "🙂", { folder: "svg", ext: ".svg" }),
+                __html: getEmojiSvg(emoji),
             }}
         />
-    );
+    ), [getEmojiSvg]);
 
     const safeTopOffset = Math.max(safeAreaTop, viewportHeight < 700 ? 64 : 48) + 120;
 
@@ -420,10 +431,10 @@ export default function AwardCeremony({ winners = [], onFinish, onRestart }) {
 const overlay = { position: "fixed", top: 0, left: 0, width: "100vw", height: "100dvh", backgroundColor: "var(--surface-main)", display: "flex", flexDirection: "column", boxSizing: "border-box", overflow: "hidden" };
 const centerContainer = { position: "relative", width: "100%", minHeight: 260, display: "flex", justifyContent: "center", alignItems: "center", transition: "all 0.4s ease" };
 // 🔧 FIX #1: добавить top/left 50% чтобы избежать моргания у левого края до применения transform
-const lightStyle = { position: "absolute", width: 260, height: 260, transform: "translate(-50%, -50%)", opacity: 0.85, willChange: "transform, opacity", contain: "paint layout" };
-const centerMedal = { position: "absolute", width: 200, height: 200, transform: "translate(-50%, -50%)", display: "flex", justifyContent: "center", alignItems: "center", willChange: "transform, opacity" };
+const lightStyle = { position: "absolute", top: "50%", left: "50%", width: 260, height: 260, transform: "translate(-50%, -50%)", opacity: 0.85, willChange: "transform, opacity", contain: "paint layout" };
+const centerMedal = { position: "absolute", top: "50%", left: "50%", width: 200, height: 200, transform: "translate(-50%, -50%)", display: "flex", justifyContent: "center", alignItems: "center", willChange: "transform, opacity" };
 const waitingEmoji = { position: "absolute", width: 46, height: 46, top: "50%", left: "50%", transform: "translate(-50%, -50%)" };
-const emojiWrapper = { position: "absolute", width: 46, height: 46, transform: "translate(-50%, -50%)" };
+const emojiWrapper = { position: "absolute", top: "50%", left: "50%", width: 46, height: 46, transform: "translate(-50%, -50%)" };
 const medal = { width: 140, height: 180 };
 const textZone = { height: 80, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" };
 const placeText = { fontSize: 36, fontWeight: 700, color: "white" };

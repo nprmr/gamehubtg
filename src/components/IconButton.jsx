@@ -1,4 +1,5 @@
-import React, { useRef } from "react";
+import React, { useRef, forwardRef, useCallback } from "react";
+import { motion } from "framer-motion";
 import "../theme.css";
 
 /**
@@ -7,33 +8,43 @@ import "../theme.css";
  * @param {Function} onClick - обработчик клика
  * @param {number} size - размер кнопки (по умолчанию 48px)
  */
-function IconButton({ icon: Icon, onClick, size = 48 }) {
+const IconButton = forwardRef(function IconButton({ icon: Icon, onClick, size = 48, className, ariaLabel }, ref) {
     const hapticTriggered = useRef(false);
 
-    const handleClick = (e) => {
+    const handleClick = useCallback((e) => {
         onClick?.(e);
-        // 👇 сброс после клика
         hapticTriggered.current = false;
-    };
+    }, [onClick]);
 
-    const handlePressStart = () => {
+    const handlePressStart = useCallback(() => {
         if (!hapticTriggered.current) {
             hapticTriggered.current = true;
             window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("light");
         }
-    };
+    }, []);
 
-    const handlePressEnd = () => {
+    const handlePressEnd = useCallback(() => {
         hapticTriggered.current = false;
-    };
+    }, []);
+
+    const handleKeyDown = useCallback((e) => {
+        if (!onClick) return;
+        if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onClick(e);
+        }
+    }, [onClick]);
 
     return (
-        <button
+        <motion.button
+            ref={ref}
             onClick={handleClick}
-            onMouseDown={handlePressStart}
-            onTouchStart={handlePressStart}
-            onMouseUp={handlePressEnd}
-            onTouchEnd={handlePressEnd}
+            onPointerDown={handlePressStart}
+            onPointerUp={handlePressEnd}
+            onKeyDown={handleKeyDown}
+            className={className}
+            aria-label={ariaLabel}
+            whileTap={{ scale: 0.93 }}
             style={{
                 width: `${size}px`,
                 height: `${size}px`,
@@ -46,19 +57,12 @@ function IconButton({ icon: Icon, onClick, size = 48 }) {
                 cursor: "pointer",
                 backdropFilter: "blur(12px)",
                 WebkitBackdropFilter: "blur(12px)",
-                transition: "transform 0.1s ease",
                 outline: "none",
                 boxShadow: "none",
                 WebkitTapHighlightColor: "transparent",
                 WebkitTouchCallout: "none",
                 userSelect: "none",
             }}
-            onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-            onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
-            onTouchEnd={(e) => (e.currentTarget.style.transform = "scale(1)")}
-            onMouseDownCapture={(e) =>
-                (e.currentTarget.style.transform = "scale(0.93)")
-            }
         >
             {Icon && (
                 <Icon
@@ -67,8 +71,8 @@ function IconButton({ icon: Icon, onClick, size = 48 }) {
                     fill="var(--icotex-white)"
                 />
             )}
-        </button>
+        </motion.button>
     );
-}
+});
 
 export default IconButton;

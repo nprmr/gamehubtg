@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, forwardRef, useCallback } from "react";
 import PlayerAddIcon from "../icons/addPlayer.svg?react";
 import CloseIcon from "../icons/close.svg?react"; // ✅ крестик
 import { emojiMap } from "../data/emojiMap";
@@ -6,7 +6,7 @@ import { theme } from "../theme";
 import PremiumCard from "./PremiumCard";
 import twemoji from "twemoji";
 
-export default function PlayerCard({
+const PlayerCard = forwardRef(function PlayerCard({
                                        id,
                                        state = "active",
                                        playerNumber = 1,
@@ -16,8 +16,10 @@ export default function PlayerCard({
                                        onUpdate = () => {},
                                        onRemove = () => {},
                                        canRemove = true, // ✅ возможность удаления
-                                   }) {
+                                       className,
+                                   }, ref) {
     const emojiRef = useRef(null);
+    const hapticRef = useRef(false);
 
     function randomEmojiData() {
         return emojiMap[Math.floor(Math.random() * emojiMap.length)];
@@ -38,10 +40,28 @@ export default function PlayerCard({
         }
     }, [emojiData]);
 
-    const handleCardClick = () => {
+    const handleCardClick = useCallback(() => {
         const newEmoji = randomEmojiData();
         onUpdate({ emojiData: newEmoji });
-    };
+    }, [onUpdate]);
+
+    const handleKeyDown = useCallback((e) => {
+        if (state !== "active") return;
+        if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            handleCardClick();
+        }
+    }, [state, handleCardClick]);
+
+    const hapticStart = useCallback(() => {
+        if (!hapticRef.current) {
+            hapticRef.current = true;
+            window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("light");
+        }
+    }, []);
+    const hapticEnd = useCallback(() => {
+        hapticRef.current = false;
+    }, []);
 
     const styles = {
         cardBase: {
@@ -115,8 +135,16 @@ export default function PlayerCard({
         return (
             <div
                 id={id}
+                ref={ref}
+                className={className}
                 style={{ ...styles.cardBase, backgroundColor: theme.surface.zero }}
                 onClick={handleCardClick}
+                onPointerDown={hapticStart}
+                onPointerUp={hapticEnd}
+                onKeyDown={handleKeyDown}
+                role="button"
+                tabIndex={0}
+                aria-label={`Игрок ${emojiData?.name || "Игрок"}. Нажмите, чтобы сменить смайлик`}
             >
                 {/* ✅ крестик показываем только если можно удалить */}
                 {canRemove && (
@@ -147,7 +175,20 @@ export default function PlayerCard({
         return (
             <div
                 id={id}
+                ref={ref}
+                className={className}
                 onClick={onAdd}
+                onPointerDown={hapticStart}
+                onPointerUp={hapticEnd}
+                onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        onAdd();
+                    }
+                }}
+                role="button"
+                tabIndex={0}
+                aria-label={`Добавить игрока ${playerNumber}`}
                 style={{
                     ...styles.cardBase,
                     backgroundColor: theme.surface.normalAlfa,
@@ -198,4 +239,6 @@ export default function PlayerCard({
     }
 
     return null;
-}
+});
+
+export default PlayerCard;

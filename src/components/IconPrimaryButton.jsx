@@ -1,34 +1,45 @@
-import React, { useRef } from "react";
+import React, { useRef, forwardRef, useCallback } from "react";
+import { motion } from "framer-motion";
 import "../theme.css";
 import ArrowBackIcon from "../icons/arrowback.svg?react";
 
-function IconPrimaryButton({ onClick }) {
+const IconPrimaryButton = forwardRef(function IconPrimaryButton({ onClick, ariaLabel = "Назад", className }, ref) {
     const hapticTriggered = useRef(false);
 
-    const handleClick = (e) => {
+    const handleClick = useCallback((e) => {
         onClick?.(e);
-        // 👇 сброс после клика
         hapticTriggered.current = false;
-    };
+    }, [onClick]);
 
-    const handlePressStart = () => {
+    const handlePressStart = useCallback(() => {
         if (!hapticTriggered.current) {
             hapticTriggered.current = true;
             window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("medium");
         }
-    };
+    }, []);
 
-    const handlePressEnd = () => {
+    const handlePressEnd = useCallback(() => {
         hapticTriggered.current = false;
-    };
+    }, []);
+
+    const handleKeyDown = useCallback((e) => {
+        if (!onClick) return;
+        if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onClick(e);
+        }
+    }, [onClick]);
 
     return (
-        <button
+        <motion.button
+            ref={ref}
             onClick={handleClick}
-            onMouseDown={handlePressStart}
-            onTouchStart={handlePressStart}
-            onMouseUp={handlePressEnd}
-            onTouchEnd={handlePressEnd}
+            onPointerDown={handlePressStart}
+            onPointerUp={handlePressEnd}
+            onKeyDown={handleKeyDown}
+            aria-label={ariaLabel}
+            className={className}
+            whileTap={{ scale: 0.93 }}
             style={{
                 display: "flex",
                 width: "64px",
@@ -42,33 +53,20 @@ function IconPrimaryButton({ onClick }) {
                 cursor: "pointer",
                 backdropFilter: "blur(20px)",
                 WebkitBackdropFilter: "blur(20px)",
-                transition: "transform 0.1s ease",
                 outline: "none",
                 boxShadow: "none",
                 WebkitTapHighlightColor: "transparent",
                 WebkitTouchCallout: "none",
                 userSelect: "none",
             }}
-            onMouseLeave={(e) =>
-                (e.currentTarget.style.transform = "scale(1)")
-            }
-            onMouseUp={(e) =>
-                (e.currentTarget.style.transform = "scale(1)")
-            }
-            onTouchEnd={(e) =>
-                (e.currentTarget.style.transform = "scale(1)")
-            }
-            onMouseDownCapture={(e) =>
-                (e.currentTarget.style.transform = "scale(0.93)")
-            }
         >
             <ArrowBackIcon
                 width={24}
                 height={24}
                 style={{ color: "var(--icotex-white)" }}
             />
-        </button>
+        </motion.button>
     );
-}
+});
 
 export default IconPrimaryButton;

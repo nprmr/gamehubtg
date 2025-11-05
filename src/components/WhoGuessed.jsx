@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence, useMotionValue, animate, useTransform } from "framer-motion";
 import { theme } from "../theme";
 import SecondaryButton from "./SecondaryButton";
@@ -41,28 +41,41 @@ export default function WhoGuessed({
         }
     }, [open]);
 
-    const togglePlayer = (index) => {
+    const togglePlayer = useCallback((index) => {
         setNobodyGuessed(false);
         setSelectedPlayers((prev) =>
             prev.includes(index)
                 ? prev.filter((i) => i !== index)
                 : [...prev, index]
         );
-    };
+    }, []);
 
-    const handleNobody = () => {
+    const handleNobody = useCallback(() => {
         setSelectedPlayers([]);
         setNobodyGuessed(true);
-    };
+    }, []);
 
-    const handleContinue = () => {
+    const handleContinue = useCallback(() => {
         onSubmit?.({
             guessedBy: selectedPlayers,
             nobodyGuessed,
             awardedTo: currentPlayerIndex,
         });
         onClose?.();
-    };
+    }, [onSubmit, selectedPlayers, nobodyGuessed, currentPlayerIndex, onClose]);
+
+    // Escape-to-close + body scroll lock while open
+    useEffect(() => {
+        if (!open) return;
+        const prevOverflow = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+        const onKey = (e) => { if (e.key === "Escape") onClose?.(); };
+        window.addEventListener("keydown", onKey);
+        return () => {
+            document.body.style.overflow = prevOverflow;
+            window.removeEventListener("keydown", onKey);
+        };
+    }, [open, onClose]);
 
     const totalCount = Math.max(players.length - 1, 0);
     const canContinue = selectedPlayers.length > 0 || nobodyGuessed;
@@ -142,6 +155,16 @@ export default function WhoGuessed({
                                                 : "var(--surface-light)",
                                         }}
                                         onClick={() => togglePlayer(index)}
+                                        role="button"
+                                        tabIndex={0}
+                                        aria-pressed={selected}
+                                        aria-label={`Добавить балл игроку ${player?.emojiData?.name || "Игрок"}`}
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Enter" || e.key === " ") {
+                                                e.preventDefault();
+                                                togglePlayer(index);
+                                            }
+                                        }}
                                     >
                                         <div style={playerInfoStyle}>
                                             <div style={emojiStyle}>
@@ -171,6 +194,16 @@ export default function WhoGuessed({
                                     marginTop: 8,
                                 }}
                                 onClick={handleNobody}
+                                role="button"
+                                tabIndex={0}
+                                aria-pressed={nobodyGuessed}
+                                aria-label="Никто не угадал"
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter" || e.key === " ") {
+                                        e.preventDefault();
+                                        handleNobody();
+                                    }
+                                }}
                             >
                                 <div style={playerInfoStyle}>
                                     <div style={playerNameStyle}>Никто не угадал</div>
