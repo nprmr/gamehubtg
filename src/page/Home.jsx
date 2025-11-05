@@ -39,9 +39,14 @@ function Home() {
             try {
                 setLoading(true);
                 const data = await getGames();
-                if (alive) setGames(data);
+                if (alive) {
+                    setGames(Array.isArray(data) ? data : []);
+                }
             } catch (e) {
-                if (alive) setError(e?.message || "Failed to load");
+                if (alive) {
+                    setError(e?.message || "Failed to load");
+                    setGames([]);
+                }
             } finally {
                 if (alive) setLoading(false);
             }
@@ -88,7 +93,35 @@ function Home() {
 
     if (error) return <div style={{ color: "tomato", padding: 24 }}>Ошибка: {error}</div>;
 
-    const active = useMemo(() => games[activeIndex], [games, activeIndex]);
+    if (!games || games.length === 0) {
+        return (
+            <div style={{
+                width: "100vw",
+                height: "100vh",
+                backgroundColor: "var(--surface-main)",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                color: "var(--icotex-white)",
+                fontFamily: "Gilroy, sans-serif",
+            }}>
+                Нет доступных игр
+            </div>
+        );
+    }
+
+    // Ensure activeIndex is within bounds
+    useEffect(() => {
+        if (games.length > 0) {
+            const safeIndex = Math.max(0, Math.min(activeIndex, games.length - 1));
+            if (safeIndex !== activeIndex) {
+                setActiveIndex(safeIndex);
+            }
+        }
+    }, [games.length, activeIndex]);
+
+    const safeActiveIndex = Math.max(0, Math.min(activeIndex, games.length - 1));
+    const active = useMemo(() => games[safeActiveIndex] || games[0], [games, safeActiveIndex]);
     
     const handleNavigate = useCallback(() => {
         if (active?.route) {
@@ -124,7 +157,7 @@ function Home() {
             <AnimatePresence mode="wait">
                 {active?.bg && (
                     <motion.img
-                        key={activeIndex}
+                        key={safeActiveIndex}
                         src={active.bg}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -218,11 +251,11 @@ function Home() {
                         dragConstraints={{ left: minX, right: maxX }}
                         dragElastic={0.05}
                         dragMomentum={false}
-                        animate={{ x: getXForIndex(activeIndex) }}
+                        animate={{ x: getXForIndex(safeActiveIndex) }}
                         transition={{ type: "spring", stiffness: 250, damping: 35 }}
                         onDragEnd={handleDragEnd}
                     >
-                        {games.map((g, i) => (
+                        {games && games.map((g, i) => (
                             <div
                                 key={g.id}
                                 ref={i === 0 ? firstItemRef : undefined}
