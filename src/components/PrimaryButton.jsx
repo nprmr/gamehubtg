@@ -10,6 +10,7 @@ const PrimaryButton = forwardRef(function PrimaryButton({
                            description,
                            type = "button",
                            className,
+                           withMargin = false,
                        }, ref) {
     const hapticTriggered = useRef(false);
 
@@ -57,7 +58,7 @@ const PrimaryButton = forwardRef(function PrimaryButton({
                 fontFamily: "Gilroy, sans-serif",
                 backdropFilter: "blur(20px)",
                 WebkitBackdropFilter: "blur(20px)",
-                marginBottom: "24px",
+                marginBottom: withMargin ? "24px" : "0",
                 boxSizing: "border-box",
                 overflow: "hidden",
                 outline: "none",

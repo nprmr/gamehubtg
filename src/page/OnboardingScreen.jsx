@@ -17,7 +17,7 @@ import { setOnboarded } from "../utils/onboarding";
 function OnboardingScreen({ asModal = false, from, categories = [], onClose }) {
     const navigate = useNavigate();
     const location = useLocation();
-    const fallbackFrom = useMemo(() => from || location.state?.from, [from, location.state?.from]);
+    const fallbackFrom = useMemo(() => from || location.state?.from || undefined, [from, location.state]);
     const [step, setStep] = useState(1);
 
     const { rive: rive1, RiveComponent: Rive1 } = useRive({

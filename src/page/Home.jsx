@@ -52,7 +52,7 @@ function Home() {
     }, []);
 
     const maxIndex = useMemo(() => Math.max(0, games.length - 1), [games.length]);
-    const step = useMemo(() => cardWidth + GAP, [cardWidth, GAP]);
+    const step = useMemo(() => cardWidth + GAP, [cardWidth]);
     
     const clamp = useCallback((n) => Math.max(0, Math.min(maxIndex, n)), [maxIndex]);
     const goTo = useCallback((i) => setActiveIndex(clamp(i)), [clamp]);
