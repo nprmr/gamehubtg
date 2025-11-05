@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import GameScreen from "./GameScreen";
 import OnboardingScreen from "./OnboardingScreen";
@@ -20,15 +20,18 @@ function GameWrapper() {
         }
     }, [navigate, categories]);
 
+    const handleShowOnboarding = useCallback(() => setShowOnboarding(true), []);
+    const handleCloseOnboarding = useCallback(() => setShowOnboarding(false), []);
+
     return (
         <>
-            <GameScreen onShowOnboarding={() => setShowOnboarding(true)} />
+            <GameScreen onShowOnboarding={handleShowOnboarding} />
             {showOnboarding && (
                 <OnboardingScreen
                     asModal
                     from="/game"
                     categories={categories}
-                    onClose={() => setShowOnboarding(false)}
+                    onClose={handleCloseOnboarding}
                 />
             )}
         </>

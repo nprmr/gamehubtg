@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -17,7 +17,7 @@ import { setOnboarded } from "../utils/onboarding";
 function OnboardingScreen({ asModal = false, from, categories = [], onClose }) {
     const navigate = useNavigate();
     const location = useLocation();
-    const fallbackFrom = from || location.state?.from;
+    const fallbackFrom = useMemo(() => from || location.state?.from, [from, location.state?.from]);
     const [step, setStep] = useState(1);
 
     const { rive: rive1, RiveComponent: Rive1 } = useRive({
@@ -35,7 +35,7 @@ function OnboardingScreen({ asModal = false, from, categories = [], onClose }) {
         layout: new Layout({ fit: Fit.Cover, alignment: Alignment.Center }),
     });
 
-    const handleNext = () => {
+    const handleNext = useCallback(() => {
         if (step === 1) {
             setStep(2);
         } else {
@@ -47,17 +47,17 @@ function OnboardingScreen({ asModal = false, from, categories = [], onClose }) {
                 else navigate("/neverever", { replace: true });
             }
         }
-    };
+    }, [step, asModal, onClose, fallbackFrom, navigate, categories]);
 
-    const handleBack = () => {
+    const handleBack = useCallback(() => {
         if (step === 2) setStep(1);
         else {
             if (asModal) onClose?.();
             else navigate(fallbackFrom || "/", { replace: true });
         }
-    };
+    }, [step, asModal, onClose, fallbackFrom, navigate]);
 
-    const handleSoftHaptic = () => {
+    const handleSoftHaptic = useCallback(() => {
         if (window?.Telegram?.WebApp?.HapticFeedback) {
             try {
                 window.Telegram.WebApp.HapticFeedback.impactOccurred("soft");
@@ -65,7 +65,16 @@ function OnboardingScreen({ asModal = false, from, categories = [], onClose }) {
                 console.warn("Haptic feedback failed:", e);
             }
         }
-    };
+    }, []);
+
+    const handleRiveClick = useCallback(() => {
+        handleSoftHaptic();
+        trigger?.fire();
+    }, [handleSoftHaptic, trigger]);
+
+    const handleOverlayClick = useCallback(() => {
+        if (asModal) onClose?.();
+    }, [asModal, onClose]);
 
     const rive1Variants = {
         hidden: { x: "-100vw", rotate: -90, opacity: 0, scale: 0.8 },
@@ -110,7 +119,7 @@ function OnboardingScreen({ asModal = false, from, categories = [], onClose }) {
                     justifyContent: "center",
                     alignItems: "center",
                 }}
-                onClick={() => asModal && onClose?.()}
+                onClick={handleOverlayClick}
             >
                 <motion.div
                     key="onboarding-container"
@@ -167,10 +176,7 @@ function OnboardingScreen({ asModal = false, from, categories = [], onClose }) {
                                         <div style={{ width: "100%", maxWidth: 256, aspectRatio: "1/1" }}>
                                             <Rive1
                                                 style={{ width: "100%", height: "100%" }}
-                                                onClick={() => {
-                                                    handleSoftHaptic();
-                                                    trigger?.fire();
-                                                }}
+                                                onClick={handleRiveClick}
                                             />
                                         </div>
                                     </motion.div>

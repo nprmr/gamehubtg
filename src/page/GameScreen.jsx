@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion, useMotionValue, useTransform, useAnimation } from "framer-motion";
 import IconButton from "../components/IconButton";
@@ -50,10 +50,10 @@ function GameScreen({ onShowOnboarding }) {
         }
     }, [categories]);
 
-    const rotateFromX = (val) => {
+    const rotateFromX = useCallback((val) => {
         const clamped = Math.max(-SWIPE_GOAL, Math.min(0, val || 0));
         return (clamped / SWIPE_GOAL) * 18;
-    };
+    }, [SWIPE_GOAL]);
 
     const screenWidth = useMemo(
         () => (typeof window !== "undefined" ? window.innerWidth : 400),
@@ -61,10 +61,10 @@ function GameScreen({ onShowOnboarding }) {
     );
 
     const total = questions.length;
-    const currentQuestion = questions[currentIndex];
-    const nextQuestion = total ? questions[(currentIndex + 1) % total] : undefined;
+    const currentQuestion = useMemo(() => questions[currentIndex], [questions, currentIndex]);
+    const nextQuestion = useMemo(() => (total ? questions[(currentIndex + 1) % total] : undefined), [questions, currentIndex, total]);
 
-    const spawnGhostAndAdvance = (startX = 0) => {
+    const spawnGhostAndAdvance = useCallback((startX = 0) => {
         if (isCooldown || !currentQuestion) return;
         setIsCooldown(true);
 
@@ -88,9 +88,9 @@ function GameScreen({ onShowOnboarding }) {
 
         setCurrentIndex((prev) => (prev + 1) % total);
         setTimeout(() => setIsCooldown(false), COOLDOWN_MS);
-    };
+    }, [isCooldown, currentQuestion, rotateFromX, screenWidth, controls, x, total, COOLDOWN_MS]);
 
-    const onActiveDragEnd = (_e, { offset, velocity }) => {
+    const onActiveDragEnd = useCallback((_e, { offset, velocity }) => {
         if (isCooldown) return;
         if (offset.x < -THRESHOLD_OFFSET || velocity.x < -THRESHOLD_VELOCITY) {
             spawnGhostAndAdvance(x.get());
@@ -103,12 +103,16 @@ function GameScreen({ onShowOnboarding }) {
                 transition: { type: "spring", stiffness: 220, damping: 22 },
             });
         }
-    };
+    }, [isCooldown, THRESHOLD_OFFSET, THRESHOLD_VELOCITY, spawnGhostAndAdvance, x, controls]);
 
-    const onNextClick = () => {
+    const onNextClick = useCallback(() => {
         if (isCooldown) return;
         spawnGhostAndAdvance(0);
-    };
+    }, [isCooldown, spawnGhostAndAdvance]);
+
+    const handleShowSheet = useCallback(() => setShowSheet(true), []);
+    const handleCloseSheet = useCallback(() => setShowSheet(false), []);
+    const handleConfirmSheet = useCallback(() => navigate("/neverever", { replace: true }), [navigate]);
 
     if (loading) return <div style={centerStyle}>Загружаем вопросы...</div>;
     if (!total) return <div style={centerStyle}>Нет вопросов для выбранных категорий</div>;
@@ -117,7 +121,7 @@ function GameScreen({ onShowOnboarding }) {
         <div style={wrapperStyle}>
             {/* Назад */}
             <div style={backIconStyle}>
-                <IconButton icon={ArrowBackIcon} onClick={() => setShowSheet(true)} />
+                <IconButton icon={ArrowBackIcon} onClick={handleShowSheet} />
             </div>
 
             {/* FAQ → открывает онбординг как модалку */}
@@ -207,8 +211,8 @@ function GameScreen({ onShowOnboarding }) {
             {/* BottomSheet */}
             <BottomSheet
                 open={showSheet}
-                onClose={() => setShowSheet(false)}
-                onConfirm={() => navigate("/neverever", { replace: true })}
+                onClose={handleCloseSheet}
+                onConfirm={handleConfirmSheet}
                 riveFile="/rive/tv.riv"
                 stateMachine="State Machine 1"
                 trigger="clickTrigger"

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import "../theme.css";
@@ -51,19 +51,20 @@ function Home() {
         };
     }, []);
 
-    const maxIndex = Math.max(0, games.length - 1);
-    const clamp = (n) => Math.max(0, Math.min(maxIndex, n));
-    const goTo = (i) => setActiveIndex(clamp(i));
-    const step = cardWidth + GAP;
+    const maxIndex = useMemo(() => Math.max(0, games.length - 1), [games.length]);
+    const step = useMemo(() => cardWidth + GAP, [cardWidth, GAP]);
+    
+    const clamp = useCallback((n) => Math.max(0, Math.min(maxIndex, n)), [maxIndex]);
+    const goTo = useCallback((i) => setActiveIndex(clamp(i)), [clamp]);
 
-    const getXForIndex = (i) => {
+    const getXForIndex = useCallback((i) => {
         if (i === 0) return 16;
         const centerOfCard = i * step + cardWidth / 2;
         const viewportCenter = viewportWidth / 2;
         return viewportCenter - centerOfCard;
-    };
+    }, [step, cardWidth, viewportWidth]);
 
-    const minX = getXForIndex(maxIndex);
+    const minX = useMemo(() => getXForIndex(maxIndex), [getXForIndex, maxIndex]);
     const maxX = 16;
 
     if (loading) {
@@ -87,7 +88,27 @@ function Home() {
 
     if (error) return <div style={{ color: "tomato", padding: 24 }}>Ошибка: {error}</div>;
 
-    const active = games[activeIndex];
+    const active = useMemo(() => games[activeIndex], [games, activeIndex]);
+    
+    const handleNavigate = useCallback(() => {
+        if (active?.route) {
+            navigate(active.route);
+        }
+    }, [active, navigate]);
+
+    const handleDragEnd = useCallback((_, info) => {
+        const { offset, velocity } = info;
+        const dx = offset.x;
+        const vx = velocity.x;
+        const swipePower = Math.abs(dx) * 0.5 + Math.abs(vx) * 20;
+        const passed = Math.abs(dx) > step * 0.25 || swipePower > 300;
+        if (passed) {
+            if (dx < 0) goTo(activeIndex + 1);
+            else goTo(activeIndex - 1);
+        } else {
+            goTo(activeIndex);
+        }
+    }, [step, goTo, activeIndex]);
 
     return (
         <div
@@ -199,19 +220,7 @@ function Home() {
                         dragMomentum={false}
                         animate={{ x: getXForIndex(activeIndex) }}
                         transition={{ type: "spring", stiffness: 250, damping: 35 }}
-                        onDragEnd={(_, info) => {
-                            const { offset, velocity } = info;
-                            const dx = offset.x;
-                            const vx = velocity.x;
-                            const swipePower = Math.abs(dx) * 0.5 + Math.abs(vx) * 20;
-                            const passed = Math.abs(dx) > step * 0.25 || swipePower > 300;
-                            if (passed) {
-                                if (dx < 0) goTo(activeIndex + 1);
-                                else goTo(activeIndex - 1);
-                            } else {
-                                goTo(activeIndex);
-                            }
-                        }}
+                        onDragEnd={handleDragEnd}
                     >
                         {games.map((g, i) => (
                             <div
@@ -247,7 +256,7 @@ function Home() {
                 {active?.route ? (
                     <PrimaryButton
                         textColor="var(--icotex-white)"
-                        onClick={() => navigate(active.route)}
+                        onClick={handleNavigate}
                         withMargin
                     >
                         {active.buttonText || "Играть"}
